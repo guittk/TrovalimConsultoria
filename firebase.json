@@ -1,24 +1,18 @@
 {
   "hosting": {
     "site": "trovalim",
-    "public": ".",
+    "public": "dist/trovalim/browser",
     "ignore": [
       "firebase.json",
       ".firebaserc",
-      ".github",
-      ".git",
-      "**/.*",
-      "node_modules/**",
-      "package.json",
-      "package-lock.json",
-      "firestore.rules",
-      "storage.rules",
-      "_*.js"
+      "**/.*"
     ],
-    "cleanUrls": true,
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ],
     "headers": [
       {
-        "source": "**",
+        "source": "/index.html",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
         ]

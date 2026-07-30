@@ -1,0 +1,28 @@
+<div class="loading-overlay" [class.show]="loading()"><div class="spinner"></div></div>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <img src="logo_gt.png" alt="Trovalim">
+    <div class="login-logo-name">Trovalim</div>
+    <div class="login-logo-sub">Portal do Cliente</div>
+  </div>
+  <div class="divider"></div>
+
+  @if (error()) {
+    <div class="error-msg show">{{ error() }}</div>
+  }
+
+  <form (ngSubmit)="submit()" autocomplete="on">
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" placeholder="seu@email.com" autocomplete="email" required
+      [ngModel]="email()" (ngModelChange)="email.set($event)">
+
+    <label for="password">Senha</label>
+    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required
+      [ngModel]="password()" (ngModelChange)="password.set($event)">
+
+    <button type="submit" class="btn-login" [disabled]="loading()">Entrar</button>
+  </form>
+
+  <a routerLink="/" class="back-link">← Voltar ao site</a>
+</div>

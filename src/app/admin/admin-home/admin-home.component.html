@@ -1,0 +1,144 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <h1 class="page-title">Projetos</h1>
+      <p class="page-subtitle">Central de clientes e projetos — atualização em tempo real</p>
+    </div>
+    <button class="btn btn-primary" (click)="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Novo Projeto
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="toolbar-search" placeholder="Buscar por projeto ou cliente…"
+      [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+    <select class="toolbar-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+      <option value="">Todos os status</option>
+      <option value="em-andamento">Em Andamento</option>
+      <option value="aguardando-cliente">Aguardando Cliente</option>
+      <option value="em-revisao">Em Revisão</option>
+      <option value="concluido">Concluído</option>
+      <option value="pausado">Pausado</option>
+    </select>
+  </div>
+
+  <div class="card" style="padding:0">
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Projeto</th>
+            <th>Descrição</th>
+            <th>Status</th>
+            <th style="width:130px">Progresso</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!filteredProjects().length) {
+            <tr><td colspan="6"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>
+          }
+          @for (p of filteredProjects(); track p.id) {
+            <tr>
+              <td>
+                <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ p.branding?.companyName || p.clientName || '—' }}</div>
+                @if (p.clientEmail) { <div style="font-size:.72rem;color:var(--muted)">{{ p.clientEmail }}</div> }
+              </td>
+              <td style="font-weight:500;max-width:200px">{{ p.name }}</td>
+              <td style="max-width:220px">
+                <div style="font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="p.description || ''">
+                  {{ p.description || '—' }}
+                </div>
+              </td>
+              <td><app-status-badge [status]="p.status" /></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <div class="progress-bar" style="flex:1">
+                    <div class="progress-fill" [style.width.%]="p.progress || 0" [style.background]="p.branding?.primaryColor || 'var(--gold)'"></div>
+                  </div>
+                  <span style="font-size:.72rem;color:var(--muted);flex-shrink:0">{{ p.progress || 0 }}%</span>
+                </div>
+              </td>
+              <td><a [routerLink]="['/admin/projeto', p.id]" class="link-btn">Gerenciar →</a></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── NEW PROJECT MODAL ── -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:580px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">Novo Projeto</div>
+
+    @if (modalError()) {
+      <div class="alert alert-error show">{{ modalError() }}</div>
+    }
+
+    <div class="form-group">
+      <label class="form-label">Nome do Projeto *</label>
+      <input type="text" class="form-input" placeholder="Ex: Consultoria de Carreira Q3" maxlength="120"
+        [ngModel]="npName()" (ngModelChange)="npName.set($event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-textarea" placeholder="Descreva o escopo ou objetivo deste projeto…" maxlength="600" rows="3"
+        [ngModel]="npDesc()" (ngModelChange)="npDesc.set($event)"></textarea>
+      <div class="np-desc-count" style="font-size:.7rem;color:var(--muted);text-align:right;margin-top:.3rem">{{ npDesc().length }}/600</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status Inicial</label>
+      <select class="form-select" [ngModel]="npStatus()" (ngModelChange)="npStatus.set($event)">
+        <option value="em-andamento">Em Andamento</option>
+        <option value="aguardando-cliente">Aguardando Cliente</option>
+        <option value="em-revisao">Em Revisão</option>
+        <option value="concluido">Concluído</option>
+        <option value="pausado">Pausado</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        Cliente
+        <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(opcional — pode ser adicionado depois)</span>
+      </label>
+
+      @if (clientsLoading()) {
+        <div style="text-align:center;padding:.6rem;font-size:.78rem;color:var(--muted)">Carregando usuários…</div>
+      } @else {
+        <select class="form-select" [ngModel]="npClientUid()" (ngModelChange)="npClientUid.set($event)">
+          <option value="">— Sem cliente (atribuir depois) —</option>
+          @for (u of clients(); track u.uid) {
+            <option [value]="u.uid">{{ u.name || u.email }}{{ u.name && u.email ? ' — ' + u.email : '' }}</option>
+          }
+        </select>
+      }
+
+      @if (selectedClient(); as c) {
+        <div class="client-preview show" style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.25);font-size:.82rem;color:var(--graphite);display:flex;gap:.6rem;align-items:center">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:var(--serif);font-size:.85rem;flex-shrink:0">{{ initials(c.name || c.email || '') }}</div>
+          <div>
+            <div style="font-weight:500">{{ c.name || c.email }}</div>
+            <div style="font-size:.75rem;color:var(--muted)">{{ c.email }}</div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="saving()" (click)="createProject()">{{ saving() ? 'Criando…' : 'Criar Projeto' }}</button>
+    </div>
+  </div>
+</div>

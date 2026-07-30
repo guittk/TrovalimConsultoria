@@ -1,0 +1,111 @@
+@if (userData$ | async; as userData) {
+  <app-pnav logoLink="/portal" sectionLabel="Portal do Cliente" [userName]="userData.name || userData.email || ''" />
+}
+
+@if (project$ | async; as p) {
+  <div class="breadcrumb">
+    <a routerLink="/portal">Meus Projetos</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ p.name }}</span>
+  </div>
+
+  <div class="page">
+    <div class="proj-header">
+      @if (p.branding?.logo) {
+        <img [src]="p.branding!.logo" class="proj-header-logo" alt="">
+      } @else {
+        <div class="proj-header-logo-ph">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        </div>
+      }
+      <div class="proj-header-info">
+        <div class="proj-header-company">{{ p.branding?.companyName || p.clientName || '' }}</div>
+        <div class="proj-header-name">{{ p.name }}</div>
+        <app-status-badge [status]="p.status" />
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- LINHA DO TEMPO -->
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Linha do Tempo</div>
+        @if (!p.steps.length) {
+          <div class="empty-state-sub">Nenhuma etapa cadastrada ainda.</div>
+        } @else {
+          <div class="timeline">
+            @for (s of p.steps; track $index) {
+              <div class="timeline-item">
+                <div class="timeline-dot" [class.done]="s.done" [class.pending]="!s.done"></div>
+                <div class="timeline-title">{{ s.name }}</div>
+                @if (s.date) { <div class="timeline-date">{{ s.date }}</div> }
+                <div class="timeline-tag" [class.done]="s.done" [class.pending]="!s.done">{{ s.done ? '✓ Concluído' : 'Pendente' }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div>
+        <!-- MENSAGENS -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Mensagens</div>
+          <div class="messages-feed">
+            @if (messages$ | async; as messages) {
+              @if (!messages.length) {
+                <div class="msg-empty">Nenhuma mensagem ainda.</div>
+              }
+              @for (m of messages; track $index) {
+                <div class="msg" [class.msg-mine]="m.authorRole !== 'admin'" [class.msg-theirs]="m.authorRole === 'admin'">
+                  <div class="msg-author">{{ m.author }}</div>
+                  <div>{{ m.text }}</div>
+                  <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>
+                </div>
+              }
+            }
+          </div>
+          <div class="msg-form">
+            <input type="text" class="msg-input" placeholder="Escreva uma mensagem…"
+              [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
+              (keydown.enter)="sendMessage()">
+            <button class="btn btn-primary btn-sm" (click)="sendMessage()">Enviar</button>
+          </div>
+        </div>
+
+        <!-- ARQUIVOS -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Arquivos</div>
+          @if (files$ | async; as files) {
+            @if (!files.length) {
+              <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum arquivo disponível.</div>
+            } @else {
+              <div style="border:1px solid var(--border);margin-bottom:1rem">
+                @for (f of files; track f.id) {
+                  <div class="file-item">
+                    <div class="file-icon">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div class="file-info">
+                      <div class="file-name">{{ f.name }}</div>
+                      <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }}</div>
+                    </div>
+                    <div class="file-actions">
+                      <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+          <div class="file-upload-area" (click)="fileInput.click()">
+            <input #fileInput type="file" style="display:none" (change)="onFileSelected($event)">
+            <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos aqui' }}</div>
+            <div class="file-upload-sub">para enviar para a consultora</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="loading-overlay show"><div class="spinner"></div></div>
+}

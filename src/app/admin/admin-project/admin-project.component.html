@@ -1,0 +1,237 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+}
+
+@if (project(); as p) {
+  <div class="breadcrumb">
+    <a routerLink="/admin">Projetos</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ p.name }}</span>
+  </div>
+
+  <div class="page">
+    <div class="proj-header">
+      @if (p.branding?.logo) {
+        <img [src]="p.branding!.logo" class="proj-header-logo" alt="">
+      } @else {
+        <div class="proj-header-logo-ph">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        </div>
+      }
+      <div class="proj-header-info">
+        <div class="proj-header-company">{{ p.branding?.companyName || p.clientName || '' }}</div>
+        <div class="proj-header-name">{{ p.name }}</div>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <app-status-badge [status]="p.status" />
+          @if (p.ownerId) {
+            <a [routerLink]="['/admin/clientes', p.ownerId]" class="link-btn">Ver Cliente →</a>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0 2rem 2rem">
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'geral'" (click)="activeTab.set('geral')">Visão Geral</button>
+        <button class="tab" [class.active]="activeTab() === 'timeline'" (click)="activeTab.set('timeline')">Linha do Tempo</button>
+        <button class="tab" [class.active]="activeTab() === 'arquivos'" (click)="activeTab.set('arquivos')">Arquivos</button>
+        <button class="tab" [class.active]="activeTab() === 'mensagens'" (click)="activeTab.set('mensagens')">Mensagens</button>
+        <button class="tab" [class.active]="activeTab() === 'marca'" (click)="activeTab.set('marca')">Marca do Cliente</button>
+      </div>
+
+      <!-- VISÃO GERAL -->
+      @if (activeTab() === 'geral') {
+        <div class="tab-panel active">
+          @if (geralOk()) { <div class="alert alert-success show">Salvo com sucesso.</div> }
+          @if (geralErr()) { <div class="alert alert-error show">{{ geralErr() }}</div> }
+
+          <div class="form-group">
+            <label class="form-label">Status do Projeto</label>
+            <select class="form-select" style="max-width:320px" [ngModel]="status()" (ngModelChange)="status.set($event)">
+              <option value="em-andamento">Em Andamento</option>
+              <option value="aguardando-cliente">Aguardando Cliente</option>
+              <option value="em-revisao">Em Revisão</option>
+              <option value="concluido">Concluído</option>
+              <option value="pausado">Pausado</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Progresso — <span>{{ progress() }}</span>%</label>
+            <div class="progress-edit-row">
+              <input type="range" class="progress-slider" min="0" max="100" [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
+              <input type="number" class="progress-number" min="0" max="100" [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
+              <span style="font-size:.82rem;color:var(--muted)">%</span>
+            </div>
+            <div style="margin-top:.85rem">
+              <div class="progress-bar" style="height:8px">
+                <div class="progress-fill" [style.width.%]="progress()" [style.background]="p.branding?.primaryColor || '#C9A96E'"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" [disabled]="savingGeral()" (click)="saveGeral()">{{ savingGeral() ? 'Salvando…' : 'Salvar Alterações' }}</button>
+        </div>
+      }
+
+      <!-- LINHA DO TEMPO -->
+      @if (activeTab() === 'timeline') {
+        <div class="tab-panel active">
+          @if (timelineOk()) { <div class="alert alert-success show">Etapas salvas.</div> }
+          @if (timelineErr()) { <div class="alert alert-error show">{{ timelineErr() }}</div> }
+
+          @if (!stepsData().length) {
+            <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma etapa. Clique em "Adicionar Etapa".</div>
+          }
+          @for (s of stepsData(); track $index; let i = $index) {
+            <div class="step-item">
+              <input type="checkbox" class="step-check" [checked]="s.done" (change)="updateStep(i, 'done', $any($event.target).checked)">
+              <div class="step-inputs">
+                <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="s.name" (ngModelChange)="updateStep(i, 'name', $event)">
+                <input type="text" class="step-date-input" placeholder="Data (ex: Jan 2025)" [ngModel]="s.date" (ngModelChange)="updateStep(i, 'date', $event)">
+              </div>
+              <div class="step-btns">
+                <button class="btn-icon" title="Mover para cima" (click)="moveStep(i, -1)">↑</button>
+                <button class="btn-icon" title="Mover para baixo" (click)="moveStep(i, 1)">↓</button>
+                <button class="btn-icon danger" title="Remover" (click)="removeStep(i)">✕</button>
+              </div>
+            </div>
+          }
+
+          <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" (click)="addStep()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adicionar Etapa
+            </button>
+            <button class="btn btn-primary btn-sm" [disabled]="savingTimeline()" (click)="saveTimeline()">{{ savingTimeline() ? 'Salvando…' : 'Salvar Etapas' }}</button>
+          </div>
+        </div>
+      }
+
+      <!-- ARQUIVOS -->
+      @if (activeTab() === 'arquivos') {
+        <div class="tab-panel active">
+          @if (files$ | async; as files) {
+            @if (!files.length) {
+              <div class="empty-state"><div class="empty-state-sub">Nenhum arquivo ainda.</div></div>
+            } @else {
+              <div style="border:1px solid var(--border)">
+                @if (adminFiles(files).length) {
+                  <div class="file-group-label">Documentos da Consultora</div>
+                  @for (f of adminFiles(files); track f.id) {
+                    <div class="file-item">
+                      <div class="file-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                      <div class="file-info">
+                        <div class="file-name">{{ f.name }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                      </div>
+                      <div class="file-actions">
+                        <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f.id!, f.path)">Excluir</button>
+                      </div>
+                    </div>
+                  }
+                }
+                @if (clientFiles(files).length) {
+                  <div class="file-group-label">Documentos do Cliente</div>
+                  @for (f of clientFiles(files); track f.id) {
+                    <div class="file-item">
+                      <div class="file-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                      <div class="file-info">
+                        <div class="file-name">{{ f.name }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                      </div>
+                      <div class="file-actions">
+                        <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f.id!, f.path)">Excluir</button>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          }
+
+          <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
+            <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
+            <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar ao cliente' }}</div>
+            <div class="file-upload-sub">PDF, DOCX, XLSX, imagens — sem limite de tamanho</div>
+          </div>
+        </div>
+      }
+
+      <!-- MENSAGENS -->
+      @if (activeTab() === 'mensagens') {
+        <div class="tab-panel active">
+          <div class="messages-feed">
+            @if (messages$ | async; as messages) {
+              @if (!messages.length) {
+                <div class="msg-empty">Nenhuma mensagem ainda.</div>
+              }
+              @for (m of messages; track $index) {
+                <div class="msg" [class.msg-mine]="m.authorRole === 'admin'" [class.msg-theirs]="m.authorRole !== 'admin'">
+                  <div class="msg-author">{{ m.author }}</div>
+                  <div>{{ m.text }}</div>
+                  <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>
+                </div>
+              }
+            }
+          </div>
+          <div class="msg-form">
+            <input type="text" class="msg-input" placeholder="Escreva uma mensagem para o cliente…"
+              [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
+              (keydown.enter)="sendMessage()">
+            <button class="btn btn-primary btn-sm" (click)="sendMessage()">Enviar</button>
+          </div>
+        </div>
+      }
+
+      <!-- MARCA DO CLIENTE -->
+      @if (activeTab() === 'marca') {
+        <div class="tab-panel active">
+          @if (marcaOk()) { <div class="alert alert-success show">Identidade visual salva.</div> }
+          @if (marcaErr()) { <div class="alert alert-error show">{{ marcaErr() }}</div> }
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nome da Empresa</label>
+              <input type="text" class="form-input" placeholder="Ex: Empresa Ltda" [ngModel]="brandingCompany()" (ngModelChange)="brandingCompany.set($event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cor Primária</label>
+              <div class="color-row">
+                <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+                  [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
+                <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Logo da Empresa</label>
+            <div class="logo-preview-wrap">
+              @if (brandingLogoPreview()) {
+                <img [src]="brandingLogoPreview()" style="max-width:100%;max-height:100%;object-fit:contain">
+              } @else {
+                <span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>
+              }
+            </div>
+            <input #logoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)">
+            <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" (click)="logoInput.click()">Escolher Logo</button>
+              @if (brandingLogoPreview()) {
+                <button class="btn btn-danger-ghost btn-sm" (click)="removeLogo()">Remover Logo</button>
+              }
+            </div>
+            <div class="form-help">Recomendado: PNG ou SVG com fundo transparente.</div>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top:.5rem" [disabled]="savingMarca()" (click)="saveMarca()">{{ savingMarca() ? 'Salvando…' : 'Salvar Identidade Visual' }}</button>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="loading-overlay show"><div class="spinner"></div></div>
+}

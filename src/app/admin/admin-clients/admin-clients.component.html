@@ -1,0 +1,49 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Clientes</h1>
+    <p class="page-subtitle">Empresas atendidas pela consultoria — atualização em tempo real</p>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="toolbar-search" placeholder="Buscar por nome, e-mail ou empresa…"
+      [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+  </div>
+
+  <div class="cards-grid">
+    @if (!filteredClients().length) {
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-emoji">🗂️</div>
+        <div class="empty-state-text">Nenhum cliente encontrado</div>
+        <div class="empty-state-sub">Contas de clientes criadas no Firestore aparecem aqui automaticamente.</div>
+      </div>
+    }
+    @for (c of filteredClients(); track c.uid) {
+      <div class="client-card">
+        <div class="client-card-top">
+          <div class="client-card-avatar">
+            @if (logoFor(c.uid, c.branding); as logo) {
+              <img [src]="logo" alt="">
+            } @else {
+              {{ initials(c.name || c.email || '') }}
+            }
+          </div>
+          <div>
+            <div class="client-card-name">{{ c.name || c.email || 'Sem nome' }}</div>
+            <div class="client-card-email">{{ c.email || '' }}</div>
+          </div>
+        </div>
+        @if (companyFor(c.uid, c.branding); as company) {
+          <div class="client-card-company">{{ company }}</div>
+        }
+        <div class="client-card-meta">{{ projectsFor(c.uid).length }} projeto{{ projectsFor(c.uid).length === 1 ? '' : 's' }}</div>
+        <div class="client-card-footer">
+          <a [routerLink]="['/admin/clientes', c.uid]" class="btn btn-outline btn-sm">Ver Cliente →</a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

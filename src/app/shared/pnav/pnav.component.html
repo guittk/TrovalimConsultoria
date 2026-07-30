@@ -1,0 +1,22 @@
+<nav class="pnav">
+  <div class="pnav-left">
+    <a [routerLink]="logoLink" class="pnav-logo">
+      <img src="logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    @if (tabs.length) {
+      <div class="pnav-tabs">
+        @for (tab of tabs; track tab.key) {
+          <a [routerLink]="tab.path" class="pnav-tab" [class.active]="tab.key === activeSection">{{ tab.label }}</a>
+        }
+      </div>
+    } @else {
+      <span class="pnav-section">{{ sectionLabel }}</span>
+    }
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name">{{ userName }}</span>
+    <button class="btn-logout" (click)="logout()">Sair</button>
+  </div>
+</nav>

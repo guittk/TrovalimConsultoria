@@ -1,0 +1,116 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="breadcrumb">
+  <a routerLink="/admin/clientes">Clientes</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>{{ client()?.name || client()?.email || 'Cliente' }}</span>
+</div>
+
+@if (client(); as c) {
+  <div class="page">
+    <div class="proj-header">
+      @if (c.branding?.logo) {
+        <img [src]="c.branding!.logo" class="proj-header-logo" alt="">
+      } @else {
+        <div class="proj-header-logo-ph">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      }
+      <div class="proj-header-info">
+        <div class="proj-header-company">{{ c.branding?.companyName || '' }}</div>
+        <div class="proj-header-name">{{ c.name || c.email || 'Cliente' }}</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <!-- DADOS DO CLIENTE -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Dados do Cliente</div>
+          @if (dadosOk()) { <div class="alert alert-success show">Dados salvos com sucesso.</div> }
+          @if (dadosErr()) { <div class="alert alert-error show">{{ dadosErr() }}</div> }
+
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input type="text" class="form-input" placeholder="Nome do responsável" [ngModel]="name()" (ngModelChange)="name.set($event)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input type="email" class="form-input" [value]="c.email || ''" disabled style="opacity:.6;cursor:not-allowed">
+            <div class="form-help">O e-mail de login é gerenciado no Firebase Authentication.</div>
+          </div>
+
+          <button class="btn btn-primary" [disabled]="savingDados()" (click)="saveDados()">{{ savingDados() ? 'Salvando…' : 'Salvar Dados' }}</button>
+        </div>
+
+        <!-- IDENTIDADE VISUAL -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Identidade Visual Padrão</div>
+          @if (marcaOk()) { <div class="alert alert-success show">Identidade visual salva.</div> }
+          @if (marcaErr()) { <div class="alert alert-error show">{{ marcaErr() }}</div> }
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nome da Empresa</label>
+              <input type="text" class="form-input" placeholder="Ex: Empresa Ltda" [ngModel]="brandingCompany()" (ngModelChange)="brandingCompany.set($event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cor Primária</label>
+              <div class="color-row">
+                <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+                  [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
+                <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Logo da Empresa</label>
+            <div class="logo-preview-wrap">
+              @if (brandingLogoPreview()) {
+                <img [src]="brandingLogoPreview()" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">
+              } @else {
+                <span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>
+              }
+            </div>
+            <input #logoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)">
+            <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" (click)="logoInput.click()">Escolher Logo</button>
+              @if (brandingLogoPreview()) {
+                <button class="btn btn-danger-ghost btn-sm" (click)="removeLogo()">Remover Logo</button>
+              }
+            </div>
+            <div class="form-help">Usada como padrão para novos projetos deste cliente.</div>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top:.5rem" [disabled]="savingMarca()" (click)="saveMarca()">{{ savingMarca() ? 'Salvando…' : 'Salvar Identidade Visual' }}</button>
+        </div>
+      </div>
+
+      <div>
+        <!-- PROJETOS DO CLIENTE -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Projetos</div>
+          @if (!projects().length) {
+            <div class="empty-state-sub">Nenhum projeto para este cliente ainda.</div>
+          }
+          @for (p of projects(); track p.id) {
+            <div class="file-item" style="padding:.85rem 0">
+              <div class="file-info">
+                <div class="file-name">{{ p.name }}</div>
+                <div class="file-meta">{{ statusLabel(p.status) }} · {{ p.progress || 0 }}% concluído</div>
+              </div>
+              <div class="file-actions">
+                <a [routerLink]="['/admin/projeto', p.id]" class="link-btn">Gerenciar →</a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="loading-overlay show"><div class="spinner"></div></div>
+}

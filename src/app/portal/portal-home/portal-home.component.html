@@ -1,0 +1,48 @@
+@if (userData$ | async; as userData) {
+  <app-pnav logoLink="/portal" sectionLabel="Portal do Cliente" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Meus Projetos</h1>
+    <p class="page-subtitle">Acompanhe o andamento dos seus projetos em tempo real</p>
+  </div>
+
+  @if (projects$ | async; as projects) {
+    <div class="cards-grid">
+      @if (!projects.length) {
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-emoji">📂</div>
+          <div class="empty-state-text">Nenhum projeto encontrado</div>
+          <div class="empty-state-sub">Entre em contato para iniciar seu projeto.</div>
+        </div>
+      }
+      @for (p of projects; track p.id) {
+        <a [routerLink]="['/portal', p.id]" class="proj-card">
+          <div class="proj-card-brand">
+            @if (p.branding?.logo) {
+              <img [src]="p.branding!.logo" class="proj-card-logo" [alt]="p.branding?.companyName || ''">
+            } @else {
+              <div class="proj-card-logo-ph">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              </div>
+            }
+            <div>
+              <div class="proj-card-company">{{ p.branding?.companyName || p.clientName || '' }}</div>
+              <div class="proj-card-name">{{ p.name }}</div>
+            </div>
+          </div>
+          <div class="proj-card-status"><app-status-badge [status]="p.status" /></div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="p.progress || 0" [style.background]="p.branding?.primaryColor || '#C9A96E'"></div>
+            </div>
+            <div class="progress-label">{{ p.progress || 0 }}% concluído</div>
+          </div>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="loading-overlay show"><div class="spinner"></div></div>
+  }
+</div>
