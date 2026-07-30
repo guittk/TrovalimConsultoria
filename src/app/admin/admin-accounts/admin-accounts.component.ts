@@ -90,6 +90,10 @@ export class AdminAccountsComponent {
     this.modalOpen.set(false);
   }
 
+  toggleRestrictProjects(): void {
+    this.restrictProjects.update((v) => !v);
+  }
+
   toggleProject(id: string, checked: boolean): void {
     this.selectedProjectIds.update((set) => {
       const copy = new Set(set);

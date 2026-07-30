@@ -104,8 +104,8 @@
 
     @if (!editingIsSelf() && accRole() === 'manager') {
       <div class="form-group">
-        <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-          <input type="checkbox" [checked]="restrictProjects()" (change)="restrictProjects.set($any($event.target).checked)" style="accent-color:var(--gold)">
+        <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer" (click)="$event.preventDefault(); toggleRestrictProjects()">
+          <input type="checkbox" [checked]="restrictProjects()" tabindex="-1" style="accent-color:var(--gold);pointer-events:none">
           Restringir a projetos específicos
         </label>
         <div class="form-help" style="margin-bottom:.6rem">Desmarcado = acesso a todos os projetos.</div>

@@ -120,28 +120,29 @@
 
     <div class="form-group">
       <label class="form-label">
-        Cliente
+        Empresa
         <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(opcional — pode ser adicionado depois)</span>
       </label>
 
       @if (clientsLoading()) {
-        <div style="text-align:center;padding:.6rem;font-size:.78rem;color:var(--muted)">Carregando usuários…</div>
+        <div style="text-align:center;padding:.6rem;font-size:.78rem;color:var(--muted)">Carregando empresas…</div>
       } @else {
         <select class="form-select" [ngModel]="npClientUid()" (ngModelChange)="npClientUid.set($event)">
-          <option value="">— Sem cliente (atribuir depois) —</option>
+          <option value="">— Sem empresa (atribuir depois) —</option>
           @for (u of clients(); track u.uid) {
-            <option [value]="u.uid">{{ u.name || u.email }}{{ u.name && u.email ? ' — ' + u.email : '' }}</option>
+            <option [value]="u.uid">{{ companyLabel(u) }}</option>
           }
         </select>
       }
 
       @if (selectedClient(); as c) {
         <div class="client-preview show" style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.25);font-size:.82rem;color:var(--graphite);display:flex;gap:.6rem;align-items:center">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:var(--serif);font-size:.85rem;flex-shrink:0">{{ initials(c.name || c.email || '') }}</div>
-          <div>
-            <div style="font-weight:500">{{ c.name || c.email }}</div>
-            <div style="font-size:.75rem;color:var(--muted)">{{ c.email }}</div>
-          </div>
+          @if (c.branding?.logo) {
+            <img [src]="c.branding!.logo" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">
+          } @else {
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:var(--serif);font-size:.85rem;flex-shrink:0">{{ initials(companyLabel(c)) }}</div>
+          }
+          <div style="font-weight:500">{{ companyLabel(c) }}</div>
         </div>
       }
     </div>

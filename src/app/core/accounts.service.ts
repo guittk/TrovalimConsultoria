@@ -51,6 +51,21 @@ export class AccountsService {
     ).pipe(map((docs) => docs.map((d) => ({ ...d, uid: d.id }) as UserAccount)));
   }
 
+  /**
+   * Cria uma empresa "pura" — um doc em /users sem login próprio (sem
+   * e-mail/senha no Firebase Auth), só para servir de dona de projetos e
+   * âncora de branding/limites. Colaboradores (contas criadas em Contas)
+   * são vinculados a ela depois via companyId.
+   */
+  async createCompany(companyName: string): Promise<string> {
+    const ref = doc(collection(this.db, 'users'));
+    await setDoc(ref, {
+      role: 'client',
+      branding: { companyName, primaryColor: '#C9A96E', logo: null },
+    });
+    return ref.id;
+  }
+
   updateProfile(
     uid: string,
     data: { name?: string; role?: Role; projectAccess?: string[] | null },

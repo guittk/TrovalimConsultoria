@@ -86,11 +86,15 @@ export class AdminHomeComponent {
     this.clientsLoading.set(true);
     this.accountsSvc.listCompanies$().subscribe({
       next: (list) => {
-        this.clients.set([...list].sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || '')));
+        this.clients.set([...list].sort((a, b) => this.companyLabel(a).localeCompare(this.companyLabel(b))));
         this.clientsLoading.set(false);
       },
       error: () => this.clientsLoading.set(false),
     });
+  }
+
+  companyLabel(u: UserAccount): string {
+    return u.branding?.companyName || u.name || u.email || 'Sem nome';
   }
 
   initials(name: string): string {
@@ -109,7 +113,7 @@ export class AdminHomeComponent {
       const id = await this.projectsSvc.create({
         name,
         description: this.npDesc().trim(),
-        clientName: client?.name || client?.email || '',
+        clientName: client ? this.companyLabel(client) : '',
         clientEmail: client?.email || '',
         ownerId: client?.uid || null,
         status: this.npStatus(),

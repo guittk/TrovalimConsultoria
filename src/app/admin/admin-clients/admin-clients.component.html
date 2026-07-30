@@ -3,9 +3,17 @@
 }
 
 <div class="page">
-  <div class="page-header">
-    <h1 class="page-title">Empresas</h1>
-    <p class="page-subtitle">Empresas atendidas pela consultoria — atualização em tempo real</p>
+  <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <h1 class="page-title">Empresas</h1>
+      <p class="page-subtitle">Empresas atendidas pela consultoria — atualização em tempo real</p>
+    </div>
+    @if (isOwner()) {
+      <button class="btn btn-primary" (click)="openCreate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova Empresa
+      </button>
+    }
   </div>
 
   <div class="toolbar">
@@ -41,5 +49,26 @@
         </div>
       </div>
     }
+  </div>
+</div>
+
+<!-- ── NOVA EMPRESA MODAL ── -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">Nova Empresa</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Nome da Empresa</label>
+      <input type="text" class="form-input" placeholder="Ex: Empresa Ltda" [ngModel]="newCompanyName()" (ngModelChange)="newCompanyName.set($event)" (keydown.enter)="createCompany()">
+      <div class="form-help">Depois você adiciona colaboradores (contas criadas em "Contas") e projetos a ela.</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="saving()" (click)="createCompany()">{{ saving() ? 'Criando…' : 'Criar Empresa' }}</button>
+    </div>
   </div>
 </div>
