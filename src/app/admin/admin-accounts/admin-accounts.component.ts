@@ -134,9 +134,16 @@ export class AdminAccountsComponent {
     if (!confirm(`Excluir o acesso de "${acc.name || acc.email}"?\n\nIsso remove os dados da conta na plataforma, mas o login no Firebase Authentication precisa ser removido separadamente pelo Console do Firebase.`)) {
       return;
     }
+    this.pageErr.set('');
     try {
       await this.accountsSvc.deleteAccount(acc.uid);
     } catch (e) {
+      if (e instanceof Error && e.message === 'HAS_TEAM_MEMBERS') {
+        this.pageErr.set(
+          `"${acc.name || acc.email}" ainda tem colaboradores vinculados. Remova-os (ou realoque-os) na tela do cliente antes de excluir esta conta.`,
+        );
+        return;
+      }
       const err = e as { code?: string; message?: string };
       this.pageErr.set('Erro ao excluir conta: ' + (err.code || err.message));
     }

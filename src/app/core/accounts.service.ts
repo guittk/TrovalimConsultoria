@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   query,
   setDoc,
   updateDoc,
@@ -69,8 +70,18 @@ export class AccountsService {
     return updateDoc(doc(this.db, 'users', uid), { photoUrl });
   }
 
-  deleteAccount(uid: string): Promise<void> {
-    return deleteDoc(doc(this.db, 'users', uid));
+  /**
+   * Impede excluir uma conta "empresa" enquanto ela ainda tiver colaboradores
+   * vinculados (companyId) — eles ficariam órfãos, sem branding/projeto,
+   * sem serem avisados. O chamador deve remover os colaboradores primeiro
+   * (ou os promover/realocar) antes de excluir a empresa.
+   */
+  async deleteAccount(uid: string): Promise<void> {
+    const teamSnap = await getDocs(query(collection(this.db, 'users'), where('companyId', '==', uid)));
+    if (!teamSnap.empty) {
+      throw new Error('HAS_TEAM_MEMBERS');
+    }
+    await deleteDoc(doc(this.db, 'users', uid));
   }
 
   /**
