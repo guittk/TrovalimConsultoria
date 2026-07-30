@@ -55,8 +55,9 @@
     if (!user) { window.location.href = '../login.html'; return; }
 
     const userData = await resolveUserData(user);
+    console.log('[trovalim] uid:', user.uid, 'email:', user.email, 'dados encontrados:', JSON.stringify(userData));
 
-    if (userData.role === 'admin') { window.location.href = '../admin/'; return; }
+    if (normRole(userData.role) === 'admin') { window.location.href = '../admin/'; return; }
 
     document.getElementById('userName').textContent = userData.name || user.email;
 
@@ -132,6 +133,10 @@
     snap = await db.collection('users').doc(user.email).get().catch(() => null);
     if (snap?.exists) return snap.data() || {};
     return {};
+  }
+
+  function normRole(role) {
+    return String(role || '').trim().toLowerCase();
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

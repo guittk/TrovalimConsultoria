@@ -138,7 +138,7 @@
 
     const data = await resolveUserData(user);
 
-    if (data.role === 'admin') { location.href = '../admin/'; return; }
+    if (normRole(data.role) === 'admin') { location.href = '../admin/'; return; }
 
     currentUser     = user;
     currentUserData = data;
@@ -367,6 +367,10 @@
     snap = await db.collection('users').doc(user.email).get().catch(() => null);
     if (snap?.exists) return snap.data() || {};
     return {};
+  }
+
+  function normRole(role) {
+    return String(role || '').trim().toLowerCase();
   }
   function showErr(msg) {
     const el = document.getElementById('alertErr');
