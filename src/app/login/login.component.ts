@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { FirebaseError } from 'firebase/app';
 import { AuthService, isStaffRole } from '../core/auth.service';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -25,8 +24,14 @@ export class LoginComponent {
     this.error.set('');
     this.loading.set(true);
     try {
-      await this.auth.login(this.email().trim(), this.password());
-      const data = await firstValueFrom(this.auth.userData$);
+      const cred = await this.auth.login(this.email().trim(), this.password());
+      // Resolve o papel direto a partir do usuário recém-logado, sem passar
+      // pelo userData$ compartilhado: signInWithEmailAndPassword resolve
+      // antes do onAuthStateChanged notificar os observables da app, e como
+      // user$/userData$ usam shareReplay(1), um redirecionamento imediato a
+      // partir deles corria o risco de ler o valor antigo em cache (usuário
+      // deslogado) e mandar todo mundo pro /portal — só corrigia com F5.
+      const data = await this.auth.resolveUserData(cred.user);
       await this.router.navigateByUrl(isStaffRole(data?.role) ? '/admin' : '/portal');
     } catch (e) {
       this.error.set(this.errMsg(e));

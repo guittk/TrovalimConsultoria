@@ -70,6 +70,17 @@ export type ProjectStatus =
   | 'concluido'
   | 'pausado';
 
+export interface ProjectStatusOption {
+  key: string;
+  label: string;
+  bg: string;
+  color: string;
+}
+
+export interface ProjectStatusSettings {
+  statuses: ProjectStatusOption[];
+}
+
 export interface TimelineStep {
   name: string;
   date: string;
@@ -88,7 +99,19 @@ export interface Project {
   steps: TimelineStep[];
   branding: Branding | null;
   createdAt?: unknown;
+  /** Prazo de entrega (yyyy-mm-dd), opcional. */
+  deadline?: string | null;
+  /** uid da conta (owner/manager) responsável por este projeto. */
+  responsibleUid?: string | null;
 }
+
+export const PROJECT_FILE_CATEGORIES: { key: string; label: string }[] = [
+  { key: 'contrato', label: 'Contrato' },
+  { key: 'briefing', label: 'Briefing' },
+  { key: 'curriculo', label: 'Currículo' },
+  { key: 'relatorio', label: 'Relatório' },
+  { key: 'outro', label: 'Outro' },
+];
 
 export interface ProjectMessage {
   id?: string;
@@ -107,4 +130,6 @@ export interface ProjectFile {
   uploadedAt?: unknown;
   uploadedByRole: 'admin' | 'client' | string;
   uploadedByName?: string;
+  /** Categoria do arquivo (ver PROJECT_FILE_CATEGORIES). */
+  category?: string;
 }

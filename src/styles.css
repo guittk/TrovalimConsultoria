@@ -872,8 +872,18 @@ img { max-width: 100%; display: block; }
 }
 .progress-slider {
   flex: 1;
+  height: 22px;
   accent-color: var(--gold);
   cursor: pointer;
+}
+.progress-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+.progress-slider::-moz-range-track { height: 8px; border-radius: 4px; }
+.progress-slider::-webkit-slider-thumb {
+  width: 20px; height: 20px; margin-top: -6px;
+  border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35);
+}
+.progress-slider::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35);
 }
 .progress-number {
   width: 70px;

@@ -1,28 +1,27 @@
-import { Component, Input } from '@angular/core';
-
-interface BadgeInfo {
-  label: string;
-  bg: string;
-  color: string;
-}
-
-const STATUS_MAP: Record<string, BadgeInfo> = {
-  'em-andamento': { label: 'Em Andamento', bg: '#DBEAFE', color: '#1D4ED8' },
-  'aguardando-cliente': { label: 'Aguardando Cliente', bg: '#FEF3C7', color: '#B45309' },
-  'em-revisao': { label: 'Em Revisão', bg: '#EDE9FE', color: '#6D28D9' },
-  concluido: { label: 'Concluído', bg: '#D1FAE5', color: '#065F46' },
-  pausado: { label: 'Pausado', bg: '#F3F4F6', color: '#374151' },
-};
+import { Component, Input, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  ProjectStatusSettingsService,
+  DEFAULT_PROJECT_STATUS_SETTINGS,
+} from '../../core/project-status-settings.service';
 
 @Component({
   selector: 'app-status-badge',
   standalone: true,
-  template: `<span class="badge" [style.background]="info.bg" [style.color]="info.color">{{ info.label }}</span>`,
+  template: `<span class="badge" [style.background]="info().bg" [style.color]="info().color">{{ info().label }}</span>`,
 })
 export class StatusBadgeComponent {
-  info: BadgeInfo = { label: '—', bg: '#F3F4F6', color: '#374151' };
+  private readonly settingsSvc = inject(ProjectStatusSettingsService);
+  private readonly settings = toSignal(this.settingsSvc.get$(), { initialValue: DEFAULT_PROJECT_STATUS_SETTINGS });
+
+  private statusValue: string | undefined | null;
 
   @Input() set status(value: string | undefined | null) {
-    this.info = (value && STATUS_MAP[value]) || { label: value || '—', bg: '#F3F4F6', color: '#374151' };
+    this.statusValue = value;
+  }
+
+  info() {
+    const found = this.settings().statuses.find((s) => s.key === this.statusValue);
+    return found || { label: this.statusValue || '—', bg: '#F3F4F6', color: '#374151' };
   }
 }

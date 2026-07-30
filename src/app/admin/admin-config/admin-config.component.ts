@@ -7,7 +7,11 @@ import { EmpresasService } from '../../core/empresas.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
-import { Empresa, FileTypeLimit } from '../../core/models';
+import {
+  ProjectStatusSettingsService,
+  DEFAULT_PROJECT_STATUS_SETTINGS,
+} from '../../core/project-status-settings.service';
+import { Empresa, FileTypeLimit, ProjectStatusOption } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
@@ -39,6 +43,7 @@ export class AdminConfigComponent {
   private readonly empresasSvc = inject(EmpresasService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
+  private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -73,6 +78,14 @@ export class AdminConfigComponent {
         this.totalLimitMb.set(s.totalLimitMb);
         this.defaultClientLimitMb.set(s.defaultClientLimitMb);
         this.typeLimitsForm.set(s.typeLimits.map((t) => ({ ...t, extensionsText: t.extensions.join(', ') })));
+      }
+    });
+
+    effect(() => {
+      const s = this.statusSettingsSig();
+      if (s && !this.statusSyncedOnce) {
+        this.statusSyncedOnce = true;
+        this.statusForm.set(s.statuses.map((st) => ({ ...st })));
       }
     });
   }
@@ -222,6 +235,48 @@ export class AdminConfigComponent {
       });
     } finally {
       this.savingLimitFor.set(null);
+    }
+  }
+
+  /* ── STATUS DO PROJETO ── */
+  private readonly statusSettingsSig = toSignal(this.statusSettingsSvc.get$(), {
+    initialValue: DEFAULT_PROJECT_STATUS_SETTINGS,
+  });
+  private statusSyncedOnce = false;
+
+  readonly statusForm = signal<ProjectStatusOption[]>([]);
+  readonly statusSavingOk = signal(false);
+  readonly statusSavingErr = signal('');
+  readonly statusSaving = signal(false);
+
+  addStatus(): void {
+    this.statusForm.update((rows) => [
+      ...rows,
+      { key: `status-${Date.now()}`, label: 'Novo Status', bg: '#F3F4F6', color: '#374151' },
+    ]);
+  }
+
+  removeStatus(index: number): void {
+    this.statusForm.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  updateStatus(index: number, field: 'label' | 'bg' | 'color', value: string): void {
+    this.statusForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  }
+
+  async saveStatusSettings(): Promise<void> {
+    this.statusSavingOk.set(false);
+    this.statusSavingErr.set('');
+    this.statusSaving.set(true);
+    try {
+      await this.statusSettingsSvc.update(this.statusForm());
+      this.statusSavingOk.set(true);
+      setTimeout(() => this.statusSavingOk.set(false), 3000);
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      this.statusSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+    } finally {
+      this.statusSaving.set(false);
     }
   }
 }

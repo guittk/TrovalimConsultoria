@@ -39,6 +39,10 @@ export class AccountsService {
     return this.listAll$().pipe(map((users) => users.filter((u) => !isStaffRole(u.role))));
   }
 
+  listStaff$(): Observable<UserAccount[]> {
+    return this.listAll$().pipe(map((users) => users.filter((u) => isStaffRole(u.role))));
+  }
+
   /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
   listUnlinkedClients$(): Observable<UserAccount[]> {
     return this.listClients$().pipe(map((users) => users.filter((u) => !u.companyId)));

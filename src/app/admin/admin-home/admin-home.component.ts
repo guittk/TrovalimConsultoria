@@ -6,6 +6,10 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
+import {
+  ProjectStatusSettingsService,
+  DEFAULT_PROJECT_STATUS_SETTINGS,
+} from '../../core/project-status-settings.service';
 import { Empresa } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -27,7 +31,12 @@ export class AdminHomeComponent {
   private readonly auth = inject(AuthService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
+  private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
   private readonly router = inject(Router);
+
+  readonly statusSettings = toSignal(this.statusSettingsSvc.get$(), {
+    initialValue: DEFAULT_PROJECT_STATUS_SETTINGS,
+  });
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;

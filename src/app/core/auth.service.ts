@@ -73,7 +73,7 @@ export class AuthService {
    * regras corretas (validado ao vivo) — por isso o retry, e por isso
    * nunca deixamos um erro vazar daqui: o pior caso é retornar null.
    */
-  private async resolveUserData(user: User): Promise<UserAccount | null> {
+  async resolveUserData(user: User): Promise<UserAccount | null> {
     try {
       return await retryPromiseOnPermissionDenied(() => this.resolveUserDataOnce(user));
     } catch {

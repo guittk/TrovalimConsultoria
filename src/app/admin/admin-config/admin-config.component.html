@@ -32,6 +32,57 @@
     }
   </div>
 
+  <!-- ── STATUS DO PROJETO ── -->
+  <div class="card" style="margin-top:2rem">
+    <div class="card-title"><span class="card-title-bar"></span>Status do Projeto</div>
+
+    @if (statusSavingOk()) { <div class="alert alert-success show">Status salvos com sucesso.</div> }
+    @if (statusSavingErr()) { <div class="alert alert-error show">{{ statusSavingErr() }}</div> }
+
+    @if (!isOwner()) {
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Owner pode alterar esta configuração.</p>
+    }
+
+    <div class="form-help" style="margin-bottom:.85rem">
+      Lista de status disponíveis para os projetos. Renomear um status já em uso não quebra nada, mas mudar a cor de identificação interna (a "chave") faz os projetos que já usavam esse status perderem a cor/rótulo — evite trocar a chave de um status existente.
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rótulo</th>
+            <th style="width:90px">Cor</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of statusForm(); track s.key; let i = $index) {
+            <tr>
+              <td>
+                <input type="text" class="form-input" [ngModel]="s.label" (ngModelChange)="updateStatus(i, 'label', $event)" [disabled]="!isOwner()">
+              </td>
+              <td>
+                <input type="color" style="width:38px;height:38px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+                  [ngModel]="s.color" (ngModelChange)="updateStatus(i, 'color', $event)" [disabled]="!isOwner()">
+              </td>
+              @if (isOwner()) {
+                <td><button class="btn btn-danger-ghost btn-sm" (click)="removeStatus(i)">Excluir</button></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (isOwner()) {
+      <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" (click)="addStatus()">+ Adicionar status</button>
+        <button class="btn btn-primary btn-sm" [disabled]="statusSaving()" (click)="saveStatusSettings()">{{ statusSaving() ? 'Salvando…' : 'Salvar Status' }}</button>
+      </div>
+    }
+  </div>
+
   <!-- ── ARQUIVOS E ARMAZENAMENTO ── -->
   <div class="card" style="margin-top:2rem">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">

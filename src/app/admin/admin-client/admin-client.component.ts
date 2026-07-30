@@ -7,6 +7,10 @@ import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
+import {
+  ProjectStatusSettingsService,
+  DEFAULT_PROJECT_STATUS_SETTINGS,
+} from '../../core/project-status-settings.service';
 import { UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
@@ -17,14 +21,6 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
-
-const STATUS_LABELS: Record<string, string> = {
-  'em-andamento': 'Em Andamento',
-  'aguardando-cliente': 'Aguardando Cliente',
-  'em-revisao': 'Em Revisão',
-  concluido: 'Concluído',
-  pausado: 'Pausado',
-};
 
 @Component({
   selector: 'app-admin-client',
@@ -39,6 +35,11 @@ export class AdminClientComponent {
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly confirmSvc = inject(ConfirmService);
+  private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
+
+  readonly statusSettings = toSignal(this.statusSettingsSvc.get$(), {
+    initialValue: DEFAULT_PROJECT_STATUS_SETTINGS,
+  });
 
   readonly tabs = ADMIN_TABS;
   readonly cid = this.route.snapshot.paramMap.get('id')!;
@@ -92,7 +93,7 @@ export class AdminClientComponent {
   }
 
   statusLabel(status: string): string {
-    return STATUS_LABELS[status] || status || '—';
+    return this.statusSettings().statuses.find((s) => s.key === status)?.label || status || '—';
   }
 
   onColorChange(value: string): void {

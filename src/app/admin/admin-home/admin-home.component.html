@@ -19,11 +19,9 @@
       [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
     <select class="toolbar-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
       <option value="">Todos os status</option>
-      <option value="em-andamento">Em Andamento</option>
-      <option value="aguardando-cliente">Aguardando Cliente</option>
-      <option value="em-revisao">Em Revisão</option>
-      <option value="concluido">Concluído</option>
-      <option value="pausado">Pausado</option>
+      @for (s of statusSettings().statuses; track s.key) {
+        <option [value]="s.key">{{ s.label }}</option>
+      }
     </select>
   </div>
 

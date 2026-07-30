@@ -87,7 +87,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || (f.uploadedByRole === 'admin' ? 'Consultoria' : '—') }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || (f.uploadedByRole === 'admin' ? 'Consultoria' : '—') }} · {{ categoryLabel(f.category) }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
@@ -98,6 +98,15 @@
               }
             }
             @if (uploadErr()) { <div class="alert alert-error show" style="margin-bottom:1rem">{{ uploadErr() }}</div> }
+
+            <div class="form-group">
+              <label class="form-label">Categoria do arquivo</label>
+              <select class="form-select" [ngModel]="uploadCategory()" (ngModelChange)="uploadCategory.set($event)">
+                @for (c of fileCategories; track c.key) {
+                  <option [value]="c.key">{{ c.label }}</option>
+                }
+              </select>
+            </div>
 
             <div class="file-upload-area" (click)="fileInput.click()">
               <input #fileInput type="file" style="display:none" (change)="onFileSelected($event)">

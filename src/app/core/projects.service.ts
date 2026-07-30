@@ -22,7 +22,7 @@ import {
   ref,
   uploadBytes,
 } from 'firebase/storage';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { FIRESTORE, FIREBASE_STORAGE } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
 import { Project, ProjectFile, ProjectMessage, TimelineStep } from './models';
@@ -69,6 +69,22 @@ export class ProjectsService {
     return getDownloadURL(snap.ref);
   }
 
+  /**
+   * Notas internas ficam em uma subcoleção separada (não no doc principal do
+   * projeto) porque o doc principal é legível pelo próprio cliente dono do
+   * projeto — colocar as notas ali vazaria o conteúdo "só da equipe" para
+   * quem inspecionasse a leitura do Firestore, mesmo sem aparecer na UI.
+   */
+  internalNotes$(projectId: string): Observable<string> {
+    return docData$<DocumentData>(doc(this.db, 'projects', projectId, 'internal', 'notes')).pipe(
+      map((d) => (d?.['text'] as string) || ''),
+    );
+  }
+
+  updateInternalNotes(projectId: string, text: string): Promise<void> {
+    return setDoc(doc(this.db, 'projects', projectId, 'internal', 'notes'), { text }, { merge: true });
+  }
+
   /* ── MENSAGENS ── */
   messages$(projectId: string): Observable<ProjectMessage[]> {
     return collectionData$<DocumentData>(
@@ -98,6 +114,7 @@ export class ProjectsService {
     file: File,
     uploadedByRole: string,
     uploadedByName: string,
+    category: string = 'outro',
   ): Promise<void> {
     const path = `projects/${projectId}/${uploadedByRole}/${Date.now()}_${file.name}`;
     const storageRef = ref(this.storage, path);
@@ -111,6 +128,7 @@ export class ProjectsService {
       uploadedAt: serverTimestamp(),
       uploadedByRole,
       uploadedByName,
+      category,
     });
     await this.bumpUsage(ownerId, file.size);
   }

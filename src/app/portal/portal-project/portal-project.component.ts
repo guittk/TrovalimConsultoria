@@ -9,6 +9,7 @@ import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
+import { PROJECT_FILE_CATEGORIES } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -43,6 +44,8 @@ export class PortalProjectComponent {
   readonly messageText = signal('');
   readonly uploading = signal(false);
   readonly uploadErr = signal('');
+  readonly uploadCategory = signal('outro');
+  readonly fileCategories = PROJECT_FILE_CATEGORIES;
 
   constructor() {
     combineLatest([this.auth.user$, this.userData$, this.project$])
@@ -95,10 +98,14 @@ export class PortalProjectComponent {
     try {
       const project = await firstValueFrom(this.project$);
       const ownerId = project?.ownerId ?? (data?.companyId || user.uid);
-      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'client', data?.name || user.email || '');
+      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'client', data?.name || user.email || '', this.uploadCategory());
     } finally {
       this.uploading.set(false);
       input.value = '';
     }
+  }
+
+  categoryLabel(key: string | undefined): string {
+    return this.fileCategories.find((c) => c.key === key)?.label || 'Outro';
   }
 }

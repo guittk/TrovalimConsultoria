@@ -23,6 +23,7 @@
         <div class="proj-header-name">{{ p.name }}</div>
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <app-status-badge [status]="p.status" />
+          @if (isOverdue()) { <span class="badge" style="background:#FEE2E2;color:#DC2626">Prazo Vencido</span> }
           @if (p.ownerId) {
             <a [routerLink]="['/admin/clientes', p.ownerId]" class="link-btn">Ver Cliente →</a>
           }
@@ -44,15 +45,35 @@
           @if (geralOk()) { <div class="alert alert-success show">Salvo com sucesso.</div> }
           @if (geralErr()) { <div class="alert alert-error show">{{ geralErr() }}</div> }
 
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Status do Projeto</label>
+              <select class="form-select" [ngModel]="status()" (ngModelChange)="status.set($event)">
+                @for (s of statusSettings().statuses; track s.key) {
+                  <option [value]="s.key">{{ s.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prazo de Entrega</label>
+              <input type="date" class="form-input" [ngModel]="deadline()" (ngModelChange)="deadline.set($event)">
+            </div>
+          </div>
+
           <div class="form-group">
-            <label class="form-label">Status do Projeto</label>
-            <select class="form-select" style="max-width:320px" [ngModel]="status()" (ngModelChange)="status.set($event)">
-              <option value="em-andamento">Em Andamento</option>
-              <option value="aguardando-cliente">Aguardando Cliente</option>
-              <option value="em-revisao">Em Revisão</option>
-              <option value="concluido">Concluído</option>
-              <option value="pausado">Pausado</option>
+            <label class="form-label">Responsável pelo Projeto</label>
+            <select class="form-select" style="max-width:320px" [ngModel]="responsibleUid()" (ngModelChange)="responsibleUid.set($event)">
+              <option value="">— Sem responsável definido —</option>
+              @for (u of staffAccounts(); track u.uid) {
+                <option [value]="u.uid">{{ u.name || u.email }}</option>
+              }
             </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Descrição</label>
+            <textarea class="form-textarea" rows="3" placeholder="Escopo ou objetivo deste projeto…"
+              [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
           </div>
 
           <div class="form-group">
@@ -63,11 +84,15 @@
                 [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
               <span style="font-size:.82rem;color:var(--muted);width:2.5rem;text-align:right">{{ progress() }}%</span>
             </div>
-            <div style="margin-top:.85rem">
-              <div class="progress-bar" style="height:8px">
-                <div class="progress-fill" [style.width.%]="progress()" [style.background]="ownerAccount()?.branding?.primaryColor || '#C9A96E'"></div>
-              </div>
-            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Notas Internas
+              <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(visível só para a equipe — o cliente nunca vê isso)</span>
+            </label>
+            <textarea class="form-textarea" rows="3" placeholder="Observações internas sobre este projeto…"
+              [ngModel]="internalNotes()" (ngModelChange)="internalNotes.set($event)"></textarea>
           </div>
 
           <button class="btn btn-primary" [disabled]="savingGeral()" (click)="saveGeral()">{{ savingGeral() ? 'Salvando…' : 'Salvar Alterações' }}</button>
@@ -111,6 +136,16 @@
       <!-- ARQUIVOS -->
       @if (activeTab() === 'arquivos') {
         <div class="tab-panel active">
+          <div class="form-group" style="max-width:260px">
+            <label class="form-label">Filtrar por categoria</label>
+            <select class="form-select" [ngModel]="fileCategoryFilter()" (ngModelChange)="fileCategoryFilter.set($event)">
+              <option value="">Todas</option>
+              @for (c of fileCategories; track c.key) {
+                <option [value]="c.key">{{ c.label }}</option>
+              }
+            </select>
+          </div>
+
           @if (files$ | async; as files) {
             @if (!files.length) {
               <div class="empty-state"><div class="empty-state-sub">Nenhum arquivo ainda.</div></div>
@@ -123,7 +158,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }} · {{ categoryLabel(f.category) }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
@@ -139,7 +174,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }} · {{ categoryLabel(f.category) }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
@@ -154,7 +189,16 @@
 
           @if (uploadErr()) { <div class="alert alert-error show" style="margin-top:1.25rem">{{ uploadErr() }}</div> }
 
-          <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
+          <div class="form-group" style="max-width:260px;margin-top:1.25rem">
+            <label class="form-label">Categoria do próximo envio</label>
+            <select class="form-select" [ngModel]="uploadCategory()" (ngModelChange)="uploadCategory.set($event)">
+              @for (c of fileCategories; track c.key) {
+                <option [value]="c.key">{{ c.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="file-upload-area" (click)="adminFileInput.click()">
             <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
             <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar ao cliente' }}</div>

@@ -98,6 +98,11 @@ service cloud.firestore {
         allow read, create: if canAccessProject(projectId) || isProjectOwner(projectId);
         allow delete: if canAccessProject(projectId);
       }
+
+      // Notas internas: só a equipe (nunca o cliente dono do projeto) lê/escreve.
+      match /internal/{docId} {
+        allow read, write: if canAccessProject(projectId);
+      }
     }
 
     // Configurações da plataforma (ex: cor, limites de arquivo/armazenamento).
