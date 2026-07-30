@@ -92,15 +92,15 @@
 
         <!-- COLABORADORAS -->
         <div class="card">
-          <div class="card-title"><span class="card-title-bar"></span>Colaboradoras</div>
+          <div class="card-title"><span class="card-title-bar"></span>Colaboradores</div>
           <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
-            Cada colaboradora tem seu próprio login, cadastrado antes em "Contas". Aqui você vincula essa conta à empresa e define foto e cargo — todas compartilham os mesmos projetos e a mesma identidade visual.
+            Cada colaborador tem seu próprio login, cadastrado antes em "Contas". Aqui você vincula essa conta à empresa e define foto e cargo — todos compartilham os mesmos projetos e a mesma identidade visual.
           </p>
 
           @if (tmErr()) { <div class="alert alert-error show">{{ tmErr() }}</div> }
 
           @if (!teamMembers().length) {
-            <div class="empty-state-sub" style="margin-bottom:1rem">Nenhuma colaboradora vinculada ainda.</div>
+            <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum colaborador vinculado ainda.</div>
           } @else {
             <div style="border:1px solid var(--border);margin-bottom:1.25rem">
               @for (m of teamMembers(); track m.uid) {
@@ -182,7 +182,7 @@
               <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
               <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="tmPhotoInput.click()">Escolher Foto</button>
             </div>
-            <button class="btn btn-primary" [disabled]="tmSaving() || !availableAccounts().length" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : '+ Adicionar Colaboradora' }}</button>
+            <button class="btn btn-primary" [disabled]="tmSaving() || !availableAccounts().length" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : '+ Adicionar Colaborador' }}</button>
           }
         </div>
       </div>

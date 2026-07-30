@@ -494,7 +494,7 @@ img { max-width: 100%; display: block; }
   text-overflow: ellipsis;
 }
 .file-meta { font-size: .72rem; color: var(--muted); margin-top: .15rem; }
-.file-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+.file-actions { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
 .file-upload-area {
   border: 2px dashed rgba(0,0,0,.15);
   padding: 2rem 1.5rem;

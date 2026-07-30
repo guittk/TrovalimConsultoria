@@ -45,7 +45,7 @@ export class AdminClientComponent {
   readonly projects = toSignal(this.projectsSvc.listForOwner$(this.cid), { initialValue: [] });
   readonly teamMembers = toSignal(this.accountsSvc.listTeamMembers$(this.cid), { initialValue: [] });
 
-  /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaboradora. */
+  /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
   readonly availableAccounts = computed(() =>
     this.allUnlinkedClients().filter((a) => a.uid !== this.cid),
   );
@@ -168,7 +168,7 @@ export class AdminClientComponent {
       this.tmPhotoPreview.set(null);
       this.tmPendingPhotoFile = null;
     } catch {
-      this.tmErr.set('Erro ao adicionar colaboradora.');
+      this.tmErr.set('Erro ao adicionar colaborador.');
     } finally {
       this.tmSaving.set(false);
     }

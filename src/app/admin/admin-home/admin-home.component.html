@@ -57,7 +57,6 @@
                   }
                   <div>
                     <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ accountsByUid().get(p.ownerId || '')?.branding?.companyName || p.branding?.companyName || p.clientName || '—' }}</div>
-                    @if (p.clientEmail) { <div style="font-size:.72rem;color:var(--muted)">{{ p.clientEmail }}</div> }
                   </div>
                 </div>
               </td>

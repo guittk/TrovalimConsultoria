@@ -109,7 +109,7 @@ export class AccountsService {
 
   /**
    * Vincula uma conta client já existente (criada em Contas) como
-   * colaboradora de uma empresa, com foto e cargo próprios. A conta passa a
+   * colaborador de uma empresa, com foto e cargo próprios. A conta passa a
    * herdar branding/projetos/limites de armazenamento da empresa.
    */
   linkTeamMember(uid: string, companyId: string, jobTitle: string, photoUrl: string | null): Promise<void> {
