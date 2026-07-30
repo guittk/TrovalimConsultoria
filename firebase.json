@@ -15,7 +15,15 @@
       "storage.rules",
       "_*.js"
     ],
-    "cleanUrls": true
+    "cleanUrls": true,
+    "headers": [
+      {
+        "source": "**/*.@(html|json)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules"
