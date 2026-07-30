@@ -107,22 +107,22 @@ export class AccountsService {
     }
   }
 
-  /** Cria um colaborador (role client) vinculado a uma empresa-cliente existente. */
-  async createTeamMember(companyId: string, name: string, email: string, password: string): Promise<void> {
-    const secondaryApp = initializeApp(environment.firebase, `Secondary-${Date.now()}`);
-    try {
-      const secondaryAuth = getAuth(secondaryApp);
-      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-      await setDoc(doc(this.db, 'users', cred.user.uid), {
-        name,
-        email,
-        role: 'client',
-        companyId,
-        projectAccess: null,
-      });
-      await signOut(secondaryAuth);
-    } finally {
-      await deleteApp(secondaryApp);
-    }
+  /**
+   * Vincula uma conta client já existente (criada em Contas) como
+   * colaboradora de uma empresa, com foto e cargo próprios. A conta passa a
+   * herdar branding/projetos/limites de armazenamento da empresa.
+   */
+  linkTeamMember(uid: string, companyId: string, jobTitle: string, photoUrl: string | null): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { companyId, jobTitle, photoUrl });
+  }
+
+  /** Desvincula um colaborador da empresa, sem excluir a conta (login continua existindo em Contas). */
+  unlinkTeamMember(uid: string): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { companyId: null, jobTitle: null, photoUrl: null });
+  }
+
+  /** Atualiza foto/cargo de um colaborador já vinculado. */
+  updateCollaboratorProfile(uid: string, jobTitle: string, photoUrl: string | null): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { jobTitle, photoUrl });
   }
 }

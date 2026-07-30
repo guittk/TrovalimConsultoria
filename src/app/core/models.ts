@@ -14,6 +14,8 @@ export interface UserAccount {
   branding?: Branding;
   /** Foto de perfil da pessoa (distinta do logo de branding da empresa). */
   photoUrl?: string | null;
+  /** Cargo do colaborador dentro da empresa-cliente (ex: "Gerente de RH"). */
+  jobTitle?: string | null;
   /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
   projectAccess?: string[] | null;
   /**

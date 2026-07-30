@@ -1,8 +1,7 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { FirebaseError } from 'firebase/app';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
@@ -12,7 +11,7 @@ import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
+  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
@@ -46,11 +45,11 @@ export class AdminClientComponent {
   readonly projects = toSignal(this.projectsSvc.listForOwner$(this.cid), { initialValue: [] });
   readonly teamMembers = toSignal(this.accountsSvc.listTeamMembers$(this.cid), { initialValue: [] });
 
-  /* ── DADOS ── */
-  readonly name = signal('');
-  readonly savingDados = signal(false);
-  readonly dadosOk = signal(false);
-  readonly dadosErr = signal('');
+  /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaboradora. */
+  readonly availableAccounts = computed(() =>
+    this.allUnlinkedClients().filter((a) => a.uid !== this.cid),
+  );
+  private readonly allUnlinkedClients = toSignal(this.accountsSvc.listCompanies$(), { initialValue: [] as UserAccount[] });
 
   /* ── IDENTIDADE VISUAL ── */
   readonly brandingCompany = signal('');
@@ -62,54 +61,36 @@ export class AdminClientComponent {
   private pendingLogoFile: File | null = null;
   private logoRemoved = false;
 
-  /* ── FOTO DO CONTATO ── */
-  readonly photoPreview = signal<string | null>(null);
-  readonly savingPhoto = signal(false);
-  readonly photoOk = signal(false);
-  readonly photoErr = signal('');
-  private pendingPhotoFile: File | null = null;
-  private photoRemoved = false;
-
-  /* ── COLABORADORES ── */
-  readonly tmName = signal('');
-  readonly tmEmail = signal('');
-  readonly tmPassword = signal('');
+  /* ── COLABORADORES: adicionar ── */
+  readonly tmSelectedUid = signal('');
+  readonly tmJobTitle = signal('');
+  readonly tmPhotoPreview = signal<string | null>(null);
   readonly tmSaving = signal(false);
   readonly tmErr = signal('');
+  private tmPendingPhotoFile: File | null = null;
+
+  /* ── COLABORADORES: editar ── */
+  readonly editingMemberUid = signal<string | null>(null);
+  readonly editJobTitle = signal('');
+  readonly editPhotoPreview = signal<string | null>(null);
+  readonly editSaving = signal(false);
+  private editPendingPhotoFile: File | null = null;
+  private editPhotoRemoved = false;
 
   constructor() {
     effect(() => {
       const c = this.client();
       if (!c) return;
-      this.name.set(c.name || '');
       this.brandingCompany.set(c.branding?.companyName || '');
       this.brandingColor.set(c.branding?.primaryColor || '#C9A96E');
       this.brandingLogoPreview.set(c.branding?.logo || null);
       this.pendingLogoFile = null;
       this.logoRemoved = false;
-      this.photoPreview.set(c.photoUrl || null);
-      this.pendingPhotoFile = null;
-      this.photoRemoved = false;
     });
   }
 
   statusLabel(status: string): string {
     return STATUS_LABELS[status] || status || '—';
-  }
-
-  async saveDados(): Promise<void> {
-    this.dadosOk.set(false);
-    this.dadosErr.set('');
-    this.savingDados.set(true);
-    try {
-      await this.accountsSvc.updateProfile(this.cid, { name: this.name().trim() });
-      this.dadosOk.set(true);
-      setTimeout(() => this.dadosOk.set(false), 3000);
-    } catch {
-      this.dadosErr.set('Erro ao salvar. Tente novamente.');
-    } finally {
-      this.savingDados.set(false);
-    }
   }
 
   onColorChange(value: string): void {
@@ -159,79 +140,90 @@ export class AdminClientComponent {
     }
   }
 
-  /* ── FOTO DO CONTATO ── */
-  onPhotoSelected(event: Event): void {
+  /* ── COLABORADORES: adicionar ── */
+  onTmPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.pendingPhotoFile = file;
-    this.photoRemoved = false;
+    this.tmPendingPhotoFile = file;
     const reader = new FileReader();
-    reader.onload = (ev) => this.photoPreview.set(ev.target?.result as string);
+    reader.onload = (ev) => this.tmPhotoPreview.set(ev.target?.result as string);
     reader.readAsDataURL(file);
   }
 
-  removePhoto(): void {
-    this.pendingPhotoFile = null;
-    this.photoRemoved = true;
-    this.photoPreview.set(null);
-  }
-
-  async savePhoto(): Promise<void> {
-    this.photoOk.set(false);
-    this.photoErr.set('');
-    this.savingPhoto.set(true);
-    try {
-      let photoUrl: string | null = this.photoRemoved ? null : this.client()?.photoUrl || null;
-      if (this.pendingPhotoFile) {
-        const path = `clients/${this.cid}/photo/photo_${Date.now()}`;
-        photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.pendingPhotoFile);
-        this.pendingPhotoFile = null;
-      }
-      await this.accountsSvc.updatePhoto(this.cid, photoUrl);
-      this.photoOk.set(true);
-      setTimeout(() => this.photoOk.set(false), 3000);
-    } catch (e) {
-      const err = e as { code?: string; message?: string };
-      this.photoErr.set('Erro ao salvar a foto: ' + (err.code || err.message || 'desconhecido'));
-    } finally {
-      this.savingPhoto.set(false);
-    }
-  }
-
-  /* ── COLABORADORES ── */
   async addTeamMember(): Promise<void> {
-    const name = this.tmName().trim();
-    const email = this.tmEmail().trim();
-    const password = this.tmPassword();
+    const uid = this.tmSelectedUid();
     this.tmErr.set('');
-    if (!name) { this.tmErr.set('O nome é obrigatório.'); return; }
-    if (!email) { this.tmErr.set('O e-mail é obrigatório.'); return; }
-    if (password.length < 6) { this.tmErr.set('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (!uid) { this.tmErr.set('Selecione uma conta cadastrada em Contas.'); return; }
     this.tmSaving.set(true);
     try {
-      await this.accountsSvc.createTeamMember(this.cid, name, email, password);
-      this.tmName.set('');
-      this.tmEmail.set('');
-      this.tmPassword.set('');
-    } catch (e) {
-      const code = e instanceof FirebaseError ? e.code : '';
-      const map: Record<string, string> = {
-        'auth/email-already-in-use': 'Este e-mail já está em uso.',
-        'auth/invalid-email': 'E-mail inválido.',
-        'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.',
-      };
-      this.tmErr.set(map[code] || 'Erro ao adicionar colaborador.');
+      let photoUrl: string | null = null;
+      if (this.tmPendingPhotoFile) {
+        const path = `clients/${this.cid}/collab/${uid}_${Date.now()}`;
+        photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.tmPendingPhotoFile);
+      }
+      await this.accountsSvc.linkTeamMember(uid, this.cid, this.tmJobTitle().trim(), photoUrl);
+      this.tmSelectedUid.set('');
+      this.tmJobTitle.set('');
+      this.tmPhotoPreview.set(null);
+      this.tmPendingPhotoFile = null;
+    } catch {
+      this.tmErr.set('Erro ao adicionar colaboradora.');
     } finally {
       this.tmSaving.set(false);
     }
   }
 
-  async removeTeamMember(member: UserAccount): Promise<void> {
-    if (!confirm(`Remover o acesso de "${member.name || member.email}"?\n\nIsso remove os dados da conta na plataforma, mas o login no Firebase Authentication precisa ser removido separadamente pelo Console do Firebase.`)) {
+  /* ── COLABORADORES: editar ── */
+  startEditMember(member: UserAccount): void {
+    this.editingMemberUid.set(member.uid);
+    this.editJobTitle.set(member.jobTitle || '');
+    this.editPhotoPreview.set(member.photoUrl || null);
+    this.editPendingPhotoFile = null;
+    this.editPhotoRemoved = false;
+  }
+
+  cancelEditMember(): void {
+    this.editingMemberUid.set(null);
+  }
+
+  onEditPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.editPendingPhotoFile = file;
+    this.editPhotoRemoved = false;
+    const reader = new FileReader();
+    reader.onload = (ev) => this.editPhotoPreview.set(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeEditPhoto(): void {
+    this.editPendingPhotoFile = null;
+    this.editPhotoRemoved = true;
+    this.editPhotoPreview.set(null);
+  }
+
+  async saveEditMember(member: UserAccount): Promise<void> {
+    this.editSaving.set(true);
+    try {
+      let photoUrl: string | null = this.editPhotoRemoved ? null : member.photoUrl || null;
+      if (this.editPendingPhotoFile) {
+        const path = `clients/${this.cid}/collab/${member.uid}_${Date.now()}`;
+        photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.editPendingPhotoFile);
+      }
+      await this.accountsSvc.updateCollaboratorProfile(member.uid, this.editJobTitle().trim(), photoUrl);
+      this.editingMemberUid.set(null);
+    } finally {
+      this.editSaving.set(false);
+    }
+  }
+
+  async unlinkTeamMember(member: UserAccount): Promise<void> {
+    if (!confirm(`Remover "${member.name || member.email}" desta empresa?\n\nA conta continua existindo em Contas — ela só deixa de estar vinculada a esta empresa.`)) {
       return;
     }
-    await this.accountsSvc.deleteAccount(member.uid);
+    await this.accountsSvc.unlinkTeamMember(member.uid);
   }
 
   initials(name: string): string {

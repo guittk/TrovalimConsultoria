@@ -11,7 +11,7 @@ import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
+  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
@@ -38,13 +38,8 @@ export class AdminClientsComponent {
     const q = this.searchTerm().trim().toLowerCase();
     if (!q) return this.clients();
     return this.clients().filter((c) => {
-      const proj = this.projectsFor(c.uid);
-      const company = c.branding?.companyName || proj[0]?.branding?.companyName || proj[0]?.clientName || '';
-      return (
-        (c.name || '').toLowerCase().includes(q) ||
-        (c.email || '').toLowerCase().includes(q) ||
-        company.toLowerCase().includes(q)
-      );
+      const company = this.companyFor(c.uid, c.branding) || c.name || c.email || '';
+      return company.toLowerCase().includes(q);
     });
   });
 
@@ -59,10 +54,6 @@ export class AdminClientsComponent {
 
   logoFor(uid: string, branding?: { logo: string | null }): string | null {
     return branding?.logo || this.projectsFor(uid)[0]?.branding?.logo || null;
-  }
-
-  avatarFor(uid: string, photoUrl?: string | null, branding?: { logo: string | null }): string | null {
-    return photoUrl || this.logoFor(uid, branding);
   }
 
   initials(name: string): string {
