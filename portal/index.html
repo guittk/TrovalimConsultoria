@@ -54,8 +54,7 @@
   auth.onAuthStateChanged(async user => {
     if (!user) { window.location.href = '../login.html'; return; }
 
-    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
-    const userData = snap?.data() || {};
+    const userData = await resolveUserData(user);
 
     if (userData.role === 'admin') { window.location.href = '../admin/'; return; }
 
@@ -123,6 +122,13 @@
 
   function showLoading(v) {
     document.getElementById('loadingOverlay').classList.toggle('show', v);
+  }
+
+  async function resolveUserData(user) {
+    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    return q && !q.empty ? q.docs[0].data() || {} : {};
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

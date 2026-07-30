@@ -202,11 +202,17 @@
   auth.onAuthStateChanged(async user => {
     if (!user) { showLoading(false); return; }
     try {
-      const snap = await db.collection('users').doc(user.uid).get();
-      const role = snap.data()?.role;
+      const role = await resolveRole(user);
       window.location.href = role === 'admin' ? 'admin/' : 'portal/';
     } catch(e) { showLoading(false); }
   });
+
+  async function resolveRole(user) {
+    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    if (snap?.exists) return snap.data()?.role || null;
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    return q && !q.empty ? q.docs[0].data()?.role || null : null;
+  }
 
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
