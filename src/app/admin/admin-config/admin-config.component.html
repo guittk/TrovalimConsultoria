@@ -1,0 +1,34 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="config" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Configurações</h1>
+    <p class="page-subtitle">Identidade visual da plataforma</p>
+  </div>
+
+  <div class="card" style="max-width:520px">
+    <div class="card-title"><span class="card-title-bar"></span>Cor da Plataforma</div>
+
+    @if (savingOk()) { <div class="alert alert-success show">Cor salva com sucesso.</div> }
+    @if (savingErr()) { <div class="alert alert-error show">{{ savingErr() }}</div> }
+
+    @if (!isOwner()) {
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Owner pode alterar esta configuração.</p>
+    }
+
+    <div class="form-group">
+      <label class="form-label">Cor usada nas mensagens e destaques enviados pela equipe</label>
+      <div class="color-row">
+        <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+          [ngModel]="color()" (ngModelChange)="onColorChange($event)" [disabled]="!isOwner()">
+        <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="color()" (ngModelChange)="onColorChange($event)" [disabled]="!isOwner()">
+      </div>
+    </div>
+
+    @if (isOwner()) {
+      <button class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'Salvando…' : 'Salvar Cor' }}</button>
+    }
+  </div>
+</div>

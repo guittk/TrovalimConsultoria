@@ -37,8 +37,11 @@ export class AccountsService {
     return this.listAll$().pipe(map((users) => users.filter((u) => !isStaffRole(u.role))));
   }
 
-  updateProfile(uid: string, data: { name?: string; role?: Role }): Promise<void> {
-    return updateDoc(doc(this.db, 'users', uid), data);
+  updateProfile(
+    uid: string,
+    data: { name?: string; role?: Role; projectAccess?: string[] | null },
+  ): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), data as DocumentData);
   }
 
   updateBranding(uid: string, branding: UserAccount['branding']): Promise<void> {
@@ -54,12 +57,18 @@ export class AccountsService {
    * do admin logado — createUserWithEmailAndPassword loga automaticamente
    * como o novo usuário no app em que é chamado.
    */
-  async createAccount(name: string, email: string, password: string, role: Role): Promise<void> {
+  async createAccount(
+    name: string,
+    email: string,
+    password: string,
+    role: Role,
+    projectAccess: string[] | null = null,
+  ): Promise<void> {
     const secondaryApp = initializeApp(environment.firebase, `Secondary-${Date.now()}`);
     try {
       const secondaryAuth = getAuth(secondaryApp);
       const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-      await setDoc(doc(this.db, 'users', cred.user.uid), { name, email, role });
+      await setDoc(doc(this.db, 'users', cred.user.uid), { name, email, role, projectAccess });
       await signOut(secondaryAuth);
     } finally {
       await deleteApp(secondaryApp);

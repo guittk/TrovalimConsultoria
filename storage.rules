@@ -6,12 +6,29 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function myRole() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    function myAccount() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isOwner() {
+      return isSignedIn() && myAccount().role == 'owner';
+    }
+
+    function isManager() {
+      return isSignedIn() && myAccount().role == 'manager';
     }
 
     function isStaff() {
-      return isSignedIn() && myRole() in ['owner', 'manager'];
+      return isOwner() || isManager();
+    }
+
+    function managerCanAccessProject(projectId) {
+      let acc = myAccount();
+      return !('projectAccess' in acc) || acc.projectAccess == null || (projectId in acc.projectAccess);
+    }
+
+    function canAccessProject(projectId) {
+      return isOwner() || (isManager() && managerCanAccessProject(projectId));
     }
 
     function isProjectOwner(projectId) {
@@ -21,18 +38,18 @@ service firebase.storage {
 
     // Arquivos de projetos (consultora e cliente)
     match /projects/{projectId}/{allPaths=**} {
-      allow read: if isStaff() || isProjectOwner(projectId);
-      allow write: if isStaff() || isProjectOwner(projectId);
-      allow delete: if isStaff();
+      allow read: if canAccessProject(projectId) || isProjectOwner(projectId);
+      allow write: if canAccessProject(projectId) || isProjectOwner(projectId);
+      allow delete: if canAccessProject(projectId);
     }
 
     // Logos de branding (por projeto)
     match /branding/{projectId}/{allPaths=**} {
-      allow read: if isStaff() || isProjectOwner(projectId);
-      allow write, delete: if isStaff();
+      allow read: if canAccessProject(projectId) || isProjectOwner(projectId);
+      allow write, delete: if canAccessProject(projectId);
     }
 
-    // Logos de branding padrão do cliente
+    // Logos de branding padrão do cliente (não é restrito por projeto)
     match /clients/{clientId}/{allPaths=**} {
       allow read: if isStaff() || (isSignedIn() && request.auth.uid == clientId);
       allow write, delete: if isStaff();

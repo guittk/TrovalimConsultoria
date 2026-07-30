@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
 import { AuthService, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
+import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { RoleBadgeComponent } from '../../shared/role-badge/role-badge.component';
@@ -13,6 +14,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
 const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
@@ -26,12 +28,14 @@ const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
 export class AdminAccountsComponent {
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
+  private readonly projectsSvc = inject(ProjectsService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
   readonly currentUid = computed(() => this.auth.currentUser?.uid);
 
   readonly accounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] });
+  readonly allProjects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
   readonly sortedAccounts = computed(() =>
     [...this.accounts()].sort((a, b) => {
       const ra = ROLE_ORDER[normRole(a.role)] ?? 99;
@@ -54,6 +58,8 @@ export class AdminAccountsComponent {
   readonly accEmail = signal('');
   readonly accPassword = signal('');
   readonly accRole = signal<Role>('client');
+  readonly restrictProjects = signal(false);
+  readonly selectedProjectIds = signal<Set<string>>(new Set());
 
   openCreate(): void {
     this.editingUid.set(null);
@@ -61,6 +67,8 @@ export class AdminAccountsComponent {
     this.accEmail.set('');
     this.accPassword.set('');
     this.accRole.set('client');
+    this.restrictProjects.set(false);
+    this.selectedProjectIds.set(new Set());
     this.modalErr.set('');
     this.modalOpen.set(true);
   }
@@ -71,12 +79,23 @@ export class AdminAccountsComponent {
     this.accEmail.set(acc.email || '');
     this.accPassword.set('');
     this.accRole.set(normRole(acc.role) === 'manager' ? 'manager' : 'client');
+    this.restrictProjects.set(Array.isArray(acc.projectAccess));
+    this.selectedProjectIds.set(new Set(acc.projectAccess || []));
     this.modalErr.set('');
     this.modalOpen.set(true);
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
+  }
+
+  toggleProject(id: string, checked: boolean): void {
+    this.selectedProjectIds.update((set) => {
+      const copy = new Set(set);
+      if (checked) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
   }
 
   async save(): Promise<void> {
@@ -86,15 +105,17 @@ export class AdminAccountsComponent {
     if (!email) { this.modalErr.set('O e-mail é obrigatório.'); return; }
 
     this.saving.set(true);
+    const projectAccess =
+      this.accRole() === 'manager' && this.restrictProjects() ? [...this.selectedProjectIds()] : null;
     try {
       const editingUid = this.editingUid();
       if (editingUid) {
-        await this.accountsSvc.updateProfile(editingUid, { name, role: this.accRole() });
+        await this.accountsSvc.updateProfile(editingUid, { name, role: this.accRole(), projectAccess });
       } else {
         if (this.accPassword().length < 6) {
           throw new Error('WEAK_PASSWORD');
         }
-        await this.accountsSvc.createAccount(name, email, this.accPassword(), this.accRole());
+        await this.accountsSvc.createAccount(name, email, this.accPassword(), this.accRole(), projectAccess);
       }
       this.modalOpen.set(false);
     } catch (e) {

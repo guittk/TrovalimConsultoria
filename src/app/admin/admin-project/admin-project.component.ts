@@ -7,6 +7,7 @@ import { firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
+import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { ProjectFile, TimelineStep } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -16,6 +17,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
 type TabKey = 'geral' | 'timeline' | 'arquivos' | 'mensagens';
@@ -31,6 +33,7 @@ export class AdminProjectComponent {
   private readonly auth = inject(AuthService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly accountsSvc = inject(AccountsService);
+  private readonly platformSettingsSvc = inject(PlatformSettingsService);
 
   readonly tabs = ADMIN_TABS;
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -44,6 +47,9 @@ export class AdminProjectComponent {
   );
   readonly messages$ = this.projectsSvc.messages$(this.pid);
   readonly files$ = this.projectsSvc.files$(this.pid);
+  readonly platformColor = toSignal(this.platformSettingsSvc.get$(), {
+    initialValue: { primaryColor: DEFAULT_PLATFORM_COLOR },
+  });
 
   readonly activeTab = signal<TabKey>('geral');
 

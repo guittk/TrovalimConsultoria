@@ -169,7 +169,9 @@
                 <div class="msg-empty">Nenhuma mensagem ainda.</div>
               }
               @for (m of messages; track $index) {
-                <div class="msg" [class.msg-mine]="m.authorRole === 'admin'" [class.msg-theirs]="m.authorRole !== 'admin'">
+                <div class="msg" [class.msg-mine]="m.authorRole === 'admin'" [class.msg-theirs]="m.authorRole !== 'admin'"
+                  [style.background]="m.authorRole === 'admin' ? platformColor().primaryColor : (ownerAccount()?.branding?.primaryColor || null)"
+                  [style.color]="m.authorRole === 'admin' ? 'var(--gold-light)' : '#fff'">
                   <div class="msg-author">{{ m.author }}</div>
                   <div>{{ m.text }}</div>
                   <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>

@@ -6,19 +6,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function myRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function myAccount() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     // Owner: acesso total, inclusive gerenciar contas (criar/editar/excluir/definir role)
     function isOwner() {
-      return isSignedIn() && myRole() == 'owner';
+      return isSignedIn() && myAccount().role == 'owner';
     }
 
-    // Staff (owner ou manager): acesso total a projetos e clientes, mas
-    // apenas o owner pode escrever em contas (ver regra de /users abaixo)
+    function isManager() {
+      return isSignedIn() && myAccount().role == 'manager';
+    }
+
+    // Staff (owner ou manager): acesso a projetos e clientes, mas apenas o
+    // owner pode escrever em contas (ver regra de /users abaixo)
     function isStaff() {
-      return isSignedIn() && myRole() in ['owner', 'manager'];
+      return isOwner() || isManager();
+    }
+
+    // Managers podem ter a visão restrita a um subconjunto de projetos
+    // (campo projectAccess na própria conta). Sem o campo, ou null, = todos.
+    function managerCanAccessProject(projectId) {
+      let acc = myAccount();
+      return !('projectAccess' in acc) || acc.projectAccess == null || (projectId in acc.projectAccess);
+    }
+
+    function canAccessProject(projectId) {
+      return isOwner() || (isManager() && managerCanAccessProject(projectId));
     }
 
     function isProjectOwner(projectId) {
@@ -29,9 +44,8 @@ service cloud.firestore {
     // Users: staff lê todos; usuário lê o próprio doc (por UID) ou um doc
     // cujo campo email bata com o e-mail autenticado (fallback para docs
     // criados manualmente com ID diferente do UID).
-    // Criar/excluir conta e mudar role: só owner.
-    // Editar dados do próprio cliente (nome, branding): staff também pode,
-    // desde que não mude o campo role.
+    // Criar/excluir conta, mudar role ou projectAccess: só owner.
+    // Editar dados do próprio cliente (nome, branding): staff também pode.
     match /users/{userId} {
       allow read: if isSignedIn() && (
         request.auth.uid == userId ||
@@ -41,26 +55,33 @@ service cloud.firestore {
       allow create, delete: if isOwner();
       allow update: if isOwner() || (
         isStaff() &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'projectAccess'])
       );
     }
 
-    // Projetos: staff (owner + manager) tem acesso total
+    // Projetos: staff tem acesso, managers restritos ao projectAccess se definido
     match /projects/{projectId} {
-      allow read, write: if isStaff();
+      allow read, write: if canAccessProject(projectId);
       allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-      // Mensagens: dono e staff leem/escrevem; só staff deleta
+      // Mensagens: dono e staff (com acesso ao projeto) leem/escrevem
       match /messages/{msgId} {
-        allow read, create: if isStaff() || isProjectOwner(projectId);
-        allow update, delete: if isStaff();
+        allow read, create: if canAccessProject(projectId) || isProjectOwner(projectId);
+        allow update, delete: if canAccessProject(projectId);
       }
 
-      // Arquivos (metadados): dono e staff leem/criam; só staff deleta
+      // Arquivos (metadados): dono e staff (com acesso ao projeto) leem/criam
       match /files/{fileId} {
-        allow read, create: if isStaff() || isProjectOwner(projectId);
-        allow delete: if isStaff();
+        allow read, create: if canAccessProject(projectId) || isProjectOwner(projectId);
+        allow delete: if canAccessProject(projectId);
       }
+    }
+
+    // Configurações da plataforma (ex: cor). Qualquer usuário autenticado lê
+    // (afeta como o portal do cliente renderiza), só owner escreve.
+    match /settings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
     }
   }
 }

@@ -13,6 +13,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
 @Component({

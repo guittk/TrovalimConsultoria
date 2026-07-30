@@ -12,6 +12,12 @@ export interface UserAccount {
   email?: string;
   role?: Role | string;
   branding?: Branding;
+  /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
+  projectAccess?: string[] | null;
+}
+
+export interface PlatformSettings {
+  primaryColor: string;
 }
 
 export type ProjectStatus =

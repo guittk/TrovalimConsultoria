@@ -14,6 +14,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Clientes', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
 @Component({
@@ -32,6 +33,8 @@ export class AdminHomeComponent {
   readonly userData$ = this.auth.userData$;
 
   readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
+  readonly allAccounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] });
+  readonly accountsByUid = computed(() => new Map(this.allAccounts().map((a) => [a.uid, a])));
   readonly searchTerm = signal('');
   readonly statusFilter = signal('');
 

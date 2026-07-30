@@ -27,17 +27,19 @@
       <div class="two-col">
         <!-- LINHA DO TEMPO -->
         <div class="card">
-          <div class="card-title"><span class="card-title-bar"></span>Linha do Tempo</div>
+          <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Linha do Tempo</div>
           @if (!p.steps.length) {
             <div class="empty-state-sub">Nenhuma etapa cadastrada ainda.</div>
           } @else {
             <div class="timeline">
               @for (s of p.steps; track $index) {
                 <div class="timeline-item">
-                  <div class="timeline-dot" [class.done]="s.done" [class.pending]="!s.done"></div>
+                  <div class="timeline-dot" [class.done]="s.done" [class.pending]="!s.done"
+                    [style.background]="s.done ? (userData.branding?.primaryColor || null) : null"
+                    [style.border-color]="s.done ? (userData.branding?.primaryColor || null) : null"></div>
                   <div class="timeline-title">{{ s.name }}</div>
                   @if (s.date) { <div class="timeline-date">{{ s.date }}</div> }
-                  <div class="timeline-tag" [class.done]="s.done" [class.pending]="!s.done">{{ s.done ? '✓ Concluído' : 'Pendente' }}</div>
+                  <div class="timeline-tag" [class.done]="s.done" [class.pending]="!s.done" [style.color]="s.done ? (userData.branding?.primaryColor || null) : null">{{ s.done ? '✓ Concluído' : 'Pendente' }}</div>
                 </div>
               }
             </div>
@@ -47,14 +49,16 @@
         <div>
           <!-- MENSAGENS -->
           <div class="card">
-            <div class="card-title"><span class="card-title-bar"></span>Mensagens</div>
+            <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Mensagens</div>
             <div class="messages-feed">
               @if (messages$ | async; as messages) {
                 @if (!messages.length) {
                   <div class="msg-empty">Nenhuma mensagem ainda.</div>
                 }
                 @for (m of messages; track $index) {
-                  <div class="msg" [class.msg-mine]="m.authorRole !== 'admin'" [class.msg-theirs]="m.authorRole === 'admin'">
+                  <div class="msg" [class.msg-mine]="m.authorRole !== 'admin'" [class.msg-theirs]="m.authorRole === 'admin'"
+                    [style.background]="m.authorRole === 'admin' ? platformColor().primaryColor : (userData.branding?.primaryColor || null)"
+                    [style.color]="m.authorRole === 'admin' ? 'var(--gold-light)' : '#fff'">
                     <div class="msg-author">{{ m.author }}</div>
                     <div>{{ m.text }}</div>
                     <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>
@@ -72,7 +76,7 @@
 
           <!-- ARQUIVOS -->
           <div class="card">
-            <div class="card-title"><span class="card-title-bar"></span>Arquivos</div>
+            <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Arquivos</div>
             @if (files$ | async; as files) {
               @if (!files.length) {
                 <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum arquivo disponível.</div>

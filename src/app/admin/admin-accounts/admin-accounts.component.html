@@ -95,6 +95,30 @@
       <div class="form-help">Para promover alguém a Owner, isso deve ser feito manualmente por segurança.</div>
     </div>
 
+    @if (accRole() === 'manager') {
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+          <input type="checkbox" [ngModel]="restrictProjects()" (ngModelChange)="restrictProjects.set($event)" style="accent-color:var(--gold)">
+          Restringir a projetos específicos
+        </label>
+        <div class="form-help" style="margin-bottom:.6rem">Desmarcado = acesso a todos os projetos.</div>
+
+        @if (restrictProjects()) {
+          <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);padding:.5rem .75rem">
+            @if (!allProjects().length) {
+              <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhum projeto cadastrado ainda.</div>
+            }
+            @for (p of allProjects(); track p.id) {
+              <label style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;font-size:.85rem;cursor:pointer">
+                <input type="checkbox" [checked]="selectedProjectIds().has(p.id)" (change)="toggleProject(p.id, $any($event.target).checked)" style="accent-color:var(--gold)">
+                <span>{{ p.name }}<span style="color:var(--muted)"> — {{ p.clientName || 'sem cliente' }}</span></span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+    }
+
     <div class="modal-footer">
       <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
       <button class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>

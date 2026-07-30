@@ -46,5 +46,10 @@ export const routes: Routes = [
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
   },
+  {
+    path: 'admin/config',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-config/admin-config.component').then((m) => m.AdminConfigComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

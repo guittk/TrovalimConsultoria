@@ -1,11 +1,12 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { combineLatest, firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ProjectsService } from '../../core/projects.service';
+import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -21,12 +22,16 @@ export class PortalProjectComponent {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly projectsSvc = inject(ProjectsService);
+  private readonly platformSettingsSvc = inject(PlatformSettingsService);
 
   readonly pid = this.route.snapshot.paramMap.get('id')!;
   readonly userData$ = this.auth.userData$;
   readonly project$ = this.projectsSvc.get$(this.pid);
   readonly messages$ = this.projectsSvc.messages$(this.pid);
   readonly files$ = this.projectsSvc.files$(this.pid);
+  readonly platformColor = toSignal(this.platformSettingsSvc.get$(), {
+    initialValue: { primaryColor: DEFAULT_PLATFORM_COLOR },
+  });
 
   readonly messageText = signal('');
   readonly uploading = signal(false);

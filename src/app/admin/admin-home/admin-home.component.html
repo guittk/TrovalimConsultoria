@@ -47,8 +47,19 @@
           @for (p of filteredProjects(); track p.id) {
             <tr>
               <td>
-                <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ p.branding?.companyName || p.clientName || '—' }}</div>
-                @if (p.clientEmail) { <div style="font-size:.72rem;color:var(--muted)">{{ p.clientEmail }}</div> }
+                <div style="display:flex;align-items:center;gap:.6rem">
+                  @if (accountsByUid().get(p.ownerId || '')?.branding?.logo; as logo) {
+                    <img [src]="logo" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                  } @else {
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.72rem;flex-shrink:0">
+                      {{ initials(accountsByUid().get(p.ownerId || '')?.name || p.clientName || p.branding?.companyName || '?') }}
+                    </div>
+                  }
+                  <div>
+                    <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ accountsByUid().get(p.ownerId || '')?.branding?.companyName || p.branding?.companyName || p.clientName || '—' }}</div>
+                    @if (p.clientEmail) { <div style="font-size:.72rem;color:var(--muted)">{{ p.clientEmail }}</div> }
+                  </div>
+                </div>
               </td>
               <td style="font-weight:500;max-width:200px">{{ p.name }}</td>
               <td style="max-width:220px">
