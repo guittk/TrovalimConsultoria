@@ -9,8 +9,7 @@
       ".git",
       "**/.*"
     ],
-    "cleanUrls": true,
-    "trailingSlash": true
+    "cleanUrls": true
   },
   "firestore": {
     "rules": "firestore.rules"

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../admin/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <div class="pnav-tabs">
+      <a href="../admin/" class="pnav-tab">Projetos</a>
+      <a href="clientes.html" class="pnav-tab active">Clientes</a>
+    </div>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Clientes</h1>
+    <p class="page-subtitle">Empresas atendidas pela consultoria — atualização em tempo real</p>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="toolbar-search" id="searchInput" placeholder="Buscar por nome, e-mail ou empresa…">
+  </div>
+
+  <div class="cards-grid" id="clientsGrid">
+    <div class="empty-state" style="grid-column:1/-1"><div class="empty-state-sub">Carregando…</div></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+  let allClients = [], allProjects = [], unsubUsers, unsubProjects;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '../login.html'; return; }
+
+    const data = await resolveUserData(user);
+    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
+
+    document.getElementById('userName').textContent = data.name || user.email;
+
+    unsubUsers = db.collection('users').onSnapshot(s => {
+      allClients = s.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => normRole(u.role) !== 'admin');
+      showLoading(false);
+      applyFilters();
+    }, () => showLoading(false));
+
+    unsubProjects = db.collection('projects').onSnapshot(s => {
+      allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
+      applyFilters();
+    });
+  });
+
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    let list = allClients;
+    if (q) list = list.filter(c => {
+      const proj = projectsFor(c.uid);
+      const company = c.branding?.companyName || proj[0]?.branding?.companyName || proj[0]?.clientName || '';
+      return (c.name||'').toLowerCase().includes(q) ||
+             (c.email||'').toLowerCase().includes(q) ||
+             company.toLowerCase().includes(q);
+    });
+    renderClients(list);
+  }
+
+  function projectsFor(uid) {
+    return allProjects.filter(p => p.ownerId === uid);
+  }
+
+  function renderClients(list) {
+    const grid = document.getElementById('clientsGrid');
+    if (!list.length) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-emoji">🗂️</div>
+          <div class="empty-state-text">Nenhum cliente encontrado</div>
+          <div class="empty-state-sub">Contas de clientes criadas no Firestore aparecem aqui automaticamente.</div>
+        </div>`;
+      return;
+    }
+    grid.innerHTML = list.map(c => {
+      const proj    = projectsFor(c.uid);
+      const company = c.branding?.companyName || proj[0]?.branding?.companyName || proj[0]?.clientName || '';
+      const name    = c.name || c.email || 'Sem nome';
+      const initials = name.split(' ').slice(0,2).map(w => w[0]||'').join('').toUpperCase() || '?';
+      const logo    = c.branding?.logo || proj[0]?.branding?.logo || '';
+      return `
+        <div class="client-card">
+          <div class="client-card-top">
+            <div class="client-card-avatar">${logo ? `<img src="${logo}" alt="">` : initials}</div>
+            <div>
+              <div class="client-card-name">${esc(name)}</div>
+              <div class="client-card-email">${esc(c.email||'')}</div>
+            </div>
+          </div>
+          ${company ? `<div class="client-card-company">${esc(company)}</div>` : ''}
+          <div class="client-card-meta">${proj.length} projeto${proj.length === 1 ? '' : 's'}</div>
+          <div class="client-card-footer">
+            <a href="cliente.html?id=${c.uid}" class="btn btn-outline btn-sm">Ver Cliente →</a>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showLoading(v) {
+    document.getElementById('loadingOverlay').classList.toggle('show', v);
+  }
+
+  async function resolveUserData(user) {
+    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    if (q && !q.empty) return q.docs[0].data() || {};
+    snap = await db.collection('users').doc(user.email).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    return {};
+  }
+
+  function normRole(role) {
+    return String(role || '').trim().toLowerCase();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    [unsubUsers, unsubProjects].forEach(u => u && u());
+    auth.signOut().then(() => location.href = '../login.html');
+  });
+</script>
+</body>
+</html>

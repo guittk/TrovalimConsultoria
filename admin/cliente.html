@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cliente · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../admin/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <div class="pnav-tabs">
+      <a href="../admin/" class="pnav-tab">Projetos</a>
+      <a href="../admin/clientes.html" class="pnav-tab active">Clientes</a>
+    </div>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="clientes.html">Clientes</a>
+  <span class="breadcrumb-sep">›</span>
+  <span id="bcClient">Cliente</span>
+</div>
+
+<div class="page">
+
+  <!-- Client header -->
+  <div class="proj-header" id="clientHeader" style="display:none">
+    <div id="clientLogoWrap"></div>
+    <div class="proj-header-info">
+      <div class="proj-header-company" id="clientCompany"></div>
+      <div class="proj-header-name" id="clientName"></div>
+    </div>
+  </div>
+
+  <div class="two-col" id="clientCards" style="display:none">
+    <div>
+      <!-- Dados do Cliente -->
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Dados do Cliente</div>
+        <div class="alert alert-success" id="dadosOk">Dados salvos com sucesso.</div>
+        <div class="alert alert-error"   id="dadosErr"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-input" id="c-name" placeholder="Nome do responsável">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" class="form-input" id="c-email" disabled style="opacity:.6;cursor:not-allowed">
+          <div class="form-help">O e-mail de login é gerenciado no Firebase Authentication.</div>
+        </div>
+
+        <button class="btn btn-primary" id="saveDados">Salvar Dados</button>
+      </div>
+
+      <!-- Identidade Visual -->
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Identidade Visual Padrão</div>
+        <div class="alert alert-success" id="marcaOk">Identidade visual salva.</div>
+        <div class="alert alert-error"   id="marcaErr"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nome da Empresa</label>
+            <input type="text" class="form-input" id="c-company" placeholder="Ex: Empresa Ltda">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cor Primária</label>
+            <div class="color-row">
+              <input type="color" id="c-color" value="#C9A96E" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none">
+              <input type="text" class="form-input" id="c-color-hex" value="#C9A96E" maxlength="7" style="flex:1">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Logo da Empresa</label>
+          <div class="logo-preview-wrap" id="logoPreviewWrap">
+            <span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>
+          </div>
+          <input type="file" id="c-logo" accept="image/*" style="display:none">
+          <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" id="logoPickBtn">Escolher Logo</button>
+            <button class="btn btn-danger-ghost btn-sm" id="logoRemoveBtn" style="display:none">Remover Logo</button>
+          </div>
+          <div class="form-help">Usada como padrão para novos projetos deste cliente.</div>
+        </div>
+
+        <button class="btn btn-primary" id="saveMarca" style="margin-top:.5rem">Salvar Identidade Visual</button>
+      </div>
+    </div>
+
+    <div>
+      <!-- Projetos do cliente -->
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Projetos</div>
+        <div id="clientProjects">
+          <div class="empty-state-sub">Carregando…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth    = firebase.auth();
+  const db      = firebase.firestore();
+  const storage = firebase.storage();
+
+  const cid = new URLSearchParams(location.search).get('id');
+  if (!cid) location.href = 'clientes.html';
+
+  let clientData = {};
+  let unsubClient, unsubProjects;
+  let pendingLogoFile = null, logoRemoved = false;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '../login.html'; return; }
+
+    const data = await resolveUserData(user);
+    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
+
+    document.getElementById('userName').textContent = data.name || user.email;
+
+    listenClient();
+  });
+
+  function listenClient() {
+    unsubClient = db.collection('users').doc(cid).onSnapshot(snap => {
+      if (!snap.exists) { location.href = 'clientes.html'; return; }
+      showLoading(false);
+      clientData = snap.data() || {};
+
+      document.title = `${clientData.name || clientData.email || 'Cliente'} · Admin · Trovalim`;
+      document.getElementById('bcClient').textContent = clientData.name || clientData.email || 'Cliente';
+      document.getElementById('clientHeader').style.display = 'flex';
+      document.getElementById('clientCards').style.display  = 'grid';
+
+      renderHeader();
+      syncDadosUI();
+      syncMarcaUI();
+    }, () => showLoading(false));
+
+    unsubProjects = db.collection('projects').where('ownerId', '==', cid).onSnapshot(s => {
+      renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {
+      document.getElementById('clientProjects').innerHTML =
+        `<div class="empty-state-sub">Erro ao carregar projetos.</div>`;
+    });
+  }
+
+  function renderHeader() {
+    const c = clientData;
+    const wrap = document.getElementById('clientLogoWrap');
+    if (c.branding?.logo) {
+      wrap.innerHTML = `<img src="${c.branding.logo}" class="proj-header-logo" alt="">`;
+    } else {
+      wrap.innerHTML = `<div class="proj-header-logo-ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+    }
+    document.getElementById('clientCompany').textContent = c.branding?.companyName || '';
+    document.getElementById('clientName').textContent    = c.name || c.email || 'Cliente';
+  }
+
+  function renderProjects(list) {
+    const wrap = document.getElementById('clientProjects');
+    if (!list.length) {
+      wrap.innerHTML = `<div class="empty-state-sub">Nenhum projeto para este cliente ainda.</div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(p => `
+      <div class="file-item" style="padding:.85rem 0">
+        <div class="file-info">
+          <div class="file-name">${esc(p.name)}</div>
+          <div class="file-meta">${statusLabel(p.status)} · ${p.progress||0}% concluído</div>
+        </div>
+        <div class="file-actions">
+          <a href="projeto.html?id=${p.id}" class="link-btn">Gerenciar →</a>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── DADOS DO CLIENTE ── */
+  function syncDadosUI() {
+    document.getElementById('c-name').value  = clientData.name  || '';
+    document.getElementById('c-email').value = clientData.email || '';
+  }
+
+  document.getElementById('saveDados').addEventListener('click', async () => {
+    hideAlert('dadosOk'); hideAlert('dadosErr');
+    const btn = document.getElementById('saveDados');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      await db.collection('users').doc(cid).update({
+        name: document.getElementById('c-name').value.trim(),
+      });
+      showAlert('dadosOk');
+    } catch(e) { showAlert('dadosErr', 'Erro ao salvar. Tente novamente.'); }
+    btn.disabled = false; btn.textContent = 'Salvar Dados';
+  });
+
+  /* ── IDENTIDADE VISUAL ── */
+  function syncMarcaUI() {
+    const b = clientData.branding || {};
+    document.getElementById('c-company').value   = b.companyName || '';
+    document.getElementById('c-color').value     = b.primaryColor || '#C9A96E';
+    document.getElementById('c-color-hex').value = b.primaryColor || '#C9A96E';
+
+    const pw = document.getElementById('logoPreviewWrap');
+    if (b.logo) {
+      pw.innerHTML = `<img src="${b.logo}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      document.getElementById('logoRemoveBtn').style.display = 'inline-flex';
+    } else {
+      pw.innerHTML = `<span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>`;
+      document.getElementById('logoRemoveBtn').style.display = 'none';
+    }
+  }
+
+  document.getElementById('c-color').addEventListener('input', e => {
+    document.getElementById('c-color-hex').value = e.target.value;
+  });
+  document.getElementById('c-color-hex').addEventListener('input', e => {
+    const v = e.target.value;
+    if (/^#[0-9A-Fa-f]{6}$/.test(v)) document.getElementById('c-color').value = v;
+  });
+
+  document.getElementById('logoPickBtn').addEventListener('click', () => document.getElementById('c-logo').click());
+  document.getElementById('c-logo').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingLogoFile = file;
+    logoRemoved = false;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('logoPreviewWrap').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      document.getElementById('logoRemoveBtn').style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('logoRemoveBtn').addEventListener('click', () => {
+    pendingLogoFile = null;
+    logoRemoved = true;
+    document.getElementById('logoPreviewWrap').innerHTML = `<span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>`;
+    document.getElementById('logoRemoveBtn').style.display = 'none';
+    document.getElementById('c-logo').value = '';
+  });
+
+  document.getElementById('saveMarca').addEventListener('click', async () => {
+    hideAlert('marcaOk'); hideAlert('marcaErr');
+    const btn = document.getElementById('saveMarca');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+
+    try {
+      let logoUrl = logoRemoved ? null : (clientData.branding?.logo || null);
+
+      if (pendingLogoFile) {
+        const path = `clients/${cid}/branding/logo_${Date.now()}`;
+        const snap = await storage.ref(path).put(pendingLogoFile);
+        logoUrl = await snap.ref.getDownloadURL();
+        pendingLogoFile = null;
+      }
+
+      const branding = {
+        companyName:  document.getElementById('c-company').value.trim(),
+        primaryColor: document.getElementById('c-color').value,
+        logo:         logoUrl,
+      };
+
+      await db.collection('users').doc(cid).update({ branding });
+      showAlert('marcaOk');
+    } catch(e) { showAlert('marcaErr', 'Erro ao salvar a identidade visual.'); }
+
+    btn.disabled = false; btn.textContent = 'Salvar Identidade Visual';
+  });
+
+  /* ── HELPERS ── */
+  function statusLabel(s) {
+    const map = {
+      'em-andamento':       'Em Andamento',
+      'aguardando-cliente': 'Aguardando Cliente',
+      'em-revisao':         'Em Revisão',
+      'concluido':          'Concluído',
+      'pausado':            'Pausado',
+    };
+    return map[s] || s || '—';
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showAlert(id, msg) {
+    const el = document.getElementById(id);
+    if (msg) el.textContent = msg;
+    el.classList.add('show');
+    if (id.endsWith('Ok')) setTimeout(() => el.classList.remove('show'), 3000);
+  }
+  function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
+
+  function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+
+  async function resolveUserData(user) {
+    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    if (q && !q.empty) return q.docs[0].data() || {};
+    snap = await db.collection('users').doc(user.email).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    return {};
+  }
+
+  function normRole(role) {
+    return String(role || '').trim().toLowerCase();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    [unsubClient, unsubProjects].forEach(u => u && u());
+    auth.signOut().then(() => location.href = '../login.html');
+  });
+</script>
+</body>
+</html>

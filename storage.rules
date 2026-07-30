@@ -23,9 +23,15 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
-    // Logos de branding
+    // Logos de branding (por projeto)
     match /branding/{projectId}/{allPaths=**} {
       allow read: if isAdmin() || isProjectOwner(projectId);
+      allow write, delete: if isAdmin();
+    }
+
+    // Logos de branding padrão do cliente
+    match /clients/{clientId}/{allPaths=**} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == clientId);
       allow write, delete: if isAdmin();
     }
   }

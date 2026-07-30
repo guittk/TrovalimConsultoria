@@ -19,7 +19,10 @@
       <span class="pnav-logo-text">Trovalim</span>
     </a>
     <div class="pnav-sep"></div>
-    <span class="pnav-section">Área Admin</span>
+    <div class="pnav-tabs">
+      <a href="../admin/" class="pnav-tab active">Projetos</a>
+      <a href="../admin/clientes.html" class="pnav-tab">Clientes</a>
+    </div>
   </div>
   <div class="pnav-user">
     <span class="pnav-name" id="userName"></span>
@@ -41,7 +44,10 @@
     <div class="proj-header-info">
       <div class="proj-header-company" id="projCompany"></div>
       <div class="proj-header-name" id="projName"></div>
-      <div id="projBadge"></div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div id="projBadge"></div>
+        <a href="#" id="viewClientLink" class="link-btn" style="display:none">Ver Cliente →</a>
+      </div>
     </div>
   </div>
 
@@ -243,6 +249,14 @@
     document.getElementById('projCompany').textContent = p.branding?.companyName || p.clientName || '';
     document.getElementById('projName').textContent    = p.name;
     document.getElementById('projBadge').innerHTML     = statusBadge(p.status);
+
+    const clientLink = document.getElementById('viewClientLink');
+    if (p.ownerId) {
+      clientLink.href = `cliente.html?id=${p.ownerId}`;
+      clientLink.style.display = 'inline-block';
+    } else {
+      clientLink.style.display = 'none';
+    }
   }
 
   /* ══════════════════════════════════════════
