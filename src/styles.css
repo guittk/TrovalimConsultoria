@@ -643,9 +643,9 @@ img { max-width: 100%; display: block; }
 /* ── TABS ── */
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 2px solid var(--border);
   margin-bottom: 2rem;
-  overflow-x: auto;
 }
 .tab {
   padding: .88rem 1.6rem;
@@ -697,6 +697,8 @@ img { max-width: 100%; display: block; }
   color: var(--graphite);
 }
 .btn-outline:hover { border-color: var(--wine); color: var(--wine); }
+.btn-danger { background: #DC2626; color: #fff; }
+.btn-danger:hover { background: #B91C1C; }
 .btn-danger-ghost {
   background: transparent;
   border: none;

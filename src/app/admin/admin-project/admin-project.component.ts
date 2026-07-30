@@ -14,6 +14,7 @@ import { ProjectFile, TimelineStep } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
@@ -38,6 +39,7 @@ export class AdminProjectComponent {
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
+  private readonly confirmSvc = inject(ConfirmService);
 
   readonly tabs = ADMIN_TABS;
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -177,7 +179,13 @@ export class AdminProjectComponent {
   }
 
   async deleteFile(f: ProjectFile): Promise<void> {
-    if (!confirm('Excluir este arquivo permanentemente?')) return;
+    const ok = await this.confirmSvc.confirm({
+      title: 'Excluir arquivo',
+      message: 'Excluir este arquivo permanentemente?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
     const ownerId = this.project()?.ownerId ?? null;
     const sizeBytes = (f.sizeKb || 0) * 1024;
     await this.projectsSvc.deleteFile(this.pid, f.id!, f.path, ownerId, sizeBytes);

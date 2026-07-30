@@ -54,7 +54,7 @@
 
 <!-- ── NOVA EMPRESA MODAL ── -->
 <div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
-  <div class="modal" style="max-width:420px">
+  <div class="modal" style="max-width:560px;max-height:88vh;overflow-y:auto">
     <button class="modal-close" (click)="closeModal()">✕</button>
     <div class="modal-title">Nova Empresa</div>
 
@@ -62,8 +62,96 @@
 
     <div class="form-group">
       <label class="form-label">Nome da Empresa</label>
-      <input type="text" class="form-input" placeholder="Ex: Empresa Ltda" [ngModel]="newCompanyName()" (ngModelChange)="newCompanyName.set($event)" (keydown.enter)="createCompany()">
-      <div class="form-help">Depois você adiciona colaboradores (contas criadas em "Contas") e projetos a ela.</div>
+      <input type="text" class="form-input" placeholder="Ex: Empresa Ltda" [ngModel]="newCompanyName()" (ngModelChange)="newCompanyName.set($event)">
+    </div>
+
+    <!-- IDENTIDADE VISUAL -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cor Primária</label>
+        <div class="color-row">
+          <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+            [ngModel]="newBrandingColor()" (ngModelChange)="onColorChange($event)">
+          <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="newBrandingColor()" (ngModelChange)="onColorChange($event)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo</label>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div class="logo-preview-wrap" style="width:46px;height:46px">
+            @if (newLogoPreview()) {
+              <img [src]="newLogoPreview()" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">
+            } @else {
+              <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem logo</span>
+            }
+          </div>
+          <input #newLogoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)">
+          <button class="btn btn-outline btn-sm" (click)="newLogoInput.click()">Escolher</button>
+          @if (newLogoPreview()) {
+            <button class="btn btn-danger-ghost btn-sm" (click)="removeLogo()">Remover</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- COLABORADORES -->
+    <div class="form-group">
+      <label class="form-label">Colaboradores</label>
+      <div class="form-help" style="margin-bottom:.6rem">Contas já cadastradas em "Contas" (papel Client) que farão parte desta empresa.</div>
+
+      @if (stagedCollaborators().length) {
+        <div style="border:1px solid var(--border);margin-bottom:.85rem">
+          @for (c of stagedCollaborators(); track c.uid) {
+            <div class="file-item">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.75rem;flex-shrink:0;overflow:hidden">
+                @if (c.photoPreview) { <img [src]="c.photoPreview" alt="" style="width:100%;height:100%;object-fit:cover"> } @else { {{ initials(c.name || c.email) }} }
+              </div>
+              <div class="file-info">
+                <div class="file-name">{{ c.name || '—' }}{{ c.jobTitle ? ' · ' + c.jobTitle : '' }}</div>
+                <div class="file-meta">{{ c.email }}</div>
+              </div>
+              <div class="file-actions">
+                <button class="btn btn-danger-ghost btn-sm" (click)="removeStagedCollaborator(c.uid)">Remover</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!availableAccounts().length) {
+        <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhuma conta disponível. Crie uma em "Contas" (papel Client) primeiro.</div>
+      } @else {
+        <div style="border:1px solid var(--border);padding:.85rem">
+          <div class="form-group">
+            <label class="form-label">Conta</label>
+            <select class="form-select" [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
+              <option value="">— Selecione —</option>
+              @for (a of availableAccounts(); track a.uid) {
+                <option [value]="a.uid">{{ a.name || a.email }}{{ a.name && a.email ? ' — ' + a.email : '' }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cargo</label>
+            <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="tmJobTitle()" (ngModelChange)="tmJobTitle.set($event)">
+          </div>
+          <div class="form-group" style="margin-bottom:.75rem">
+            <label class="form-label">Foto</label>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div class="logo-preview-wrap" style="width:46px;height:46px;border-radius:50%">
+                @if (tmPhotoPreview()) {
+                  <img [src]="tmPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
+                } @else {
+                  <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
+                }
+              </div>
+              <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
+              <button class="btn btn-outline btn-sm" (click)="tmPhotoInput.click()">Escolher</button>
+            </div>
+          </div>
+          <button class="btn btn-outline btn-sm" [disabled]="!tmSelectedUid()" (click)="addStagedCollaborator()">+ Adicionar à lista</button>
+        </div>
+      }
     </div>
 
     <div class="modal-footer">

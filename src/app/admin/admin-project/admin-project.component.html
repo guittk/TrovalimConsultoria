@@ -58,9 +58,10 @@
           <div class="form-group">
             <label class="form-label">Progresso — <span>{{ progress() }}</span>%</label>
             <div class="progress-edit-row">
-              <input type="range" class="progress-slider" min="0" max="100" [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
-              <input type="number" class="progress-number" min="0" max="100" [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
-              <span style="font-size:.82rem;color:var(--muted)">%</span>
+              <input type="range" class="progress-slider" min="0" max="100" step="5"
+                [style.accent-color]="ownerAccount()?.branding?.primaryColor || '#C9A96E'"
+                [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
+              <span style="font-size:.82rem;color:var(--muted);width:2.5rem;text-align:right">{{ progress() }}%</span>
             </div>
             <div style="margin-top:.85rem">
               <div class="progress-bar" style="height:8px">

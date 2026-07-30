@@ -4,9 +4,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
-import { Project } from '../../core/models';
+import { Project, UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
@@ -16,6 +17,15 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
+interface StagedCollaborator {
+  uid: string;
+  name: string;
+  email: string;
+  jobTitle: string;
+  photoPreview: string | null;
+  photoFile: File | null;
+}
+
 @Component({
   selector: 'app-admin-clients',
   standalone: true,
@@ -24,6 +34,7 @@ const ADMIN_TABS: PnavTab[] = [
 })
 export class AdminClientsComponent {
   private readonly auth = inject(AuthService);
+  private readonly accountsSvc = inject(AccountsService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly router = inject(Router);
@@ -48,14 +59,101 @@ export class AdminClientsComponent {
   readonly saving = signal(false);
   readonly modalErr = signal('');
 
+  /* ── NOVA EMPRESA: identidade visual ── */
+  readonly newBrandingColor = signal('#C9A96E');
+  readonly newLogoPreview = signal<string | null>(null);
+  private pendingLogoFile: File | null = null;
+
+  /* ── NOVA EMPRESA: colaboradores a vincular ── */
+  readonly stagedCollaborators = signal<StagedCollaborator[]>([]);
+  readonly tmSelectedUid = signal('');
+  readonly tmJobTitle = signal('');
+  readonly tmPhotoPreview = signal<string | null>(null);
+  private tmPendingPhotoFile: File | null = null;
+
+  private readonly unlinkedClients = toSignal(this.accountsSvc.listUnlinkedClients$(), {
+    initialValue: [] as UserAccount[],
+  });
+  readonly availableAccounts = computed(() => {
+    const stagedUids = new Set(this.stagedCollaborators().map((c) => c.uid));
+    return this.unlinkedClients().filter((a) => !stagedUids.has(a.uid));
+  });
+
   openCreate(): void {
     this.newCompanyName.set('');
+    this.newBrandingColor.set('#C9A96E');
+    this.newLogoPreview.set(null);
+    this.pendingLogoFile = null;
+    this.stagedCollaborators.set([]);
+    this.resetTmStaging();
     this.modalErr.set('');
     this.modalOpen.set(true);
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
+  }
+
+  onColorChange(value: string): void {
+    this.newBrandingColor.set(value);
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.pendingLogoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => this.newLogoPreview.set(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeLogo(): void {
+    this.pendingLogoFile = null;
+    this.newLogoPreview.set(null);
+  }
+
+  private resetTmStaging(): void {
+    this.tmSelectedUid.set('');
+    this.tmJobTitle.set('');
+    this.tmPhotoPreview.set(null);
+    this.tmPendingPhotoFile = null;
+  }
+
+  onTmPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.tmPendingPhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => this.tmPhotoPreview.set(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  addStagedCollaborator(): void {
+    const uid = this.tmSelectedUid();
+    const account = this.availableAccounts().find((a) => a.uid === uid);
+    if (!account) return;
+    this.stagedCollaborators.update((list) => [
+      ...list,
+      {
+        uid,
+        name: account.name || account.email || '',
+        email: account.email || '',
+        jobTitle: this.tmJobTitle().trim(),
+        photoPreview: this.tmPhotoPreview(),
+        photoFile: this.tmPendingPhotoFile,
+      },
+    ]);
+    this.resetTmStaging();
+  }
+
+  removeStagedCollaborator(uid: string): void {
+    this.stagedCollaborators.update((list) => list.filter((c) => c.uid !== uid));
+  }
+
+  initials(name: string): string {
+    return name.split(' ').slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
   }
 
   async createCompany(): Promise<void> {
@@ -65,8 +163,28 @@ export class AdminClientsComponent {
       return;
     }
     this.saving.set(true);
+    this.modalErr.set('');
     try {
       const id = await this.empresasSvc.create(name);
+
+      let logoUrl: string | null = null;
+      if (this.pendingLogoFile) {
+        logoUrl = await this.projectsSvc.uploadBrandingLogo(`clients/${id}/branding/logo_${Date.now()}`, this.pendingLogoFile);
+      }
+      await this.empresasSvc.updateBranding(id, {
+        companyName: name,
+        primaryColor: this.newBrandingColor(),
+        logo: logoUrl,
+      });
+
+      for (const c of this.stagedCollaborators()) {
+        let photoUrl: string | null = null;
+        if (c.photoFile) {
+          photoUrl = await this.projectsSvc.uploadBrandingLogo(`clients/${id}/collab/${c.uid}_${Date.now()}`, c.photoFile);
+        }
+        await this.accountsSvc.linkTeamMember(c.uid, id, c.jobTitle, photoUrl);
+      }
+
       this.modalOpen.set(false);
       await this.router.navigate(['/admin/clientes', id]);
     } catch {
@@ -78,9 +196,5 @@ export class AdminClientsComponent {
 
   projectsFor(empresaId: string): Project[] {
     return this.projects().filter((p) => p.ownerId === empresaId);
-  }
-
-  initials(name: string): string {
-    return name.split(' ').slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
   }
 }

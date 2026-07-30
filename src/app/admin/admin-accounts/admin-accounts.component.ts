@@ -9,6 +9,7 @@ import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { RoleBadgeComponent } from '../../shared/role-badge/role-badge.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
@@ -29,6 +30,7 @@ export class AdminAccountsComponent {
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
   private readonly projectsSvc = inject(ProjectsService);
+  private readonly confirmSvc = inject(ConfirmService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -135,9 +137,13 @@ export class AdminAccountsComponent {
   }
 
   async deleteAccount(acc: UserAccount): Promise<void> {
-    if (!confirm(`Excluir o acesso de "${acc.name || acc.email}"?\n\nIsso remove os dados da conta na plataforma, mas o login no Firebase Authentication precisa ser removido separadamente pelo Console do Firebase.`)) {
-      return;
-    }
+    const ok = await this.confirmSvc.confirm({
+      title: 'Excluir conta',
+      message: `Excluir o acesso de "${acc.name || acc.email}"?\n\nIsso remove os dados da conta na plataforma, mas o login no Firebase Authentication precisa ser removido separadamente pelo Console do Firebase.`,
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
     this.pageErr.set('');
     try {
       await this.accountsSvc.deleteAccount(acc.uid);

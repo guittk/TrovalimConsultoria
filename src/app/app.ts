@@ -8,10 +8,11 @@ import {
   Router,
   RouterOutlet,
 } from '@angular/router';
+import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ConfirmDialogComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

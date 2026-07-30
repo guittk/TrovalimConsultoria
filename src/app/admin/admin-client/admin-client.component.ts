@@ -9,6 +9,7 @@ import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
@@ -37,6 +38,7 @@ export class AdminClientComponent {
   private readonly accountsSvc = inject(AccountsService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
+  private readonly confirmSvc = inject(ConfirmService);
 
   readonly tabs = ADMIN_TABS;
   readonly cid = this.route.snapshot.paramMap.get('id')!;
@@ -234,9 +236,13 @@ export class AdminClientComponent {
   }
 
   async unlinkTeamMember(member: UserAccount): Promise<void> {
-    if (!confirm(`Remover "${member.name || member.email}" desta empresa?\n\nA conta continua existindo em Contas — ela só deixa de estar vinculada a esta empresa.`)) {
-      return;
-    }
+    const ok = await this.confirmSvc.confirm({
+      title: 'Remover colaborador',
+      message: `Remover "${member.name || member.email}" desta empresa?\n\nA conta continua existindo em Contas — ela só deixa de estar vinculada a esta empresa.`,
+      confirmLabel: 'Remover',
+      danger: true,
+    });
+    if (!ok) return;
     await this.accountsSvc.unlinkTeamMember(member.uid);
   }
 
