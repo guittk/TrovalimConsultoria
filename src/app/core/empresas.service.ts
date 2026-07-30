@@ -64,29 +64,4 @@ export class EmpresasService {
     }
     await deleteDoc(doc(this.db, 'empresas', id));
   }
-
-  /**
-   * Migração única: antes desta empresa virar uma coleção própria, ela era
-   * um doc em /users sem login (role client, sem e-mail) — só branding e
-   * limites. Move cada um desses docs para /empresas preservando o mesmo ID,
-   * então nenhuma referência existente (projects.ownerId, users.companyId)
-   * precisa mudar. Idempotente: rodar de novo não encontra mais nada a migrar.
-   */
-  async migrateLegacyFromUsers(): Promise<number> {
-    const legacySnap = await getDocs(
-      query(collection(this.db, 'users'), where('role', '==', 'client')),
-    );
-    const legacyDocs = legacySnap.docs.filter((d) => !d.data()['email']);
-    for (const d of legacyDocs) {
-      const data = d.data();
-      await setDoc(doc(this.db, 'empresas', d.id), {
-        branding: data['branding'] || { companyName: 'Empresa', primaryColor: DEFAULT_BRANDING_COLOR, logo: null },
-        storageLimitMb: data['storageLimitMb'] ?? null,
-        storageUsageBytes: data['storageUsageBytes'] ?? 0,
-        createdAt: serverTimestamp(),
-      });
-      await deleteDoc(doc(this.db, 'users', d.id));
-    }
-    return legacyDocs.length;
-  }
 }

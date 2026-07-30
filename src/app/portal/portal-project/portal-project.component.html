@@ -87,7 +87,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || (f.uploadedByRole === 'admin' ? 'Consultoria' : '—') }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>

@@ -113,9 +113,6 @@ export class AdminConfigComponent {
   readonly recalculating = signal(false);
   readonly recalculateMsg = signal('');
 
-  readonly migrating = signal(false);
-  readonly migrateMsg = signal('');
-
   readonly clients = toSignal(this.empresasSvc.listAll$(), { initialValue: [] as Empresa[] });
   readonly pendingLimits = signal<Record<string, string>>({});
   readonly savingLimitFor = signal<string | null>(null);
@@ -182,26 +179,6 @@ export class AdminConfigComponent {
       this.storageSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
       this.storageSaving.set(false);
-    }
-  }
-
-  /**
-   * Migração única do modelo antigo (empresa = doc em /users sem login) para
-   * a coleção /empresas própria. Roda de novo sem efeito se não sobrar nada
-   * pra migrar — seguro clicar mais de uma vez.
-   */
-  async migrateLegacyEmpresas(): Promise<void> {
-    this.migrating.set(true);
-    this.migrateMsg.set('');
-    try {
-      const count = await this.empresasSvc.migrateLegacyFromUsers();
-      this.migrateMsg.set(
-        count > 0 ? `${count} empresa${count === 1 ? '' : 's'} migrada${count === 1 ? '' : 's'} com sucesso.` : 'Nada para migrar — já está tudo em /empresas.',
-      );
-    } catch {
-      this.migrateMsg.set('Erro ao migrar. Tente novamente.');
-    } finally {
-      this.migrating.set(false);
     }
   }
 

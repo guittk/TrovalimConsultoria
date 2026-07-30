@@ -157,19 +157,4 @@
       </table>
     </div>
   </div>
-
-  @if (isOwner()) {
-    <!-- ── MIGRAÇÃO ÚNICA ── -->
-    <div class="card" style="margin-top:2rem">
-      <div class="card-title"><span class="card-title-bar"></span>Migração de Empresas</div>
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
-        Empresas criadas antes desta versão viviam como uma conta sem login em "Contas". Clique abaixo para movê-las
-        definitivamente para a coleção própria de Empresas (seguro rodar mais de uma vez).
-      </p>
-      @if (migrateMsg()) { <div class="alert alert-success show">{{ migrateMsg() }}</div> }
-      <button class="btn btn-outline" [disabled]="migrating()" (click)="migrateLegacyEmpresas()">
-        {{ migrating() ? 'Migrando…' : 'Migrar Empresas Antigas' }}
-      </button>
-    </div>
-  }
 </div>

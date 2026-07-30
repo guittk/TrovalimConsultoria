@@ -92,12 +92,15 @@
 
         <!-- COLABORADORAS -->
         <div class="card">
-          <div class="card-title"><span class="card-title-bar"></span>Colaboradores</div>
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <span><span class="card-title-bar"></span>Colaboradores</span>
+            @if (isOwner()) {
+              <button class="btn btn-outline btn-sm" (click)="openAddMemberModal()">+ Novo Colaborador</button>
+            }
+          </div>
           <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
             Cada colaborador tem seu próprio login, cadastrado antes em "Contas". Aqui você vincula essa conta à empresa e define foto e cargo — todos compartilham os mesmos projetos e a mesma identidade visual.
           </p>
-
-          @if (tmErr()) { <div class="alert alert-error show">{{ tmErr() }}</div> }
 
           @if (!teamMembers().length) {
             <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum colaborador vinculado ainda.</div>
@@ -151,39 +154,6 @@
               }
             </div>
           }
-
-          @if (isOwner()) {
-            <div class="form-group">
-              <label class="form-label">Conta (cadastrada em Contas)</label>
-              @if (!availableAccounts().length) {
-                <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhuma conta disponível. Crie uma em "Contas" (papel Client) primeiro.</div>
-              } @else {
-                <select class="form-select" [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
-                  <option value="">— Selecione —</option>
-                  @for (a of availableAccounts(); track a.uid) {
-                    <option [value]="a.uid">{{ a.name || a.email }}{{ a.name && a.email ? ' — ' + a.email : '' }}</option>
-                  }
-                </select>
-              }
-            </div>
-            <div class="form-group">
-              <label class="form-label">Cargo</label>
-              <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="tmJobTitle()" (ngModelChange)="tmJobTitle.set($event)">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Foto</label>
-              <div class="logo-preview-wrap" style="width:64px;height:64px;border-radius:50%">
-                @if (tmPhotoPreview()) {
-                  <img [src]="tmPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
-                } @else {
-                  <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
-                }
-              </div>
-              <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
-              <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="tmPhotoInput.click()">Escolher Foto</button>
-            </div>
-            <button class="btn btn-primary" [disabled]="tmSaving() || !availableAccounts().length" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : '+ Adicionar Colaborador' }}</button>
-          }
         </div>
       </div>
     </div>
@@ -191,3 +161,48 @@
 } @else {
   <div class="loading-overlay show"><div class="spinner"></div></div>
 }
+
+<!-- ── NOVO COLABORADOR MODAL ── -->
+<div class="modal-backdrop" [class.show]="tmModalOpen()" (click)="$event.target === $event.currentTarget && closeAddMemberModal()">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" (click)="closeAddMemberModal()">✕</button>
+    <div class="modal-title">Novo Colaborador</div>
+
+    @if (tmErr()) { <div class="alert alert-error show">{{ tmErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Conta (cadastrada em Contas)</label>
+      @if (!availableAccounts().length) {
+        <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhuma conta disponível. Crie uma em "Contas" (papel Client) primeiro.</div>
+      } @else {
+        <select class="form-select" [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
+          <option value="">— Selecione —</option>
+          @for (a of availableAccounts(); track a.uid) {
+            <option [value]="a.uid">{{ a.name || a.email }}{{ a.name && a.email ? ' — ' + a.email : '' }}</option>
+          }
+        </select>
+      }
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cargo</label>
+      <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="tmJobTitle()" (ngModelChange)="tmJobTitle.set($event)">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto</label>
+      <div class="logo-preview-wrap" style="width:64px;height:64px;border-radius:50%">
+        @if (tmPhotoPreview()) {
+          <img [src]="tmPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
+        } @else {
+          <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
+        }
+      </div>
+      <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
+      <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="tmPhotoInput.click()">Escolher Foto</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeAddMemberModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="tmSaving() || !availableAccounts().length" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : 'Adicionar' }}</button>
+    </div>
+  </div>
+</div>

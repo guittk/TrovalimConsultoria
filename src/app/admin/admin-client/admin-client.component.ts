@@ -61,6 +61,7 @@ export class AdminClientComponent {
   private logoRemoved = false;
 
   /* ── COLABORADORES: adicionar ── */
+  readonly tmModalOpen = signal(false);
   readonly tmSelectedUid = signal('');
   readonly tmJobTitle = signal('');
   readonly tmPhotoPreview = signal<string | null>(null);
@@ -140,6 +141,19 @@ export class AdminClientComponent {
   }
 
   /* ── COLABORADORES: adicionar ── */
+  openAddMemberModal(): void {
+    this.tmSelectedUid.set('');
+    this.tmJobTitle.set('');
+    this.tmPhotoPreview.set(null);
+    this.tmPendingPhotoFile = null;
+    this.tmErr.set('');
+    this.tmModalOpen.set(true);
+  }
+
+  closeAddMemberModal(): void {
+    this.tmModalOpen.set(false);
+  }
+
   onTmPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -166,6 +180,7 @@ export class AdminClientComponent {
       this.tmJobTitle.set('');
       this.tmPhotoPreview.set(null);
       this.tmPendingPhotoFile = null;
+      this.tmModalOpen.set(false);
     } catch {
       this.tmErr.set('Erro ao adicionar colaborador.');
     } finally {
