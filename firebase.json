@@ -7,7 +7,13 @@
       ".firebaserc",
       ".github",
       ".git",
-      "**/.*"
+      "**/.*",
+      "node_modules",
+      "package.json",
+      "package-lock.json",
+      "firestore.rules",
+      "storage.rules",
+      "_*.js"
     ],
     "cleanUrls": true
   },
