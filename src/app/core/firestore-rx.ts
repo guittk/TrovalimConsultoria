@@ -15,14 +15,14 @@ import {
  * operador reassina a fonte (o que recria o onSnapshot) algumas vezes com
  * backoff antes de desistir.
  */
-export function retryOnPermissionDenied<T>(maxRetries = 3, baseDelayMs = 700) {
+export function retryOnPermissionDenied<T>(maxRetries = 7, baseDelayMs = 600) {
   return (source: Observable<T>) =>
     source.pipe(
       retry({
         count: maxRetries,
         delay: (error: FirestoreError, retryCount: number) => {
           if (error?.code !== 'permission-denied') throw error;
-          return timer(baseDelayMs * Math.pow(1.5, retryCount - 1));
+          return timer(Math.min(baseDelayMs * Math.pow(1.4, retryCount - 1), 4000));
         },
       }),
     );
@@ -34,16 +34,16 @@ export function retryOnPermissionDenied<T>(maxRetries = 3, baseDelayMs = 700) {
  */
 export async function retryPromiseOnPermissionDenied<T>(
   fn: () => Promise<T>,
-  maxRetries = 3,
-  baseDelayMs = 700,
+  maxRetries = 7,
+  baseDelayMs = 600,
 ): Promise<T> {
   try {
     return await fn();
   } catch (e) {
     const code = (e as FirestoreError)?.code;
     if (maxRetries > 0 && code === 'permission-denied') {
-      await new Promise((resolve) => setTimeout(resolve, baseDelayMs));
-      return retryPromiseOnPermissionDenied(fn, maxRetries - 1, baseDelayMs * 1.5);
+      await new Promise((resolve) => setTimeout(resolve, Math.min(baseDelayMs, 4000)));
+      return retryPromiseOnPermissionDenied(fn, maxRetries - 1, baseDelayMs * 1.4);
     }
     throw e;
   }
