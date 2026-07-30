@@ -542,6 +542,8 @@ img { max-width: 100%; display: block; }
   text-transform: uppercase;
   font-weight: 600;
   transition: color .2s;
+  white-space: nowrap;
+  display: inline-block;
 }
 .data-table .link-btn:hover { color: var(--gold); }
 

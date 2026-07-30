@@ -194,10 +194,9 @@
   auth.onAuthStateChanged(async user => {
     if (!user) { location.href = '../login.html'; return; }
 
-    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
-    const data = snap?.data() || {};
+    const data = await resolveUserData(user);
 
-    if (data.role !== 'admin') { location.href = '../portal/'; return; }
+    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
 
     currentAdmin = { uid: user.uid, name: data.name || user.email, email: user.email };
     document.getElementById('userName').textContent = data.name || user.email;
@@ -597,6 +596,20 @@
   function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
 
   function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+
+  async function resolveUserData(user) {
+    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    if (q && !q.empty) return q.docs[0].data() || {};
+    snap = await db.collection('users').doc(user.email).get().catch(() => null);
+    if (snap?.exists) return snap.data() || {};
+    return {};
+  }
+
+  function normRole(role) {
+    return String(role || '').trim().toLowerCase();
+  }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     [unsubProject, unsubMsgs, unsubFiles].forEach(u => u && u());
