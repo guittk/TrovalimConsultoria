@@ -12,8 +12,18 @@ export interface UserAccount {
   email?: string;
   role?: Role | string;
   branding?: Branding;
+  /** Foto de perfil da pessoa (distinta do logo de branding da empresa). */
+  photoUrl?: string | null;
   /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
   projectAccess?: string[] | null;
+  /**
+   * Somente para clientes: se definido, esta conta é um colaborador de uma
+   * empresa-cliente e não a empresa em si — aponta para o uid da conta
+   * "principal" (a empresa), de quem ela herda branding e limites de
+   * armazenamento. Várias contas (e-mails) podem apontar para a mesma
+   * empresa, permitindo múltiplos colaboradores por cliente.
+   */
+  companyId?: string | null;
   /** Limite de armazenamento do cliente em MB. null/ausente = usa o limite padrão da plataforma. */
   storageLimitMb?: number | null;
   /** Uso atual de armazenamento do cliente em bytes, mantido por contador incremental. */

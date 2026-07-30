@@ -5,8 +5,10 @@ import {
   collection,
   deleteDoc,
   doc,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { deleteApp, initializeApp } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
@@ -37,6 +39,17 @@ export class AccountsService {
     return this.listAll$().pipe(map((users) => users.filter((u) => !isStaffRole(u.role))));
   }
 
+  /** Clientes "empresa" — exclui colaboradores (contas com companyId), que não são donos de projeto. */
+  listCompanies$(): Observable<UserAccount[]> {
+    return this.listClients$().pipe(map((users) => users.filter((u) => !u.companyId)));
+  }
+
+  listTeamMembers$(companyId: string): Observable<UserAccount[]> {
+    return collectionData$<DocumentData>(
+      query(collection(this.db, 'users'), where('companyId', '==', companyId)),
+    ).pipe(map((docs) => docs.map((d) => ({ ...d, uid: d.id }) as UserAccount)));
+  }
+
   updateProfile(
     uid: string,
     data: { name?: string; role?: Role; projectAccess?: string[] | null },
@@ -50,6 +63,10 @@ export class AccountsService {
 
   updateStorageLimit(uid: string, storageLimitMb: number | null): Promise<void> {
     return updateDoc(doc(this.db, 'users', uid), { storageLimitMb });
+  }
+
+  updatePhoto(uid: string, photoUrl: string | null): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { photoUrl });
   }
 
   deleteAccount(uid: string): Promise<void> {
@@ -73,6 +90,25 @@ export class AccountsService {
       const secondaryAuth = getAuth(secondaryApp);
       const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
       await setDoc(doc(this.db, 'users', cred.user.uid), { name, email, role, projectAccess });
+      await signOut(secondaryAuth);
+    } finally {
+      await deleteApp(secondaryApp);
+    }
+  }
+
+  /** Cria um colaborador (role client) vinculado a uma empresa-cliente existente. */
+  async createTeamMember(companyId: string, name: string, email: string, password: string): Promise<void> {
+    const secondaryApp = initializeApp(environment.firebase, `Secondary-${Date.now()}`);
+    try {
+      const secondaryAuth = getAuth(secondaryApp);
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      await setDoc(doc(this.db, 'users', cred.user.uid), {
+        name,
+        email,
+        role: 'client',
+        companyId,
+        projectAccess: null,
+      });
       await signOut(secondaryAuth);
     } finally {
       await deleteApp(secondaryApp);

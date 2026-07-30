@@ -27,7 +27,7 @@
       <div class="two-col">
         <!-- LINHA DO TEMPO -->
         <div class="card">
-          <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Linha do Tempo</div>
+          <div class="card-title"><span class="card-title-bar" [style.background]="platformColor().primaryColor"></span>Linha do Tempo</div>
           @if (!p.steps.length) {
             <div class="empty-state-sub">Nenhuma etapa cadastrada ainda.</div>
           } @else {
@@ -49,7 +49,7 @@
         <div>
           <!-- MENSAGENS -->
           <div class="card">
-            <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Mensagens</div>
+            <div class="card-title"><span class="card-title-bar" [style.background]="platformColor().primaryColor"></span>Mensagens</div>
             <div class="messages-feed">
               @if (messages$ | async; as messages) {
                 @if (!messages.length) {
@@ -76,7 +76,7 @@
 
           <!-- ARQUIVOS -->
           <div class="card">
-            <div class="card-title"><span class="card-title-bar" [style.background]="userData.branding?.primaryColor || 'var(--gold)'"></span>Arquivos</div>
+            <div class="card-title"><span class="card-title-bar" [style.background]="platformColor().primaryColor"></span>Arquivos</div>
             @if (files$ | async; as files) {
               @if (!files.length) {
                 <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum arquivo disponível.</div>

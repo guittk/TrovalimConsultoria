@@ -84,7 +84,7 @@ export class AdminHomeComponent {
 
   private loadClients(): void {
     this.clientsLoading.set(true);
-    this.accountsSvc.listClients$().subscribe({
+    this.accountsSvc.listCompanies$().subscribe({
       next: (list) => {
         this.clients.set([...list].sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || '')));
         this.clientsLoading.set(false);

@@ -7,6 +7,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import {
+  DocumentData,
   Firestore,
   collection,
   doc,
@@ -16,9 +17,9 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { Observable, map, shareReplay, switchMap } from 'rxjs';
+import { Observable, map, of, shareReplay, switchMap } from 'rxjs';
 import { FIREBASE_AUTH, FIRESTORE } from './firebase.providers';
-import { retryPromiseOnPermissionDenied } from './firestore-rx';
+import { docData$, retryPromiseOnPermissionDenied } from './firestore-rx';
 import { UserAccount } from './models';
 
 const STAFF_ROLES = ['owner', 'manager'];
@@ -42,6 +43,7 @@ export class AuthService {
 
   readonly userData$: Observable<UserAccount | null> = this.user$.pipe(
     switchMap((user) => (user ? this.resolveUserData(user) : Promise.resolve(null))),
+    switchMap((data) => (data?.companyId ? this.withCompanyData$(data) : of(data))),
     shareReplay(1),
   );
 
@@ -99,5 +101,25 @@ export class AuthService {
     }
 
     return null;
+  }
+
+  /**
+   * Colaboradores (contas com companyId) herdam o branding e os limites de
+   * armazenamento da conta "empresa" em tempo real — mantendo seus próprios
+   * nome/e-mail/foto.
+   */
+  private withCompanyData$(data: UserAccount): Observable<UserAccount> {
+    return docData$<DocumentData>(doc(this.db, 'users', data.companyId!)).pipe(
+      map((company) =>
+        company
+          ? {
+              ...data,
+              branding: company['branding'] as UserAccount['branding'],
+              storageLimitMb: company['storageLimitMb'] as UserAccount['storageLimitMb'],
+              storageUsageBytes: company['storageUsageBytes'] as UserAccount['storageUsageBytes'],
+            }
+          : data,
+      ),
+    );
   }
 }

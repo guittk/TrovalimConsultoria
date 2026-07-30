@@ -45,11 +45,12 @@ export class PortalProjectComponent {
   readonly uploadErr = signal('');
 
   constructor() {
-    combineLatest([this.auth.user$, this.project$])
+    combineLatest([this.auth.user$, this.userData$, this.project$])
       .pipe(takeUntilDestroyed())
-      .subscribe(([user, project]) => {
+      .subscribe(([user, data, project]) => {
         if (!user) return;
-        if (!project || project.ownerId !== user.uid) {
+        const ownerId = data?.companyId || user.uid;
+        if (!project || project.ownerId !== ownerId) {
           this.router.navigateByUrl('/portal');
         }
       });
@@ -92,7 +93,9 @@ export class PortalProjectComponent {
     }
     this.uploading.set(true);
     try {
-      await this.projectsSvc.uploadFile(this.pid, user.uid, file, 'client', data?.name || user.email || '');
+      const project = await firstValueFrom(this.project$);
+      const ownerId = project?.ownerId ?? (data?.companyId || user.uid);
+      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'client', data?.name || user.email || '');
     } finally {
       this.uploading.set(false);
       input.value = '';

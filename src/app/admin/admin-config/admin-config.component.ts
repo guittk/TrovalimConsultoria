@@ -21,6 +21,12 @@ function formatMb(mb: number): string {
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
 }
 
+// Preços aproximados do Firebase Storage no plano Blaze (us-central1, jul/2026).
+// Serve só de referência — não inclui banda de download, que também é cobrada
+// além dos 1 GB/dia gratuitos.
+const FREE_STORAGE_GB = 5;
+const PRICE_PER_GB_MONTH_USD = 0.026;
+
 @Component({
   selector: 'app-admin-config',
   standalone: true,
@@ -117,6 +123,12 @@ export class AdminConfigComponent {
 
   formatMb(mb: number): string {
     return formatMb(mb);
+  }
+
+  /** Custo mensal estimado (só armazenamento, plano Blaze) se o limite total configurado for 100% utilizado. */
+  estimatedMonthlyCostUsd(): number {
+    const totalGb = this.totalLimitMb() / 1024;
+    return Math.max(0, totalGb - FREE_STORAGE_GB) * PRICE_PER_GB_MONTH_USD;
   }
 
   usagePct(usageBytes: number, limitMb: number): number {

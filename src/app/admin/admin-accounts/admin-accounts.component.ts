@@ -46,6 +46,7 @@ export class AdminAccountsComponent {
   );
 
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });
+  readonly editingIsSelf = computed(() => !!this.editingUid() && this.editingUid() === this.currentUid());
 
   readonly pageErr = signal('');
 
@@ -110,7 +111,11 @@ export class AdminAccountsComponent {
     try {
       const editingUid = this.editingUid();
       if (editingUid) {
-        await this.accountsSvc.updateProfile(editingUid, { name, role: this.accRole(), projectAccess });
+        // Editando a própria conta: não mexe em role/projectAccess (o
+        // formulário nem oferece a opção "Owner", então salvar esses campos
+        // aqui rebaixaria o próprio Owner por acidente).
+        const payload = this.editingIsSelf() ? { name } : { name, role: this.accRole(), projectAccess };
+        await this.accountsSvc.updateProfile(editingUid, payload);
       } else {
         if (this.accPassword().length < 6) {
           throw new Error('WEAK_PASSWORD');

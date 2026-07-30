@@ -10,6 +10,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    // Uso de .get(key, default) para não estourar erro em contas sem o
+    // campo companyId (a maioria: staff e empresas-cliente principais).
+    function myCompanyId() {
+      return isSignedIn() ? myAccount().get('companyId', null) : null;
+    }
+
     // Owner: acesso total, inclusive gerenciar contas (criar/editar/excluir/definir role)
     function isOwner() {
       return isSignedIn() && myAccount().role == 'owner';
@@ -36,21 +42,25 @@ service cloud.firestore {
       return isOwner() || (isManager() && managerCanAccessProject(projectId));
     }
 
+    // Um cliente pode ser o dono direto do projeto (ownerId == seu uid) ou um
+    // colaborador de uma empresa-cliente (seu companyId == ownerId do projeto).
     function isProjectOwner(projectId) {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      let ownerId = get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId;
+      return isSignedIn() && (ownerId == request.auth.uid || ownerId == myCompanyId());
     }
 
-    // Users: staff lê todos; usuário lê o próprio doc (por UID) ou um doc
-    // cujo campo email bata com o e-mail autenticado (fallback para docs
-    // criados manualmente com ID diferente do UID).
+    // Users: staff lê todos; usuário lê o próprio doc (por UID), o doc da
+    // empresa a que pertence (companyId) ou um doc cujo campo email bata com
+    // o e-mail autenticado (fallback para docs criados manualmente com ID
+    // diferente do UID).
     // Criar/excluir conta, mudar role ou projectAccess: só owner.
     // Editar dados do próprio cliente (nome, branding): staff também pode.
     match /users/{userId} {
       allow read: if isSignedIn() && (
         request.auth.uid == userId ||
         (resource != null && resource.data.email == request.auth.token.email) ||
-        isStaff()
+        isStaff() ||
+        myCompanyId() == userId
       );
       allow create, delete: if isOwner();
       allow update: if isOwner() || (
@@ -58,8 +68,9 @@ service cloud.firestore {
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'projectAccess'])
       ) || (
         // Autoatualização do contador de uso de armazenamento, disparada pelo
-        // próprio cliente ao subir/excluir um arquivo em seu projeto.
-        isSignedIn() && request.auth.uid == userId &&
+        // próprio cliente (ou por um colaborador da mesma empresa) ao subir
+        // ou excluir um arquivo em um projeto da empresa.
+        isSignedIn() && (request.auth.uid == userId || myCompanyId() == userId) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['storageUsageBytes'])
       );
     }
@@ -67,7 +78,9 @@ service cloud.firestore {
     // Projetos: staff tem acesso, managers restritos ao projectAccess se definido
     match /projects/{projectId} {
       allow read, write: if canAccessProject(projectId);
-      allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow read: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || resource.data.ownerId == myCompanyId()
+      );
 
       // Mensagens: dono e staff (com acesso ao projeto) leem/escrevem
       match /messages/{msgId} {

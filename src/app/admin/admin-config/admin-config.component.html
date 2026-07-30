@@ -62,6 +62,10 @@
     <div class="form-group">
       <label class="form-label">Limite total de armazenamento (MB)</label>
       <input type="number" class="form-input" min="1" [ngModel]="totalLimitMb()" (ngModelChange)="totalLimitMb.set($event)" [disabled]="!isOwner()">
+      <div class="form-help">
+        Custo estimado se este limite for 100% utilizado: <strong>US$ {{ estimatedMonthlyCostUsd().toFixed(2) }}/mês</strong>
+        (plano Blaze, ~US$ {{ 0.026 }}/GB acima dos 5 GB gratuitos — só armazenamento, não inclui banda de download).
+      </div>
     </div>
 
     <div class="form-group">

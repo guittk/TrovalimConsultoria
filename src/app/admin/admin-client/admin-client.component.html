@@ -87,6 +87,33 @@
 
           <button class="btn btn-primary" [disabled]="savingDados()" (click)="saveDados()">{{ savingDados() ? 'Salvando…' : 'Salvar Dados' }}</button>
         </div>
+
+        <!-- FOTO DO CONTATO -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Foto do Cliente</div>
+          @if (photoOk()) { <div class="alert alert-success show">Foto salva com sucesso.</div> }
+          @if (photoErr()) { <div class="alert alert-error show">{{ photoErr() }}</div> }
+
+          <div class="form-group">
+            <div class="logo-preview-wrap" style="border-radius:50%">
+              @if (photoPreview()) {
+                <img [src]="photoPreview()" alt="Foto" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
+              } @else {
+                <span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem foto</span>
+              }
+            </div>
+            <input #photoInput type="file" accept="image/*" style="display:none" (change)="onPhotoSelected($event)">
+            <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" (click)="photoInput.click()">Escolher Foto</button>
+              @if (photoPreview()) {
+                <button class="btn btn-danger-ghost btn-sm" (click)="removePhoto()">Remover Foto</button>
+              }
+            </div>
+            <div class="form-help">Usada para identificar o cliente nas telas internas do admin.</div>
+          </div>
+
+          <button class="btn btn-primary" [disabled]="savingPhoto()" (click)="savePhoto()">{{ savingPhoto() ? 'Salvando…' : 'Salvar Foto' }}</button>
+        </div>
       </div>
 
       <div>
@@ -106,6 +133,55 @@
                 <a [routerLink]="['/admin/projeto', p.id]" class="link-btn">Gerenciar →</a>
               </div>
             </div>
+          }
+        </div>
+
+        <!-- COLABORADORES -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Colaboradores</div>
+          <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
+            Outras pessoas desta empresa podem ter seu próprio login (e-mail e senha), todas com acesso aos mesmos projetos e à mesma identidade visual.
+          </p>
+
+          @if (tmErr()) { <div class="alert alert-error show">{{ tmErr() }}</div> }
+
+          @if (!teamMembers().length) {
+            <div class="empty-state-sub" style="margin-bottom:1rem">Nenhum colaborador adicionado ainda.</div>
+          } @else {
+            <div style="border:1px solid var(--border);margin-bottom:1.25rem">
+              @for (m of teamMembers(); track m.uid) {
+                <div class="file-item">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.75rem;flex-shrink:0">
+                    @if (m.photoUrl) { <img [src]="m.photoUrl" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover"> } @else { {{ initials(m.name || m.email || '') }} }
+                  </div>
+                  <div class="file-info">
+                    <div class="file-name">{{ m.name || '—' }}</div>
+                    <div class="file-meta">{{ m.email }}</div>
+                  </div>
+                  <div class="file-actions">
+                    @if (isOwner()) {
+                      <button class="btn btn-danger-ghost btn-sm" (click)="removeTeamMember(m)">Remover</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (isOwner()) {
+            <div class="form-group">
+              <label class="form-label">Nome</label>
+              <input type="text" class="form-input" placeholder="Nome do colaborador" [ngModel]="tmName()" (ngModelChange)="tmName.set($event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-input" placeholder="email@empresa.com" [ngModel]="tmEmail()" (ngModelChange)="tmEmail.set($event)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Senha</label>
+              <input type="password" class="form-input" placeholder="Mínimo 6 caracteres" autocomplete="new-password" [ngModel]="tmPassword()" (ngModelChange)="tmPassword.set($event)">
+            </div>
+            <button class="btn btn-primary" [disabled]="tmSaving()" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : '+ Adicionar Colaborador' }}</button>
           }
         </div>
       </div>

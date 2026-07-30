@@ -25,8 +25,8 @@
       <div class="client-card">
         <div class="client-card-top">
           <div class="client-card-avatar">
-            @if (logoFor(c.uid, c.branding); as logo) {
-              <img [src]="logo" alt="">
+            @if (avatarFor(c.uid, c.photoUrl, c.branding); as avatar) {
+              <img [src]="avatar" alt="">
             } @else {
               {{ initials(c.name || c.email || '') }}
             }

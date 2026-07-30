@@ -18,7 +18,7 @@ export class PortalHomeComponent {
   private readonly projectsSvc = inject(ProjectsService);
 
   readonly userData$ = this.auth.userData$;
-  readonly projects$ = this.auth.user$.pipe(
-    switchMap((user) => (user ? this.projectsSvc.listForOwner$(user.uid) : of([]))),
+  readonly projects$ = this.userData$.pipe(
+    switchMap((data) => (data ? this.projectsSvc.listForOwner$(data.companyId || data.uid) : of([]))),
   );
 }

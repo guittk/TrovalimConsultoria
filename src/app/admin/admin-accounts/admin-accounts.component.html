@@ -86,16 +86,23 @@
           [ngModel]="accPassword()" (ngModelChange)="accPassword.set($event)">
       </div>
     }
-    <div class="form-group">
-      <label class="form-label">Papel</label>
-      <select class="form-select" [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
-        <option value="client">Client — acesso apenas ao próprio projeto</option>
-        <option value="manager">Manager — acesso total ao admin, exceto contas</option>
-      </select>
-      <div class="form-help">Para promover alguém a Owner, isso deve ser feito manualmente por segurança.</div>
-    </div>
+    @if (editingIsSelf()) {
+      <div class="form-group">
+        <label class="form-label">Papel</label>
+        <div style="font-size:.85rem;color:var(--graphite)">Owner — não é possível alterar o próprio papel por aqui.</div>
+      </div>
+    } @else {
+      <div class="form-group">
+        <label class="form-label">Papel</label>
+        <select class="form-select" [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
+          <option value="client">Client — acesso apenas ao próprio projeto</option>
+          <option value="manager">Manager — acesso total ao admin, exceto contas</option>
+        </select>
+        <div class="form-help">Para promover alguém a Owner, isso deve ser feito manualmente por segurança.</div>
+      </div>
+    }
 
-    @if (accRole() === 'manager') {
+    @if (!editingIsSelf() && accRole() === 'manager') {
       <div class="form-group">
         <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
           <input type="checkbox" [ngModel]="restrictProjects()" (ngModelChange)="restrictProjects.set($event)" style="accent-color:var(--gold)">

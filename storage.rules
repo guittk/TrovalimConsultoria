@@ -31,9 +31,15 @@ service firebase.storage {
       return isOwner() || (isManager() && managerCanAccessProject(projectId));
     }
 
+    function myCompanyId() {
+      return isSignedIn() ? myAccount().get('companyId', null) : null;
+    }
+
+    // Um cliente pode ser o dono direto do projeto (ownerId == seu uid) ou um
+    // colaborador de uma empresa-cliente (seu companyId == ownerId do projeto).
     function isProjectOwner(projectId) {
-      return isSignedIn() &&
-        firestore.get(/databases/(default)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      let ownerId = firestore.get(/databases/(default)/documents/projects/$(projectId)).data.ownerId;
+      return isSignedIn() && (ownerId == request.auth.uid || ownerId == myCompanyId());
     }
 
     // Arquivos de projetos (consultora e cliente)
@@ -49,9 +55,10 @@ service firebase.storage {
       allow write, delete: if canAccessProject(projectId);
     }
 
-    // Logos de branding padrão do cliente (não é restrito por projeto)
+    // Logos de branding e foto padrão do cliente (não é restrito por
+    // projeto) — colaboradores da mesma empresa também podem ler.
     match /clients/{clientId}/{allPaths=**} {
-      allow read: if isStaff() || (isSignedIn() && request.auth.uid == clientId);
+      allow read: if isStaff() || (isSignedIn() && (request.auth.uid == clientId || myCompanyId() == clientId));
       allow write, delete: if isStaff();
     }
   }

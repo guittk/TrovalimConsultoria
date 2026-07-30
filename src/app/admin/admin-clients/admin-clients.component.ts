@@ -30,7 +30,7 @@ export class AdminClientsComponent {
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
 
-  readonly clients = toSignal(this.accountsSvc.listClients$(), { initialValue: [] });
+  readonly clients = toSignal(this.accountsSvc.listCompanies$(), { initialValue: [] });
   readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
   readonly searchTerm = signal('');
 
@@ -59,6 +59,10 @@ export class AdminClientsComponent {
 
   logoFor(uid: string, branding?: { logo: string | null }): string | null {
     return branding?.logo || this.projectsFor(uid)[0]?.branding?.logo || null;
+  }
+
+  avatarFor(uid: string, photoUrl?: string | null, branding?: { logo: string | null }): string | null {
+    return photoUrl || this.logoFor(uid, branding);
   }
 
   initials(name: string): string {
