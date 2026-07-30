@@ -359,27 +359,27 @@
 
 /* ── FOOTER ── */
 footer {
-  background: var(--wine-dark); padding: 3.5rem 2rem; text-align: center;
+  background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
 }
 .ft-logo {
-  font-family: var(--serif); font-size: 1.15rem;
-  letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: .4rem;
+  font-family: var(--serif); font-size: 1.05rem;
+  letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: .3rem;
 }
 .ft-sub {
-  font-size: .65rem; letter-spacing: .28em; text-transform: uppercase;
-  color: var(--gold); margin-bottom: 2rem;
+  font-size: .6rem; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 1.2rem;
 }
-.ft-social { display: flex; justify-content: center; gap: 1.25rem; margin-bottom: 2.5rem; }
+.ft-social { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.4rem; }
 .ft-s {
-  width: 34px; height: 34px; border: 1px solid rgba(201,169,110,.2);
+  width: 30px; height: 30px; border: 1px solid rgba(201,169,110,.2);
   display: flex; align-items: center; justify-content: center;
   color: var(--gold); transition: all .3s;
 }
 .ft-s:hover { border-color: var(--gold); color: var(--gold); }
-.ft-copy { font-size: .7rem; color: var(--gold); letter-spacing: .1em; }
+.ft-copy { font-size: .68rem; color: var(--gold); letter-spacing: .1em; }
 .ft-portal {
-  display: block; margin-bottom: 1.25rem;
-  font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+  display: block; margin-bottom: .8rem;
+  font-size: .6rem; letter-spacing: .26em; text-transform: uppercase;
   color: rgba(201,169,110,.45); transition: color .2s;
 }
 .ft-portal:hover { color: var(--gold); }
