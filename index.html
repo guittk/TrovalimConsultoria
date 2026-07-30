@@ -415,6 +415,12 @@ footer {
 }
 .ft-s:hover { border-color: var(--gold); color: var(--gold); }
 .ft-copy { font-size: .7rem; color: var(--gold); letter-spacing: .1em; }
+.ft-portal {
+  display: block; margin-bottom: 1.25rem;
+  font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+  color: rgba(201,169,110,.45); transition: color .2s;
+}
+.ft-portal:hover { color: var(--gold); }
 
 /* ── WA FLOAT ── */
 .wa {
@@ -549,9 +555,9 @@ footer {
     <li><a href="#profissionais">Para Você</a></li>
     <li><a href="#depoimentos">Depoimentos</a></li>
     <li><a href="#contato">Contato</a></li>
-    <li><a href="login.html" style="color:var(--gold);border:1px solid rgba(201,169,110,.35);padding:.35rem .9rem;font-size:.68rem;letter-spacing:.18em">Portal</a></li>
+    <li><a href="#contato">Vamos Conversar</a></li>
   </ul>
-  <a href="#contato" class="nav-cta">Vamos Conversar</a>
+  <a href="login.html" class="nav-cta">Portal</a>
   <div class="hamburger" id="hamburger" onclick="openNav()">
     <span></span>
     <span></span>
@@ -828,6 +834,7 @@ footer {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
     </a>
   </div>
+  <a href="login.html" class="ft-portal">Portal do Cliente</a>
   <div class="ft-copy">© 2025 Geovana Trovalim · Todos os direitos reservados</div>
 </footer>
 

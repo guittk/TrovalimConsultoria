@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isProjectOwner(projectId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+    }
+
+    // Users: admin lê todos, usuário lê apenas o próprio
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Projetos
+    match /projects/{projectId} {
+      allow read, write: if isAdmin();
+      allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Mensagens: dono e admin leem/escrevem; só admin deleta
+      match /messages/{msgId} {
+        allow read, create: if isAdmin() || isProjectOwner(projectId);
+        allow update, delete: if isAdmin();
+      }
+
+      // Arquivos (metadados): dono e admin leem/criam; só admin deleta
+      match /files/{fileId} {
+        allow read, create: if isAdmin() || isProjectOwner(projectId);
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

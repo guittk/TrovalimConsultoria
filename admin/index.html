@@ -7,6 +7,37 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="../favicon.png">
   <link rel="stylesheet" href="../platform.css">
+  <style>
+    .client-preview {
+      display: none;
+      margin-top: .75rem;
+      padding: .75rem 1rem;
+      background: rgba(201,169,110,.08);
+      border: 1px solid rgba(201,169,110,.25);
+      font-size: .82rem;
+      color: var(--graphite);
+      gap: .6rem;
+      align-items: center;
+    }
+    .client-preview.show { display: flex; }
+    .client-preview-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--wine);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-family: var(--serif); font-size: .85rem;
+      flex-shrink: 0;
+    }
+    .client-preview-name { font-weight: 500; }
+    .client-preview-email { font-size: .75rem; color: var(--muted); }
+    .users-loading {
+      text-align: center; padding: .6rem;
+      font-size: .78rem; color: var(--muted);
+    }
+    .np-desc-count {
+      font-size: .7rem; color: var(--muted);
+      text-align: right; margin-top: .3rem;
+    }
+  </style>
 </head>
 <body>
 
@@ -39,7 +70,6 @@
     </button>
   </div>
 
-  <!-- Toolbar -->
   <div class="toolbar">
     <input type="text" class="toolbar-search" id="searchInput" placeholder="Buscar por projeto ou cliente…">
     <select class="toolbar-select" id="statusFilter">
@@ -59,39 +89,77 @@
           <tr>
             <th>Cliente</th>
             <th>Projeto</th>
+            <th>Descrição</th>
             <th>Status</th>
             <th style="width:130px">Progresso</th>
             <th style="width:90px"></th>
           </tr>
         </thead>
         <tbody id="projectsBody">
-          <tr><td colspan="5"><div class="empty-state"><div class="empty-state-sub">Carregando…</div></div></td></tr>
+          <tr><td colspan="6"><div class="empty-state"><div class="empty-state-sub">Carregando…</div></div></td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- New Project Modal -->
+<!-- ── NEW PROJECT MODAL ── -->
 <div class="modal-backdrop" id="newProjectModal">
-  <div class="modal">
+  <div class="modal" style="max-width:580px">
     <button class="modal-close" id="modalClose">✕</button>
     <div class="modal-title">Novo Projeto</div>
 
     <div class="alert alert-error" id="modalErr"></div>
 
+    <!-- Nome -->
     <div class="form-group">
       <label class="form-label">Nome do Projeto *</label>
-      <input type="text" class="form-input" id="np-name" placeholder="Ex: Consultoria de Carreira Q3">
+      <input type="text" class="form-input" id="np-name" placeholder="Ex: Consultoria de Carreira Q3" maxlength="120">
     </div>
+
+    <!-- Descrição -->
     <div class="form-group">
-      <label class="form-label">Nome do Cliente *</label>
-      <input type="text" class="form-input" id="np-client" placeholder="Ex: João Silva">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-textarea" id="np-desc" placeholder="Descreva o escopo ou objetivo deste projeto…" maxlength="600" rows="3"></textarea>
+      <div class="np-desc-count"><span id="np-desc-len">0</span>/600</div>
     </div>
+
+    <!-- Status inicial -->
     <div class="form-group">
-      <label class="form-label">UID Firebase do Cliente *</label>
-      <input type="text" class="form-input" id="np-uid" placeholder="UID gerado pela Cloud Function createClientUser">
-      <div class="form-help">Obtido após criar o usuário via a Cloud Function <code>createClientUser</code>.</div>
+      <label class="form-label">Status Inicial</label>
+      <select class="form-select" id="np-status">
+        <option value="em-andamento">Em Andamento</option>
+        <option value="aguardando-cliente">Aguardando Cliente</option>
+        <option value="em-revisao">Em Revisão</option>
+        <option value="concluido">Concluído</option>
+        <option value="pausado">Pausado</option>
+      </select>
+    </div>
+
+    <!-- Cliente (opcional) -->
+    <div class="form-group">
+      <label class="form-label">
+        Cliente
+        <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(opcional — pode ser adicionado depois)</span>
+      </label>
+
+      <div id="usersLoadingMsg" class="users-loading" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite;display:inline-block;margin-right:.4rem"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Carregando usuários…
+      </div>
+
+      <select class="form-select" id="np-client-select" style="display:none">
+        <option value="">— Sem cliente (atribuir depois) —</option>
+      </select>
+
+      <!-- Preview do cliente selecionado -->
+      <div class="client-preview" id="clientPreview">
+        <div class="client-preview-avatar" id="clientAvatar"></div>
+        <div>
+          <div class="client-preview-name" id="clientPreviewName"></div>
+          <div class="client-preview-email" id="clientPreviewEmail"></div>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
@@ -110,7 +178,7 @@
 
   const auth = firebase.auth();
   const db   = firebase.firestore();
-  let allProjects = [], unsub;
+  let allProjects = [], allUsers = [], unsub;
 
   showLoading(true);
 
@@ -124,7 +192,7 @@
 
     document.getElementById('userName').textContent = data.name || user.email;
 
-    unsub = db.collection('projects').orderBy('name').onSnapshot(s => {
+    unsub = db.collection('projects').orderBy('createdAt', 'desc').onSnapshot(s => {
       showLoading(false);
       allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
       applyFilters();
@@ -139,7 +207,11 @@
     const q  = document.getElementById('searchInput').value.trim().toLowerCase();
     const st = document.getElementById('statusFilter').value;
     let list = allProjects;
-    if (q)  list = list.filter(p => p.name?.toLowerCase().includes(q) || p.clientName?.toLowerCase().includes(q) || p.branding?.companyName?.toLowerCase().includes(q));
+    if (q)  list = list.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      p.clientName?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      p.branding?.companyName?.toLowerCase().includes(q));
     if (st) list = list.filter(p => p.status === st);
     renderTable(list);
   }
@@ -147,13 +219,21 @@
   function renderTable(list) {
     const tbody = document.getElementById('projectsBody');
     if (!list.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>`;
       return;
     }
     tbody.innerHTML = list.map(p => `
       <tr>
-        <td style="font-size:.85rem;color:var(--muted)">${esc(p.branding?.companyName || p.clientName || '—')}</td>
-        <td style="font-weight:500">${esc(p.name)}</td>
+        <td>
+          <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">${esc(p.branding?.companyName || p.clientName || '—')}</div>
+          ${p.clientEmail ? `<div style="font-size:.72rem;color:var(--muted)">${esc(p.clientEmail)}</div>` : ''}
+        </td>
+        <td style="font-weight:500;max-width:200px">${esc(p.name)}</td>
+        <td style="max-width:220px">
+          <div style="font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.description||'')}">
+            ${p.description ? esc(p.description) : '<span style="opacity:.4">—</span>'}
+          </div>
+        </td>
         <td>${statusBadge(p.status)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:.5rem">
@@ -167,59 +247,133 @@
       </tr>`).join('');
   }
 
-  /* ── NEW PROJECT MODAL ── */
-  document.getElementById('newProjectBtn').addEventListener('click', () => openModal());
+  /* ── MODAL ── */
+  document.getElementById('newProjectBtn').addEventListener('click', openModal);
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalCancel').addEventListener('click', closeModal);
-  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-
-  function openModal() {
-    document.getElementById('np-name').value   = '';
-    document.getElementById('np-client').value = '';
-    document.getElementById('np-uid').value    = '';
-    hideModalErr();
-    document.getElementById('newProjectModal').classList.add('show');
-    document.getElementById('np-name').focus();
-  }
-  function closeModal() {
-    document.getElementById('newProjectModal').classList.remove('show');
-  }
-
   document.getElementById('newProjectModal').addEventListener('click', e => {
     if (e.target === document.getElementById('newProjectModal')) closeModal();
   });
 
-  document.getElementById('modalSave').addEventListener('click', async () => {
-    const name      = document.getElementById('np-name').value.trim();
-    const clientName = document.getElementById('np-client').value.trim();
-    const ownerId   = document.getElementById('np-uid').value.trim();
+  // Description counter
+  document.getElementById('np-desc').addEventListener('input', e => {
+    document.getElementById('np-desc-len').textContent = e.target.value.length;
+  });
 
-    if (!name || !clientName || !ownerId) {
-      showModalErr('Preencha todos os campos obrigatórios.');
-      return;
+  // Client preview on select change
+  document.getElementById('np-client-select').addEventListener('change', updateClientPreview);
+
+  async function openModal() {
+    // Reset fields
+    document.getElementById('np-name').value   = '';
+    document.getElementById('np-desc').value   = '';
+    document.getElementById('np-desc-len').textContent = '0';
+    document.getElementById('np-status').value = 'em-andamento';
+    hideModalErr();
+    hideClientPreview();
+
+    document.getElementById('newProjectModal').classList.add('show');
+    document.getElementById('np-name').focus();
+
+    // Load users
+    await loadUsers();
+  }
+
+  function closeModal() {
+    document.getElementById('newProjectModal').classList.remove('show');
+  }
+
+  async function loadUsers() {
+    const sel     = document.getElementById('np-client-select');
+    const loadMsg = document.getElementById('usersLoadingMsg');
+
+    sel.style.display     = 'none';
+    loadMsg.style.display = 'block';
+
+    try {
+      const snap = await db.collection('users').get();
+      allUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
+                          .filter(u => u.role !== 'admin')
+                          .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
+
+      sel.innerHTML = `<option value="">— Sem cliente (atribuir depois) —</option>` +
+        allUsers.map(u =>
+          `<option value="${u.uid}">${esc(u.name || u.email)}${u.name && u.email ? ' — ' + esc(u.email) : ''}</option>`
+        ).join('');
+
+      sel.value = '';
+    } catch(e) {
+      sel.innerHTML = `<option value="">— Erro ao carregar usuários —</option>`;
     }
 
+    loadMsg.style.display = 'none';
+    sel.style.display     = 'block';
+  }
+
+  function updateClientPreview() {
+    const sel = document.getElementById('np-client-select');
+    const uid = sel.value;
+
+    if (!uid) { hideClientPreview(); return; }
+
+    const user = allUsers.find(u => u.uid === uid);
+    if (!user) { hideClientPreview(); return; }
+
+    const name   = user.name  || user.email || '';
+    const email  = user.email || '';
+    const initials = name.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+
+    document.getElementById('clientAvatar').textContent      = initials;
+    document.getElementById('clientPreviewName').textContent = name;
+    document.getElementById('clientPreviewEmail').textContent = email;
+    document.getElementById('clientPreview').classList.add('show');
+  }
+
+  function hideClientPreview() {
+    document.getElementById('clientPreview').classList.remove('show');
+  }
+
+  document.getElementById('modalSave').addEventListener('click', async () => {
+    const name   = document.getElementById('np-name').value.trim();
+    const desc   = document.getElementById('np-desc').value.trim();
+    const status = document.getElementById('np-status').value;
+    const uid    = document.getElementById('np-client-select').value;
+
+    if (!name) { showModalErr('O nome do projeto é obrigatório.'); return; }
+
     const btn = document.getElementById('modalSave');
-    btn.disabled = true;
-    btn.textContent = 'Criando…';
+    btn.disabled = true; btn.textContent = 'Criando…';
+
+    // Resolve client info from selected user
+    let clientName  = '';
+    let clientEmail = '';
+    let ownerId     = null;
+
+    if (uid) {
+      const user  = allUsers.find(u => u.uid === uid);
+      ownerId     = uid;
+      clientName  = user?.name  || user?.email || '';
+      clientEmail = user?.email || '';
+    }
 
     try {
       const ref = await db.collection('projects').add({
         name,
+        description: desc || '',
         clientName,
+        clientEmail,
         ownerId,
-        status:   'em-andamento',
-        progress: 0,
-        steps:    [],
-        branding: null,
+        status,
+        progress:  0,
+        steps:     [],
+        branding:  null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
       closeModal();
       location.href = `projeto.html?id=${ref.id}`;
     } catch(e) {
-      showModalErr('Erro ao criar projeto. Verifique o UID e tente novamente.');
-      btn.disabled    = false;
-      btn.textContent = 'Criar Projeto';
+      showModalErr('Erro ao criar projeto. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Criar Projeto';
     }
   });
 
