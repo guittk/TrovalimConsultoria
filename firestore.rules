@@ -16,9 +16,15 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
     }
 
-    // Users: admin lê todos, usuário lê apenas o próprio
+    // Users: admin lê todos; usuário lê o próprio doc (por UID) ou um doc
+    // cujo campo email bata com o e-mail autenticado (fallback para docs
+    // criados manualmente com ID diferente do UID)
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (resource != null && resource.data.email == request.auth.token.email) ||
+        isAdmin()
+      );
       allow write: if isAdmin();
     }
 

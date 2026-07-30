@@ -214,13 +214,13 @@
 
   async function resolveRole(user) {
     // 1. documento com ID = UID (correto)
-    let snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    let snap = await db.collection('users').doc(user.uid).get().catch(e => { console.warn('[trovalim] erro passo 1 (doc uid):', e.code || e.message); return null; });
     if (snap?.exists) return snap.data()?.role || null;
     // 2. query pelo campo email
-    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(() => null);
+    const q = await db.collection('users').where('email', '==', user.email).limit(1).get().catch(e => { console.warn('[trovalim] erro passo 2 (query email):', e.code || e.message); return null; });
     if (q && !q.empty) return q.docs[0].data()?.role || null;
     // 3. documento com ID = email (erro comum ao criar manualmente)
-    snap = await db.collection('users').doc(user.email).get().catch(() => null);
+    snap = await db.collection('users').doc(user.email).get().catch(e => { console.warn('[trovalim] erro passo 3 (doc email):', e.code || e.message); return null; });
     if (snap?.exists) return snap.data()?.role || null;
     return null;
   }
