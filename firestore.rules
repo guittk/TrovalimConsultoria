@@ -6,9 +6,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Owner: acesso total, inclusive gerenciar contas (criar/editar/excluir/definir role)
+    function isOwner() {
+      return isSignedIn() && myRole() == 'owner';
+    }
+
+    // Staff (owner ou manager): acesso total a projetos e clientes, mas
+    // apenas o owner pode escrever em contas (ver regra de /users abaixo)
+    function isStaff() {
+      return isSignedIn() && myRole() in ['owner', 'manager'];
     }
 
     function isProjectOwner(projectId) {
@@ -16,33 +26,40 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
     }
 
-    // Users: admin lê todos; usuário lê o próprio doc (por UID) ou um doc
+    // Users: staff lê todos; usuário lê o próprio doc (por UID) ou um doc
     // cujo campo email bata com o e-mail autenticado (fallback para docs
-    // criados manualmente com ID diferente do UID)
+    // criados manualmente com ID diferente do UID).
+    // Criar/excluir conta e mudar role: só owner.
+    // Editar dados do próprio cliente (nome, branding): staff também pode,
+    // desde que não mude o campo role.
     match /users/{userId} {
       allow read: if isSignedIn() && (
         request.auth.uid == userId ||
         (resource != null && resource.data.email == request.auth.token.email) ||
-        isAdmin()
+        isStaff()
       );
-      allow write: if isAdmin();
+      allow create, delete: if isOwner();
+      allow update: if isOwner() || (
+        isStaff() &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+      );
     }
 
-    // Projetos
+    // Projetos: staff (owner + manager) tem acesso total
     match /projects/{projectId} {
-      allow read, write: if isAdmin();
+      allow read, write: if isStaff();
       allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-      // Mensagens: dono e admin leem/escrevem; só admin deleta
+      // Mensagens: dono e staff leem/escrevem; só staff deleta
       match /messages/{msgId} {
-        allow read, create: if isAdmin() || isProjectOwner(projectId);
-        allow update, delete: if isAdmin();
+        allow read, create: if isStaff() || isProjectOwner(projectId);
+        allow update, delete: if isStaff();
       }
 
-      // Arquivos (metadados): dono e admin leem/criam; só admin deleta
+      // Arquivos (metadados): dono e staff leem/criam; só staff deleta
       match /files/{fileId} {
-        allow read, create: if isAdmin() || isProjectOwner(projectId);
-        allow delete: if isAdmin();
+        allow read, create: if isStaff() || isProjectOwner(projectId);
+        allow delete: if isStaff();
       }
     }
   }

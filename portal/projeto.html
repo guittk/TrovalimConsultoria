@@ -138,7 +138,7 @@
 
     const data = await resolveUserData(user);
 
-    if (normRole(data.role) === 'admin') { location.href = '../admin/'; return; }
+    if (isStaffRole(data.role)) { location.href = '../admin/'; return; }
 
     currentUser     = user;
     currentUserData = data;
@@ -371,6 +371,9 @@
 
   function normRole(role) {
     return String(role || '').trim().toLowerCase();
+  }
+  function isStaffRole(role) {
+    return ['owner', 'manager'].includes(normRole(role));
   }
   function showErr(msg) {
     const el = document.getElementById('alertErr');

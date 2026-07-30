@@ -22,6 +22,7 @@
     <div class="pnav-tabs">
       <a href="../admin/" class="pnav-tab">Projetos</a>
       <a href="clientes.html" class="pnav-tab active">Clientes</a>
+      <a href="contas.html" class="pnav-tab">Contas</a>
     </div>
   </div>
   <div class="pnav-user">
@@ -62,12 +63,12 @@
     if (!user) { location.href = '../login.html'; return; }
 
     const data = await resolveUserData(user);
-    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
+    if (!isStaffRole(data.role)) { location.href = '../portal/'; return; }
 
     document.getElementById('userName').textContent = data.name || user.email;
 
     unsubUsers = db.collection('users').onSnapshot(s => {
-      allClients = s.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => normRole(u.role) !== 'admin');
+      allClients = s.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => !isStaffRole(u.role));
       showLoading(false);
       applyFilters();
     }, () => showLoading(false));
@@ -152,6 +153,9 @@
 
   function normRole(role) {
     return String(role || '').trim().toLowerCase();
+  }
+  function isStaffRole(role) {
+    return ['owner', 'manager'].includes(normRole(role));
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

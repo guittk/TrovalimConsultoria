@@ -203,13 +203,15 @@
     if (!user) { showLoading(false); return; }
     try {
       const role = await resolveRole(user);
-      console.log('[trovalim] uid:', user.uid, 'email:', user.email, 'role encontrada:', JSON.stringify(role));
-      window.location.href = normRole(role) === 'admin' ? 'admin/' : 'portal/';
+      window.location.href = isStaffRole(role) ? 'admin/' : 'portal/';
     } catch(e) { showLoading(false); }
   });
 
   function normRole(role) {
     return String(role || '').trim().toLowerCase();
+  }
+  function isStaffRole(role) {
+    return ['owner', 'manager'].includes(normRole(role));
   }
 
   async function resolveRole(user) {

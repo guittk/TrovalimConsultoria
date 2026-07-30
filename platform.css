@@ -71,19 +71,21 @@ img { max-width: 100%; display: block; }
 }
 .pnav-tabs {
   display: flex;
-  gap: .35rem;
+  gap: 1.6rem;
+  align-self: stretch;
+  align-items: center;
 }
 .pnav-tab {
   font-size: .68rem;
-  letter-spacing: .14em;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  color: rgba(232,213,163,.55);
-  padding: .4rem .85rem;
-  border: 1px solid transparent;
-  transition: all .2s;
+  color: rgba(232,213,163,.5);
+  padding: .3rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color .25s, border-color .25s;
 }
-.pnav-tab:hover { color: var(--gold); border-color: rgba(201,169,110,.3); }
-.pnav-tab.active { color: var(--wine); background: var(--gold); }
+.pnav-tab:hover { color: var(--gold-light); }
+.pnav-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
 .pnav-user {
   display: flex;
   align-items: center;

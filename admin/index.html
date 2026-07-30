@@ -53,6 +53,7 @@
     <div class="pnav-tabs">
       <a href="../admin/" class="pnav-tab active">Projetos</a>
       <a href="clientes.html" class="pnav-tab">Clientes</a>
+      <a href="contas.html" class="pnav-tab">Contas</a>
     </div>
   </div>
   <div class="pnav-user">
@@ -189,9 +190,8 @@
     if (!user) { location.href = '../login.html'; return; }
 
     const data = await resolveUserData(user);
-    console.log('[trovalim] uid:', user.uid, 'email:', user.email, 'dados encontrados:', JSON.stringify(data));
 
-    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
+    if (!isStaffRole(data.role)) { location.href = '../portal/'; return; }
 
     document.getElementById('userName').textContent = data.name || user.email;
 
@@ -296,7 +296,7 @@
     try {
       const snap = await db.collection('users').get();
       allUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
-                          .filter(u => u.role !== 'admin')
+                          .filter(u => !isStaffRole(u.role))
                           .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
 
       sel.innerHTML = `<option value="">— Sem cliente (atribuir depois) —</option>` +
@@ -418,6 +418,9 @@
 
   function normRole(role) {
     return String(role || '').trim().toLowerCase();
+  }
+  function isStaffRole(role) {
+    return ['owner', 'manager'].includes(normRole(role));
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

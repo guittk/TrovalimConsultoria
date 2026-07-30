@@ -22,6 +22,7 @@
     <div class="pnav-tabs">
       <a href="../admin/" class="pnav-tab">Projetos</a>
       <a href="../admin/clientes.html" class="pnav-tab active">Clientes</a>
+      <a href="../admin/contas.html" class="pnav-tab">Contas</a>
     </div>
   </div>
   <div class="pnav-user">
@@ -143,7 +144,7 @@
     if (!user) { location.href = '../login.html'; return; }
 
     const data = await resolveUserData(user);
-    if (normRole(data.role) !== 'admin') { location.href = '../portal/'; return; }
+    if (!isStaffRole(data.role)) { location.href = '../portal/'; return; }
 
     document.getElementById('userName').textContent = data.name || user.email;
 
@@ -292,7 +293,10 @@
 
       await db.collection('users').doc(cid).update({ branding });
       showAlert('marcaOk');
-    } catch(e) { showAlert('marcaErr', 'Erro ao salvar a identidade visual.'); }
+    } catch(e) {
+      console.error('[trovalim] erro ao salvar identidade visual:', e);
+      showAlert('marcaErr', 'Erro ao salvar a identidade visual: ' + (e.code || e.message || 'desconhecido'));
+    }
 
     btn.disabled = false; btn.textContent = 'Salvar Identidade Visual';
   });
@@ -335,6 +339,9 @@
 
   function normRole(role) {
     return String(role || '').trim().toLowerCase();
+  }
+  function isStaffRole(role) {
+    return ['owner', 'manager'].includes(normRole(role));
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

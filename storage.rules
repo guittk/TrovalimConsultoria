@@ -6,9 +6,12 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    function myRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isStaff() {
+      return isSignedIn() && myRole() in ['owner', 'manager'];
     }
 
     function isProjectOwner(projectId) {
@@ -18,21 +21,21 @@ service firebase.storage {
 
     // Arquivos de projetos (consultora e cliente)
     match /projects/{projectId}/{allPaths=**} {
-      allow read: if isAdmin() || isProjectOwner(projectId);
-      allow write: if isAdmin() || isProjectOwner(projectId);
-      allow delete: if isAdmin();
+      allow read: if isStaff() || isProjectOwner(projectId);
+      allow write: if isStaff() || isProjectOwner(projectId);
+      allow delete: if isStaff();
     }
 
     // Logos de branding (por projeto)
     match /branding/{projectId}/{allPaths=**} {
-      allow read: if isAdmin() || isProjectOwner(projectId);
-      allow write, delete: if isAdmin();
+      allow read: if isStaff() || isProjectOwner(projectId);
+      allow write, delete: if isStaff();
     }
 
     // Logos de branding padrão do cliente
     match /clients/{clientId}/{allPaths=**} {
-      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == clientId);
-      allow write, delete: if isAdmin();
+      allow read: if isStaff() || (isSignedIn() && request.auth.uid == clientId);
+      allow write, delete: if isStaff();
     }
   }
 }

@@ -5,5 +5,8 @@
   "scripts": {
     "build": "echo \"Static site — no build step required.\"",
     "deploy": "firebase deploy --project ellen-cavalcanti"
+  },
+  "devDependencies": {
+    "firebase-admin": "^14.2.0"
   }
 }
