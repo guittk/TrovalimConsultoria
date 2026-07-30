@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav logoLink="/portal" sectionLabel="Portal do Cliente" [userName]="userData.name || userData.email || ''" />
+  <app-pnav logoLink="/portal" sectionLabel="Portal do Cliente" [userName]="userData.name || userData.email || ''" logoutRedirect="/" />
 }
 
 <div class="page">

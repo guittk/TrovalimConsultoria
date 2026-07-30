@@ -23,7 +23,7 @@ import {
 import { Observable } from 'rxjs';
 import { FIRESTORE, FIREBASE_STORAGE } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
-import { Branding, Project, ProjectFile, ProjectMessage, TimelineStep } from './models';
+import { Project, ProjectFile, ProjectMessage, TimelineStep } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
@@ -59,10 +59,6 @@ export class ProjectsService {
 
   updateSteps(id: string, steps: TimelineStep[]): Promise<void> {
     return updateDoc(doc(this.db, 'projects', id), { steps });
-  }
-
-  updateBranding(id: string, branding: Branding): Promise<void> {
-    return updateDoc(doc(this.db, 'projects', id), { branding });
   }
 
   async uploadBrandingLogo(path: string, file: File): Promise<string> {

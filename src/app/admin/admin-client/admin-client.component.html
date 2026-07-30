@@ -26,25 +26,6 @@
 
     <div class="two-col">
       <div>
-        <!-- DADOS DO CLIENTE -->
-        <div class="card">
-          <div class="card-title"><span class="card-title-bar"></span>Dados do Cliente</div>
-          @if (dadosOk()) { <div class="alert alert-success show">Dados salvos com sucesso.</div> }
-          @if (dadosErr()) { <div class="alert alert-error show">{{ dadosErr() }}</div> }
-
-          <div class="form-group">
-            <label class="form-label">Nome</label>
-            <input type="text" class="form-input" placeholder="Nome do responsável" [ngModel]="name()" (ngModelChange)="name.set($event)">
-          </div>
-          <div class="form-group">
-            <label class="form-label">E-mail</label>
-            <input type="email" class="form-input" [value]="c.email || ''" disabled style="opacity:.6;cursor:not-allowed">
-            <div class="form-help">O e-mail de login é gerenciado no Firebase Authentication.</div>
-          </div>
-
-          <button class="btn btn-primary" [disabled]="savingDados()" (click)="saveDados()">{{ savingDados() ? 'Salvando…' : 'Salvar Dados' }}</button>
-        </div>
-
         <!-- IDENTIDADE VISUAL -->
         <div class="card">
           <div class="card-title"><span class="card-title-bar"></span>Identidade Visual Padrão</div>
@@ -86,6 +67,25 @@
           </div>
 
           <button class="btn btn-primary" style="margin-top:.5rem" [disabled]="savingMarca()" (click)="saveMarca()">{{ savingMarca() ? 'Salvando…' : 'Salvar Identidade Visual' }}</button>
+        </div>
+
+        <!-- DADOS DO CLIENTE -->
+        <div class="card">
+          <div class="card-title"><span class="card-title-bar"></span>Dados do Cliente</div>
+          @if (dadosOk()) { <div class="alert alert-success show">Dados salvos com sucesso.</div> }
+          @if (dadosErr()) { <div class="alert alert-error show">{{ dadosErr() }}</div> }
+
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input type="text" class="form-input" placeholder="Nome do responsável" [ngModel]="name()" (ngModelChange)="name.set($event)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input type="email" class="form-input" [value]="c.email || ''" disabled style="opacity:.6;cursor:not-allowed">
+            <div class="form-help">O e-mail de login é gerenciado no Firebase Authentication.</div>
+          </div>
+
+          <button class="btn btn-primary" [disabled]="savingDados()" (click)="saveDados()">{{ savingDados() ? 'Salvando…' : 'Salvar Dados' }}</button>
         </div>
       </div>
 

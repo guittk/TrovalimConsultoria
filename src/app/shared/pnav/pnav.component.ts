@@ -27,9 +27,11 @@ export class PnavComponent {
   /** Rótulo estático exibido quando não há abas (ex: "Portal do Cliente"). */
   @Input() sectionLabel = '';
   @Input() userName = '';
+  /** Rota após sair (ex: '/' no portal, '/login' no admin). */
+  @Input() logoutRedirect = '/login';
 
   async logout(): Promise<void> {
     await this.auth.logout();
-    await this.router.navigateByUrl('/login');
+    await this.router.navigateByUrl(this.logoutRedirect);
   }
 }

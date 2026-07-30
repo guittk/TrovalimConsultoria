@@ -28,6 +28,27 @@ export function retryOnPermissionDenied<T>(maxRetries = 3, baseDelayMs = 700) {
     );
 }
 
+/**
+ * Mesma corrida de "permission-denied" transitório, mas para leituras
+ * avulsas (getDoc/getDocs) em vez de listeners em tempo real.
+ */
+export async function retryPromiseOnPermissionDenied<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelayMs = 700,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    const code = (e as FirestoreError)?.code;
+    if (maxRetries > 0 && code === 'permission-denied') {
+      await new Promise((resolve) => setTimeout(resolve, baseDelayMs));
+      return retryPromiseOnPermissionDenied(fn, maxRetries - 1, baseDelayMs * 1.5);
+    }
+    throw e;
+  }
+}
+
 export function docData$<T extends DocumentData>(
   ref: DocumentReference<T>,
 ): Observable<(T & { id: string }) | null> {

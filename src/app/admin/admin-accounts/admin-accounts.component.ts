@@ -15,6 +15,8 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
 ];
 
+const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
+
 @Component({
   selector: 'app-admin-accounts',
   standalone: true,
@@ -31,7 +33,12 @@ export class AdminAccountsComponent {
 
   readonly accounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] });
   readonly sortedAccounts = computed(() =>
-    [...this.accounts()].sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || '')),
+    [...this.accounts()].sort((a, b) => {
+      const ra = ROLE_ORDER[normRole(a.role)] ?? 99;
+      const rb = ROLE_ORDER[normRole(b.role)] ?? 99;
+      if (ra !== rb) return ra - rb;
+      return (a.name || a.email || '').localeCompare(b.name || b.email || '');
+    }),
   );
 
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });

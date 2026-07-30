@@ -8,11 +8,12 @@ import { AuthService } from '../../core/auth.service';
 import { ProjectsService } from '../../core/projects.service';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
 
 @Component({
   selector: 'app-portal-project',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, PnavComponent, StatusBadgeComponent],
+  imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, PnavComponent, StatusBadgeComponent, FileIconComponent],
   templateUrl: './portal-project.component.html',
 })
 export class PortalProjectComponent {

@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { Observable, map, shareReplay, switchMap } from 'rxjs';
 import { FIREBASE_AUTH, FIRESTORE } from './firebase.providers';
+import { retryPromiseOnPermissionDenied } from './firestore-rx';
 import { UserAccount } from './models';
 
 const STAFF_ROLES = ['owner', 'manager'];
@@ -64,22 +65,35 @@ export class AuthService {
    * (email em vez do UID do Firebase Auth). Este fallback em 3 passos evita
    * que a conta fique sem papel reconhecido: 1) doc com ID = UID (correto),
    * 2) query pelo campo email, 3) doc com ID = email (erro comum).
+   *
+   * Logo após restaurar a sessão, a primeira leitura às vezes esbarra numa
+   * corrida do token de auth e volta "permission-denied" mesmo com as
+   * regras corretas (validado ao vivo) — por isso o retry, e por isso
+   * nunca deixamos um erro vazar daqui: o pior caso é retornar null.
    */
   private async resolveUserData(user: User): Promise<UserAccount | null> {
-    const byUid = await getDoc(doc(this.db, 'users', user.uid)).catch(() => null);
-    if (byUid?.exists()) return { uid: byUid.id, ...(byUid.data() as Omit<UserAccount, 'uid'>) };
+    try {
+      return await retryPromiseOnPermissionDenied(() => this.resolveUserDataOnce(user));
+    } catch {
+      return null;
+    }
+  }
+
+  private async resolveUserDataOnce(user: User): Promise<UserAccount | null> {
+    const byUid = await getDoc(doc(this.db, 'users', user.uid));
+    if (byUid.exists()) return { uid: byUid.id, ...(byUid.data() as Omit<UserAccount, 'uid'>) };
 
     const byEmailQuery = await getDocs(
       query(collection(this.db, 'users'), where('email', '==', user.email), limit(1)),
-    ).catch(() => null);
-    if (byEmailQuery && !byEmailQuery.empty) {
+    );
+    if (!byEmailQuery.empty) {
       const d = byEmailQuery.docs[0];
       return { uid: d.id, ...(d.data() as Omit<UserAccount, 'uid'>) };
     }
 
     if (user.email) {
-      const byEmailDoc = await getDoc(doc(this.db, 'users', user.email)).catch(() => null);
-      if (byEmailDoc?.exists()) {
+      const byEmailDoc = await getDoc(doc(this.db, 'users', user.email));
+      if (byEmailDoc.exists()) {
         return { uid: byEmailDoc.id, ...(byEmailDoc.data() as Omit<UserAccount, 'uid'>) };
       }
     }
