@@ -8,6 +8,8 @@ import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
+import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
+import { StorageUsageService } from '../../core/storage-usage.service';
 import { ProjectFile, TimelineStep } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -34,6 +36,8 @@ export class AdminProjectComponent {
   private readonly projectsSvc = inject(ProjectsService);
   private readonly accountsSvc = inject(AccountsService);
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
+  private readonly storageSettingsSvc = inject(StorageSettingsService);
+  private readonly storageUsageSvc = inject(StorageUsageService);
 
   readonly tabs = ADMIN_TABS;
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -49,6 +53,9 @@ export class AdminProjectComponent {
   readonly files$ = this.projectsSvc.files$(this.pid);
   readonly platformColor = toSignal(this.platformSettingsSvc.get$(), {
     initialValue: { primaryColor: DEFAULT_PLATFORM_COLOR },
+  });
+  readonly storageSettings = toSignal(this.storageSettingsSvc.get$(), {
+    initialValue: DEFAULT_STORAGE_SETTINGS,
   });
 
   readonly activeTab = signal<TabKey>('geral');
@@ -68,6 +75,7 @@ export class AdminProjectComponent {
 
   /* ── ARQUIVOS ── */
   readonly uploading = signal(false);
+  readonly uploadErr = signal('');
 
   /* ── MENSAGENS ── */
   readonly messageText = signal('');
@@ -142,19 +150,37 @@ export class AdminProjectComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    this.uploadErr.set('');
+    const ownerId = this.project()?.ownerId ?? null;
+    const owner = this.ownerAccount();
+    const totalUsageBytes = await this.storageUsageSvc.totalUsageBytes();
+    const err = this.storageSettingsSvc.checkUpload(
+      file,
+      this.storageSettings(),
+      owner?.storageUsageBytes || 0,
+      owner?.storageLimitMb,
+      totalUsageBytes,
+    );
+    if (err) {
+      this.uploadErr.set(err);
+      input.value = '';
+      return;
+    }
     this.uploading.set(true);
     const data = await firstValueFrom(this.userData$);
     try {
-      await this.projectsSvc.uploadFile(this.pid, file, 'admin', data?.name || 'Admin');
+      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'admin', data?.name || 'Admin');
     } finally {
       this.uploading.set(false);
       input.value = '';
     }
   }
 
-  async deleteFile(fileId: string, path?: string): Promise<void> {
+  async deleteFile(f: ProjectFile): Promise<void> {
     if (!confirm('Excluir este arquivo permanentemente?')) return;
-    await this.projectsSvc.deleteFile(this.pid, fileId, path);
+    const ownerId = this.project()?.ownerId ?? null;
+    const sizeBytes = (f.sizeKb || 0) * 1024;
+    await this.projectsSvc.deleteFile(this.pid, f.id!, f.path, ownerId, sizeBytes);
   }
 
   adminFiles(files: ProjectFile[]): ProjectFile[] {

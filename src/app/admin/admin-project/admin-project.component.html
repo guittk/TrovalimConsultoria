@@ -126,7 +126,7 @@
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
-                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f.id!, f.path)">Excluir</button>
+                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
                       </div>
                     </div>
                   }
@@ -142,7 +142,7 @@
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
-                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f.id!, f.path)">Excluir</button>
+                        <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
                       </div>
                     </div>
                   }
@@ -151,11 +151,13 @@
             }
           }
 
+          @if (uploadErr()) { <div class="alert alert-error show" style="margin-top:1.25rem">{{ uploadErr() }}</div> }
+
           <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
             <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
             <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar ao cliente' }}</div>
-            <div class="file-upload-sub">PDF, DOCX, XLSX, imagens — sem limite de tamanho</div>
+            <div class="file-upload-sub">Limites por tipo de arquivo e por cliente configurados em Configurações</div>
           </div>
         </div>
       }

@@ -31,4 +31,126 @@
       <button class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'Salvando…' : 'Salvar Cor' }}</button>
     }
   </div>
+
+  <!-- ── ARQUIVOS E ARMAZENAMENTO ── -->
+  <div class="card" style="margin-top:2rem">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <span><span class="card-title-bar"></span>Arquivos e Armazenamento</span>
+      @if (isOwner()) {
+        <button class="btn btn-outline btn-sm" [disabled]="recalculating()" (click)="recalculateUsage()">
+          {{ recalculating() ? 'Recalculando…' : 'Recalcular Uso' }}
+        </button>
+      }
+    </div>
+
+    @if (recalculateMsg()) { <div class="alert alert-success show">{{ recalculateMsg() }}</div> }
+    @if (storageSavingOk()) { <div class="alert alert-success show">Configuração de armazenamento salva.</div> }
+    @if (storageSavingErr()) { <div class="alert alert-error show">{{ storageSavingErr() }}</div> }
+
+    @if (!isOwner()) {
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Owner pode alterar estas configurações.</p>
+    }
+
+    <div class="form-group">
+      <label class="form-label">Uso total da plataforma</label>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" [style.width.%]="usagePct(totalUsageBytes(), totalLimitMb())"></div></div>
+        <div class="progress-label">{{ formatBytes(totalUsageBytes()) }} de {{ formatMb(totalLimitMb()) }} usados — pensado para não passar do limite gratuito do Firebase</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Limite total de armazenamento (MB)</label>
+      <input type="number" class="form-input" min="1" [ngModel]="totalLimitMb()" (ngModelChange)="totalLimitMb.set($event)" [disabled]="!isOwner()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Limite padrão por cliente (MB)</label>
+      <div class="form-help" style="margin-bottom:.4rem">Usado quando o cliente não tem um limite específico definido na tabela abaixo.</div>
+      <input type="number" class="form-input" min="1" [ngModel]="defaultClientLimitMb()" (ngModelChange)="defaultClientLimitMb.set($event)" [disabled]="!isOwner()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Limites por tipo de arquivo</label>
+      <div class="form-help" style="margin-bottom:.6rem">Extensões separadas por vírgula, sem o ponto (ex: jpg, png). O tipo "outros" é usado como fallback.</div>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Extensões</th>
+              <th style="width:140px">Máx. (MB)</th>
+              @if (isOwner()) { <th style="width:60px"></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of typeLimitsForm(); track t.key; let i = $index) {
+              <tr>
+                <td><input type="text" class="form-input" [ngModel]="t.label" (ngModelChange)="updateTypeLimit(i, 'label', $event)" [disabled]="!isOwner()"></td>
+                <td><input type="text" class="form-input" [ngModel]="t.extensionsText" (ngModelChange)="updateTypeLimit(i, 'extensionsText', $event)" [disabled]="!isOwner()" placeholder="jpg, png, gif"></td>
+                <td><input type="number" class="form-input" min="1" [ngModel]="t.maxSizeMb" (ngModelChange)="updateTypeLimit(i, 'maxSizeMb', $event)" [disabled]="!isOwner()"></td>
+                @if (isOwner()) {
+                  <td><button class="btn btn-danger-ghost btn-sm" (click)="removeTypeLimit(i)">Excluir</button></td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (isOwner()) {
+        <button class="btn btn-outline btn-sm" style="margin-top:.75rem" (click)="addTypeLimit()">+ Adicionar tipo</button>
+      }
+    </div>
+
+    @if (isOwner()) {
+      <button class="btn btn-primary" [disabled]="storageSaving()" (click)="saveStorageSettings()">{{ storageSaving() ? 'Salvando…' : 'Salvar Configuração de Arquivos' }}</button>
+    }
+  </div>
+
+  <!-- ── USO POR CLIENTE ── -->
+  <div class="card" style="margin-top:2rem;padding:0">
+    <div class="card-title" style="padding:1.5rem 1.5rem 0"><span class="card-title-bar"></span>Uso de Armazenamento por Cliente</div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Uso Atual</th>
+            <th style="width:200px">Limite (MB)</th>
+            @if (isOwner()) { <th style="width:100px"></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @if (!clients().length) {
+            <tr><td colspan="4"><div class="empty-state"><div class="empty-state-sub">Nenhum cliente cadastrado.</div></div></td></tr>
+          }
+          @for (c of clients(); track c.uid) {
+            <tr>
+              <td style="font-weight:500">{{ c.name || c.email || '—' }}</td>
+              <td>
+                <div class="progress-wrap" style="max-width:220px">
+                  <div class="progress-bar"><div class="progress-fill" [style.width.%]="usagePct(c.storageUsageBytes || 0, c.storageLimitMb || defaultClientLimitMb())"></div></div>
+                  <div class="progress-label">{{ formatBytes(c.storageUsageBytes || 0) }} de {{ formatMb(c.storageLimitMb || defaultClientLimitMb()) }}</div>
+                </div>
+              </td>
+              <td>
+                <input type="number" class="form-input" min="1" style="max-width:140px"
+                  [ngModel]="clientLimitInput(c)" (ngModelChange)="setClientLimitInput(c.uid, $event)"
+                  [disabled]="!isOwner()" [placeholder]="'Padrão: ' + defaultClientLimitMb()">
+              </td>
+              @if (isOwner()) {
+                <td>
+                  <button class="btn btn-outline btn-sm" [disabled]="savingLimitFor() === c.uid" (click)="saveClientLimit(c.uid)">
+                    {{ savingLimitFor() === c.uid ? 'Salvando…' : 'Salvar' }}
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

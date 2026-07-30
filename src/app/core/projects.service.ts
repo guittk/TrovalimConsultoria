@@ -7,9 +7,11 @@ import {
   collection,
   deleteDoc,
   doc,
+  increment,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -92,6 +94,7 @@ export class ProjectsService {
 
   async uploadFile(
     projectId: string,
+    ownerId: string | null,
     file: File,
     uploadedByRole: string,
     uploadedByName: string,
@@ -109,11 +112,34 @@ export class ProjectsService {
       uploadedByRole,
       uploadedByName,
     });
+    await this.bumpUsage(ownerId, file.size);
   }
 
-  async deleteFile(projectId: string, fileId: string, path?: string): Promise<void> {
+  async deleteFile(
+    projectId: string,
+    fileId: string,
+    path?: string,
+    ownerId?: string | null,
+    sizeBytes?: number,
+  ): Promise<void> {
     await deleteDoc(doc(this.db, 'projects', projectId, 'files', fileId));
     if (path) await deleteObject(ref(this.storage, path)).catch(() => undefined);
+    if (sizeBytes) await this.bumpUsage(ownerId ?? null, -sizeBytes);
+  }
+
+  /** Mantém o contador incremental de uso de armazenamento (total + por cliente). */
+  private async bumpUsage(ownerId: string | null, deltaBytes: number): Promise<void> {
+    const jobs: Promise<unknown>[] = [
+      setDoc(doc(this.db, 'settings', 'storageUsage'), { totalUsageBytes: increment(deltaBytes) }, { merge: true }).catch(
+        () => undefined,
+      ),
+    ];
+    if (ownerId) {
+      jobs.push(
+        updateDoc(doc(this.db, 'users', ownerId), { storageUsageBytes: increment(deltaBytes) }).catch(() => undefined),
+      );
+    }
+    await Promise.all(jobs);
   }
 
   toDate(value: unknown): Date {

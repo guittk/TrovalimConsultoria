@@ -48,6 +48,10 @@ export class AccountsService {
     return updateDoc(doc(this.db, 'users', uid), { branding });
   }
 
+  updateStorageLimit(uid: string, storageLimitMb: number | null): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { storageLimitMb });
+  }
+
   deleteAccount(uid: string): Promise<void> {
     return deleteDoc(doc(this.db, 'users', uid));
   }

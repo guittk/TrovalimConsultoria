@@ -14,10 +14,28 @@ export interface UserAccount {
   branding?: Branding;
   /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
   projectAccess?: string[] | null;
+  /** Limite de armazenamento do cliente em MB. null/ausente = usa o limite padrão da plataforma. */
+  storageLimitMb?: number | null;
+  /** Uso atual de armazenamento do cliente em bytes, mantido por contador incremental. */
+  storageUsageBytes?: number;
 }
 
 export interface PlatformSettings {
   primaryColor: string;
+}
+
+export interface FileTypeLimit {
+  key: string;
+  label: string;
+  /** Extensões em minúsculas, sem o ponto. */
+  extensions: string[];
+  maxSizeMb: number;
+}
+
+export interface StorageSettings {
+  totalLimitMb: number;
+  defaultClientLimitMb: number;
+  typeLimits: FileTypeLimit[];
 }
 
 export type ProjectStatus =

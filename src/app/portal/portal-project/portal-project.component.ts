@@ -7,6 +7,8 @@ import { combineLatest, firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
+import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
+import { StorageUsageService } from '../../core/storage-usage.service';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -23,6 +25,8 @@ export class PortalProjectComponent {
   private readonly auth = inject(AuthService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
+  private readonly storageSettingsSvc = inject(StorageSettingsService);
+  private readonly storageUsageSvc = inject(StorageUsageService);
 
   readonly pid = this.route.snapshot.paramMap.get('id')!;
   readonly userData$ = this.auth.userData$;
@@ -32,9 +36,13 @@ export class PortalProjectComponent {
   readonly platformColor = toSignal(this.platformSettingsSvc.get$(), {
     initialValue: { primaryColor: DEFAULT_PLATFORM_COLOR },
   });
+  readonly storageSettings = toSignal(this.storageSettingsSvc.get$(), {
+    initialValue: DEFAULT_STORAGE_SETTINGS,
+  });
 
   readonly messageText = signal('');
   readonly uploading = signal(false);
+  readonly uploadErr = signal('');
 
   constructor() {
     combineLatest([this.auth.user$, this.project$])
@@ -67,10 +75,24 @@ export class PortalProjectComponent {
     if (!file) return;
     const user = this.auth.currentUser;
     if (!user) return;
-    this.uploading.set(true);
+    this.uploadErr.set('');
     const data = await firstValueFrom(this.userData$);
+    const totalUsageBytes = await this.storageUsageSvc.totalUsageBytes();
+    const err = this.storageSettingsSvc.checkUpload(
+      file,
+      this.storageSettings(),
+      data?.storageUsageBytes || 0,
+      data?.storageLimitMb,
+      totalUsageBytes,
+    );
+    if (err) {
+      this.uploadErr.set(err);
+      input.value = '';
+      return;
+    }
+    this.uploading.set(true);
     try {
-      await this.projectsSvc.uploadFile(this.pid, file, 'client', data?.name || user.email || '');
+      await this.projectsSvc.uploadFile(this.pid, user.uid, file, 'client', data?.name || user.email || '');
     } finally {
       this.uploading.set(false);
       input.value = '';
