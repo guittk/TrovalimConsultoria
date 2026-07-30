@@ -3,11 +3,11 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
-import { AccountsService } from '../../core/accounts.service';
+import { EmpresasService } from '../../core/empresas.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
-import { FileTypeLimit, UserAccount } from '../../core/models';
+import { Empresa, FileTypeLimit } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
@@ -36,7 +36,7 @@ const PRICE_PER_GB_MONTH_USD = 0.026;
 export class AdminConfigComponent {
   private readonly auth = inject(AuthService);
   private readonly settingsSvc = inject(PlatformSettingsService);
-  private readonly accountsSvc = inject(AccountsService);
+  private readonly empresasSvc = inject(EmpresasService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
 
@@ -113,7 +113,10 @@ export class AdminConfigComponent {
   readonly recalculating = signal(false);
   readonly recalculateMsg = signal('');
 
-  readonly clients = toSignal(this.accountsSvc.listClients$(), { initialValue: [] as UserAccount[] });
+  readonly migrating = signal(false);
+  readonly migrateMsg = signal('');
+
+  readonly clients = toSignal(this.empresasSvc.listAll$(), { initialValue: [] as Empresa[] });
   readonly pendingLimits = signal<Record<string, string>>({});
   readonly savingLimitFor = signal<string | null>(null);
 
@@ -182,6 +185,26 @@ export class AdminConfigComponent {
     }
   }
 
+  /**
+   * Migração única do modelo antigo (empresa = doc em /users sem login) para
+   * a coleção /empresas própria. Roda de novo sem efeito se não sobrar nada
+   * pra migrar — seguro clicar mais de uma vez.
+   */
+  async migrateLegacyEmpresas(): Promise<void> {
+    this.migrating.set(true);
+    this.migrateMsg.set('');
+    try {
+      const count = await this.empresasSvc.migrateLegacyFromUsers();
+      this.migrateMsg.set(
+        count > 0 ? `${count} empresa${count === 1 ? '' : 's'} migrada${count === 1 ? '' : 's'} com sucesso.` : 'Nada para migrar — já está tudo em /empresas.',
+      );
+    } catch {
+      this.migrateMsg.set('Erro ao migrar. Tente novamente.');
+    } finally {
+      this.migrating.set(false);
+    }
+  }
+
   async recalculateUsage(): Promise<void> {
     this.recalculating.set(true);
     this.recalculateMsg.set('');
@@ -196,28 +219,28 @@ export class AdminConfigComponent {
     }
   }
 
-  clientLimitInput(c: UserAccount): string {
-    const pending = this.pendingLimits()[c.uid];
+  clientLimitInput(c: Empresa): string {
+    const pending = this.pendingLimits()[c.id];
     if (pending !== undefined) return pending;
     return c.storageLimitMb != null ? String(c.storageLimitMb) : '';
   }
 
-  setClientLimitInput(uid: string, value: string): void {
-    this.pendingLimits.update((m) => ({ ...m, [uid]: value }));
+  setClientLimitInput(id: string, value: string): void {
+    this.pendingLimits.update((m) => ({ ...m, [id]: value }));
   }
 
-  async saveClientLimit(uid: string): Promise<void> {
-    const c = this.clients().find((x) => x.uid === uid);
-    const raw = c ? this.clientLimitInput(c) : this.pendingLimits()[uid] || '';
+  async saveClientLimit(id: string): Promise<void> {
+    const c = this.clients().find((x) => x.id === id);
+    const raw = c ? this.clientLimitInput(c) : this.pendingLimits()[id] || '';
     const trimmed = raw.trim();
     const value = trimmed === '' ? null : Number(trimmed);
     if (value !== null && (Number.isNaN(value) || value <= 0)) return;
-    this.savingLimitFor.set(uid);
+    this.savingLimitFor.set(id);
     try {
-      await this.accountsSvc.updateStorageLimit(uid, value);
+      await this.empresasSvc.updateStorageLimit(id, value);
       this.pendingLimits.update((m) => {
         const copy = { ...m };
-        delete copy[uid];
+        delete copy[id];
         return copy;
       });
     } finally {

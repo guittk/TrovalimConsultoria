@@ -5,10 +5,10 @@
 <div class="breadcrumb">
   <a routerLink="/admin/clientes">Empresas</a>
   <span class="breadcrumb-sep">›</span>
-  <span>{{ client()?.branding?.companyName || client()?.name || client()?.email || 'Empresa' }}</span>
+  <span>{{ empresa()?.branding?.companyName || 'Empresa' }}</span>
 </div>
 
-@if (client(); as c) {
+@if (empresa(); as c) {
   <div class="page">
     <div class="proj-header">
       @if (c.branding?.logo) {

@@ -49,28 +49,33 @@ service cloud.firestore {
       return isSignedIn() && (ownerId == request.auth.uid || ownerId == myCompanyId());
     }
 
-    // Users: staff lê todos; usuário lê o próprio doc (por UID), o doc da
-    // empresa a que pertence (companyId) ou um doc cujo campo email bata com
-    // o e-mail autenticado (fallback para docs criados manualmente com ID
-    // diferente do UID).
+    // Users: staff lê todos; usuário lê o próprio doc (por UID) ou um doc
+    // cujo campo email bata com o e-mail autenticado (fallback para docs
+    // criados manualmente com ID diferente do UID).
     // Criar/excluir conta, mudar role ou projectAccess: só owner.
     // Editar dados do próprio cliente (nome, branding): staff também pode.
     match /users/{userId} {
       allow read: if isSignedIn() && (
         request.auth.uid == userId ||
         (resource != null && resource.data.email == request.auth.token.email) ||
-        isStaff() ||
-        myCompanyId() == userId
+        isStaff()
       );
       allow create, delete: if isOwner();
       allow update: if isOwner() || (
         isStaff() &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'projectAccess'])
-      ) || (
-        // Autoatualização do contador de uso de armazenamento, disparada pelo
-        // próprio cliente (ou por um colaborador da mesma empresa) ao subir
-        // ou excluir um arquivo em um projeto da empresa.
-        isSignedIn() && (request.auth.uid == userId || myCompanyId() == userId) &&
+      );
+    }
+
+    // Empresas: staff tem acesso total; um colaborador (companyId aponta pra
+    // cá) lê a própria empresa e pode atualizar só o contador de uso de
+    // armazenamento ao subir/excluir um arquivo. Criar/excluir: só owner
+    // (mesma regra da tela "Nova Empresa" e da exclusão em Empresas).
+    match /empresas/{empresaId} {
+      allow read: if isSignedIn() && (isStaff() || myCompanyId() == empresaId);
+      allow create, delete: if isOwner();
+      allow update: if isStaff() || (
+        isSignedIn() && myCompanyId() == empresaId &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['storageUsageBytes'])
       );
     }

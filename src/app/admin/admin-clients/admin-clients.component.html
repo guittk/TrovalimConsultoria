@@ -22,30 +22,30 @@
   </div>
 
   <div class="cards-grid">
-    @if (!filteredClients().length) {
+    @if (!filteredEmpresas().length) {
       <div class="empty-state" style="grid-column:1/-1">
         <div class="empty-state-emoji">🗂️</div>
         <div class="empty-state-text">Nenhuma empresa encontrada</div>
-        <div class="empty-state-sub">Contas de clientes criadas no Firestore aparecem aqui automaticamente.</div>
+        <div class="empty-state-sub">Clique em "Nova Empresa" para cadastrar a primeira.</div>
       </div>
     }
-    @for (c of filteredClients(); track c.uid) {
+    @for (e of filteredEmpresas(); track e.id) {
       <div class="client-card">
         <div class="client-card-top">
           <div class="client-card-avatar">
-            @if (logoFor(c.uid, c.branding); as logo) {
-              <img [src]="logo" alt="">
+            @if (e.branding?.logo) {
+              <img [src]="e.branding!.logo" alt="">
             } @else {
-              {{ initials(companyFor(c.uid, c.branding) || c.name || c.email || '') }}
+              {{ initials(e.branding?.companyName || '') }}
             }
           </div>
           <div>
-            <div class="client-card-name">{{ companyFor(c.uid, c.branding) || c.name || c.email || 'Sem nome' }}</div>
+            <div class="client-card-name">{{ e.branding?.companyName || 'Sem nome' }}</div>
           </div>
         </div>
-        <div class="client-card-meta">{{ projectsFor(c.uid).length }} projeto{{ projectsFor(c.uid).length === 1 ? '' : 's' }}</div>
+        <div class="client-card-meta">{{ projectsFor(e.id).length }} projeto{{ projectsFor(e.id).length === 1 ? '' : 's' }}</div>
         <div class="client-card-footer">
-          <a [routerLink]="['/admin/clientes', c.uid]" class="btn btn-outline btn-sm">Ver Empresa →</a>
+          <a [routerLink]="['/admin/clientes', e.id]" class="btn btn-outline btn-sm">Ver Empresa →</a>
         </div>
       </div>
     }

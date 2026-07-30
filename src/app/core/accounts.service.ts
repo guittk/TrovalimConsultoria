@@ -5,7 +5,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDocs,
   query,
   setDoc,
   updateDoc,
@@ -40,8 +39,8 @@ export class AccountsService {
     return this.listAll$().pipe(map((users) => users.filter((u) => !isStaffRole(u.role))));
   }
 
-  /** Clientes "empresa" — exclui colaboradores (contas com companyId), que não são donos de projeto. */
-  listCompanies$(): Observable<UserAccount[]> {
+  /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
+  listUnlinkedClients$(): Observable<UserAccount[]> {
     return this.listClients$().pipe(map((users) => users.filter((u) => !u.companyId)));
   }
 
@@ -51,21 +50,6 @@ export class AccountsService {
     ).pipe(map((docs) => docs.map((d) => ({ ...d, uid: d.id }) as UserAccount)));
   }
 
-  /**
-   * Cria uma empresa "pura" — um doc em /users sem login próprio (sem
-   * e-mail/senha no Firebase Auth), só para servir de dona de projetos e
-   * âncora de branding/limites. Colaboradores (contas criadas em Contas)
-   * são vinculados a ela depois via companyId.
-   */
-  async createCompany(companyName: string): Promise<string> {
-    const ref = doc(collection(this.db, 'users'));
-    await setDoc(ref, {
-      role: 'client',
-      branding: { companyName, primaryColor: '#C9A96E', logo: null },
-    });
-    return ref.id;
-  }
-
   updateProfile(
     uid: string,
     data: { name?: string; role?: Role; projectAccess?: string[] | null },
@@ -73,30 +57,8 @@ export class AccountsService {
     return updateDoc(doc(this.db, 'users', uid), data as DocumentData);
   }
 
-  updateBranding(uid: string, branding: UserAccount['branding']): Promise<void> {
-    return updateDoc(doc(this.db, 'users', uid), { branding });
-  }
-
-  updateStorageLimit(uid: string, storageLimitMb: number | null): Promise<void> {
-    return updateDoc(doc(this.db, 'users', uid), { storageLimitMb });
-  }
-
-  updatePhoto(uid: string, photoUrl: string | null): Promise<void> {
-    return updateDoc(doc(this.db, 'users', uid), { photoUrl });
-  }
-
-  /**
-   * Impede excluir uma conta "empresa" enquanto ela ainda tiver colaboradores
-   * vinculados (companyId) — eles ficariam órfãos, sem branding/projeto,
-   * sem serem avisados. O chamador deve remover os colaboradores primeiro
-   * (ou os promover/realocar) antes de excluir a empresa.
-   */
-  async deleteAccount(uid: string): Promise<void> {
-    const teamSnap = await getDocs(query(collection(this.db, 'users'), where('companyId', '==', uid)));
-    if (!teamSnap.empty) {
-      throw new Error('HAS_TEAM_MEMBERS');
-    }
-    await deleteDoc(doc(this.db, 'users', uid));
+  deleteAccount(uid: string): Promise<void> {
+    return deleteDoc(doc(this.db, 'users', uid));
   }
 
   /**

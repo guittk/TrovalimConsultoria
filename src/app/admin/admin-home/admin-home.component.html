@@ -48,15 +48,15 @@
             <tr>
               <td>
                 <div style="display:flex;align-items:center;gap:.6rem">
-                  @if (accountsByUid().get(p.ownerId || '')?.branding?.logo; as logo) {
+                  @if (empresasById().get(p.ownerId || '')?.branding?.logo; as logo) {
                     <img [src]="logo" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0">
                   } @else {
                     <div style="width:28px;height:28px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.72rem;flex-shrink:0">
-                      {{ initials(accountsByUid().get(p.ownerId || '')?.name || p.clientName || p.branding?.companyName || '?') }}
+                      {{ initials(empresasById().get(p.ownerId || '')?.branding?.companyName || p.clientName || p.branding?.companyName || '?') }}
                     </div>
                   }
                   <div>
-                    <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ accountsByUid().get(p.ownerId || '')?.branding?.companyName || p.branding?.companyName || p.clientName || '—' }}</div>
+                    <div style="font-size:.85rem;font-weight:500;color:var(--graphite)">{{ empresasById().get(p.ownerId || '')?.branding?.companyName || p.branding?.companyName || p.clientName || '—' }}</div>
                   </div>
                 </div>
               </td>
@@ -129,8 +129,8 @@
       } @else {
         <select class="form-select" [ngModel]="npClientUid()" (ngModelChange)="npClientUid.set($event)">
           <option value="">— Sem empresa (atribuir depois) —</option>
-          @for (u of clients(); track u.uid) {
-            <option [value]="u.uid">{{ companyLabel(u) }}</option>
+          @for (u of clients(); track u.id) {
+            <option [value]="u.id">{{ companyLabel(u) }}</option>
           }
         </select>
       }

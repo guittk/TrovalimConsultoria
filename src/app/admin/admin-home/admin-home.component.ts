@@ -4,9 +4,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { AccountsService } from '../../core/accounts.service';
+import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
-import { UserAccount } from '../../core/models';
+import { Empresa } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
@@ -25,7 +25,7 @@ const ADMIN_TABS: PnavTab[] = [
 })
 export class AdminHomeComponent {
   private readonly auth = inject(AuthService);
-  private readonly accountsSvc = inject(AccountsService);
+  private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly router = inject(Router);
 
@@ -33,8 +33,8 @@ export class AdminHomeComponent {
   readonly userData$ = this.auth.userData$;
 
   readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
-  readonly allAccounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] });
-  readonly accountsByUid = computed(() => new Map(this.allAccounts().map((a) => [a.uid, a])));
+  readonly allEmpresas = toSignal(this.empresasSvc.listAll$(), { initialValue: [] });
+  readonly empresasById = computed(() => new Map(this.allEmpresas().map((e) => [e.id, e])));
   readonly searchTerm = signal('');
   readonly statusFilter = signal('');
 
@@ -63,10 +63,10 @@ export class AdminHomeComponent {
   readonly npDesc = signal('');
   readonly npStatus = signal('em-andamento');
   readonly npClientUid = signal('');
-  readonly clients = signal<UserAccount[]>([]);
+  readonly clients = signal<Empresa[]>([]);
   readonly clientsLoading = signal(false);
 
-  readonly selectedClient = computed(() => this.clients().find((c) => c.uid === this.npClientUid()));
+  readonly selectedClient = computed(() => this.clients().find((c) => c.id === this.npClientUid()));
 
   openModal(): void {
     this.npName.set('');
@@ -84,7 +84,7 @@ export class AdminHomeComponent {
 
   private loadClients(): void {
     this.clientsLoading.set(true);
-    this.accountsSvc.listCompanies$().subscribe({
+    this.empresasSvc.listAll$().subscribe({
       next: (list) => {
         this.clients.set([...list].sort((a, b) => this.companyLabel(a).localeCompare(this.companyLabel(b))));
         this.clientsLoading.set(false);
@@ -93,8 +93,8 @@ export class AdminHomeComponent {
     });
   }
 
-  companyLabel(u: UserAccount): string {
-    return u.branding?.companyName || u.name || u.email || 'Sem nome';
+  companyLabel(e: Empresa): string {
+    return e.branding?.companyName || 'Sem nome';
   }
 
   initials(name: string): string {
@@ -114,8 +114,7 @@ export class AdminHomeComponent {
         name,
         description: this.npDesc().trim(),
         clientName: client ? this.companyLabel(client) : '',
-        clientEmail: client?.email || '',
-        ownerId: client?.uid || null,
+        ownerId: client?.id || null,
         status: this.npStatus(),
         progress: 0,
         steps: [],

@@ -19,6 +19,6 @@ export class PortalHomeComponent {
 
   readonly userData$ = this.auth.userData$;
   readonly projects$ = this.userData$.pipe(
-    switchMap((data) => (data ? this.projectsSvc.listForOwner$(data.companyId || data.uid) : of([]))),
+    switchMap((data) => (data?.companyId ? this.projectsSvc.listForOwner$(data.companyId) : of([]))),
   );
 }

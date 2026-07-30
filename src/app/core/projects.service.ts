@@ -127,7 +127,7 @@ export class ProjectsService {
     if (sizeBytes) await this.bumpUsage(ownerId ?? null, -sizeBytes);
   }
 
-  /** Mantém o contador incremental de uso de armazenamento (total + por cliente). */
+  /** Mantém o contador incremental de uso de armazenamento (total + por empresa). */
   private async bumpUsage(ownerId: string | null, deltaBytes: number): Promise<void> {
     const jobs: Promise<unknown>[] = [
       setDoc(doc(this.db, 'settings', 'storageUsage'), { totalUsageBytes: increment(deltaBytes) }, { merge: true }).catch(
@@ -136,7 +136,7 @@ export class ProjectsService {
     ];
     if (ownerId) {
       jobs.push(
-        updateDoc(doc(this.db, 'users', ownerId), { storageUsageBytes: increment(deltaBytes) }).catch(() => undefined),
+        updateDoc(doc(this.db, 'empresas', ownerId), { storageUsageBytes: increment(deltaBytes) }).catch(() => undefined),
       );
     }
     await Promise.all(jobs);

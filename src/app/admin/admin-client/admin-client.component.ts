@@ -1,10 +1,11 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
+import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
@@ -34,6 +35,7 @@ export class AdminClientComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
+  private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
 
   readonly tabs = ADMIN_TABS;
@@ -41,15 +43,12 @@ export class AdminClientComponent {
   readonly userData$ = this.auth.userData$;
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });
 
-  readonly client = toSignal(this.accountsSvc.get$(this.cid), { initialValue: null });
+  readonly empresa = toSignal(this.empresasSvc.get$(this.cid), { initialValue: null });
   readonly projects = toSignal(this.projectsSvc.listForOwner$(this.cid), { initialValue: [] });
   readonly teamMembers = toSignal(this.accountsSvc.listTeamMembers$(this.cid), { initialValue: [] });
 
   /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
-  readonly availableAccounts = computed(() =>
-    this.allUnlinkedClients().filter((a) => a.uid !== this.cid),
-  );
-  private readonly allUnlinkedClients = toSignal(this.accountsSvc.listCompanies$(), { initialValue: [] as UserAccount[] });
+  readonly availableAccounts = toSignal(this.accountsSvc.listUnlinkedClients$(), { initialValue: [] as UserAccount[] });
 
   /* ── IDENTIDADE VISUAL ── */
   readonly brandingCompany = signal('');
@@ -79,11 +78,11 @@ export class AdminClientComponent {
 
   constructor() {
     effect(() => {
-      const c = this.client();
-      if (!c) return;
-      this.brandingCompany.set(c.branding?.companyName || '');
-      this.brandingColor.set(c.branding?.primaryColor || '#C9A96E');
-      this.brandingLogoPreview.set(c.branding?.logo || null);
+      const e = this.empresa();
+      if (!e) return;
+      this.brandingCompany.set(e.branding?.companyName || '');
+      this.brandingColor.set(e.branding?.primaryColor || '#C9A96E');
+      this.brandingLogoPreview.set(e.branding?.logo || null);
       this.pendingLogoFile = null;
       this.logoRemoved = false;
     });
@@ -119,13 +118,13 @@ export class AdminClientComponent {
     this.marcaErr.set('');
     this.savingMarca.set(true);
     try {
-      let logoUrl: string | null = this.logoRemoved ? null : this.client()?.branding?.logo || null;
+      let logoUrl: string | null = this.logoRemoved ? null : this.empresa()?.branding?.logo || null;
       if (this.pendingLogoFile) {
         const path = `clients/${this.cid}/branding/logo_${Date.now()}`;
         logoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.pendingLogoFile);
         this.pendingLogoFile = null;
       }
-      await this.accountsSvc.updateBranding(this.cid, {
+      await this.empresasSvc.updateBranding(this.cid, {
         companyName: this.brandingCompany().trim(),
         primaryColor: this.brandingColor(),
         logo: logoUrl,

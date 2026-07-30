@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { AccountsService } from '../../core/accounts.service';
+import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
@@ -34,7 +34,7 @@ export class AdminProjectComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly projectsSvc = inject(ProjectsService);
-  private readonly accountsSvc = inject(AccountsService);
+  private readonly empresasSvc = inject(EmpresasService);
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
@@ -46,7 +46,7 @@ export class AdminProjectComponent {
   readonly project$ = this.projectsSvc.get$(this.pid);
   readonly project = toSignal(this.project$, { initialValue: null });
   readonly ownerAccount = toSignal(
-    this.project$.pipe(switchMap((p) => (p?.ownerId ? this.accountsSvc.get$(p.ownerId) : of(null)))),
+    this.project$.pipe(switchMap((p) => (p?.ownerId ? this.empresasSvc.get$(p.ownerId) : of(null)))),
     { initialValue: null },
   );
   readonly messages$ = this.projectsSvc.messages$(this.pid);

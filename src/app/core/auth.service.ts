@@ -109,7 +109,7 @@ export class AuthService {
    * nome/e-mail/foto.
    */
   private withCompanyData$(data: UserAccount): Observable<UserAccount> {
-    return docData$<DocumentData>(doc(this.db, 'users', data.companyId!)).pipe(
+    return docData$<DocumentData>(doc(this.db, 'empresas', data.companyId!)).pipe(
       map((company) =>
         company
           ? {

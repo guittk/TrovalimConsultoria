@@ -49,8 +49,8 @@ export class PortalProjectComponent {
       .pipe(takeUntilDestroyed())
       .subscribe(([user, data, project]) => {
         if (!user) return;
-        const ownerId = data?.companyId || user.uid;
-        if (!project || project.ownerId !== ownerId) {
+        const ownerId = data?.companyId ?? null;
+        if (!project || !ownerId || project.ownerId !== ownerId) {
           this.router.navigateByUrl('/portal');
         }
       });

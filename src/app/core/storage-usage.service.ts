@@ -35,10 +35,10 @@ export class StorageUsageService {
    * qualquer drift do contador incremental. Requer permissão de owner.
    */
   async recalculate(): Promise<{ totalBytes: number; byOwner: Record<string, number> }> {
-    const [projectsSnap, filesSnap, usersSnap] = await Promise.all([
+    const [projectsSnap, filesSnap, empresasSnap] = await Promise.all([
       getDocs(collection(this.db, 'projects')),
       getDocs(collectionGroup(this.db, 'files')),
-      getDocs(collection(this.db, 'users')),
+      getDocs(collection(this.db, 'empresas')),
     ]);
 
     const ownerByProject: Record<string, string> = {};
@@ -59,8 +59,8 @@ export class StorageUsageService {
 
     await Promise.all([
       setDoc(doc(this.db, 'settings', 'storageUsage'), { totalUsageBytes: totalBytes }, { merge: true }),
-      ...usersSnap.docs.map((u) =>
-        updateDoc(doc(this.db, 'users', u.id), { storageUsageBytes: byOwner[u.id] || 0 }).catch(() => undefined),
+      ...empresasSnap.docs.map((e) =>
+        updateDoc(doc(this.db, 'empresas', e.id), { storageUsageBytes: byOwner[e.id] || 0 }).catch(() => undefined),
       ),
     ]);
 

@@ -11,7 +11,6 @@ export interface UserAccount {
   name?: string;
   email?: string;
   role?: Role | string;
-  branding?: Branding;
   /** Foto de perfil da pessoa (distinta do logo de branding da empresa). */
   photoUrl?: string | null;
   /** Cargo do colaborador dentro da empresa-cliente (ex: "Gerente de RH"). */
@@ -19,17 +18,31 @@ export interface UserAccount {
   /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
   projectAccess?: string[] | null;
   /**
-   * Somente para clientes: se definido, esta conta é um colaborador de uma
-   * empresa-cliente e não a empresa em si — aponta para o uid da conta
-   * "principal" (a empresa), de quem ela herda branding e limites de
-   * armazenamento. Várias contas (e-mails) podem apontar para a mesma
-   * empresa, permitindo múltiplos colaboradores por cliente.
+   * Somente para clientes: id do doc em /empresas ao qual esta conta está
+   * vinculada como colaborador. Várias contas (e-mails) podem apontar para a
+   * mesma empresa, permitindo múltiplos colaboradores por cliente — todas
+   * herdam o branding e os limites de armazenamento da empresa.
    */
   companyId?: string | null;
-  /** Limite de armazenamento do cliente em MB. null/ausente = usa o limite padrão da plataforma. */
+  /**
+   * Não persistidos no doc da conta — populados em runtime pelo
+   * AuthService a partir do doc /empresas/{companyId} quando esta conta é
+   * colaboradora, para as telas do portal não precisarem buscar a empresa
+   * separadamente.
+   */
+  branding?: Branding;
   storageLimitMb?: number | null;
-  /** Uso atual de armazenamento do cliente em bytes, mantido por contador incremental. */
   storageUsageBytes?: number;
+}
+
+export interface Empresa {
+  id: string;
+  branding: Branding;
+  /** Limite de armazenamento da empresa em MB. null/ausente = usa o limite padrão da plataforma. */
+  storageLimitMb?: number | null;
+  /** Uso atual de armazenamento da empresa em bytes, mantido por contador incremental. */
+  storageUsageBytes?: number;
+  createdAt?: unknown;
 }
 
 export interface PlatformSettings {

@@ -113,14 +113,14 @@
     }
   </div>
 
-  <!-- ── USO POR CLIENTE ── -->
+  <!-- ── USO POR EMPRESA ── -->
   <div class="card" style="margin-top:2rem;padding:0">
-    <div class="card-title" style="padding:1.5rem 1.5rem 0"><span class="card-title-bar"></span>Uso de Armazenamento por Cliente</div>
+    <div class="card-title" style="padding:1.5rem 1.5rem 0"><span class="card-title-bar"></span>Uso de Armazenamento por Empresa</div>
     <div class="data-table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Cliente</th>
+            <th>Empresa</th>
             <th>Uso Atual</th>
             <th style="width:200px">Limite (MB)</th>
             @if (isOwner()) { <th style="width:100px"></th> }
@@ -128,11 +128,11 @@
         </thead>
         <tbody>
           @if (!clients().length) {
-            <tr><td colspan="4"><div class="empty-state"><div class="empty-state-sub">Nenhum cliente cadastrado.</div></div></td></tr>
+            <tr><td colspan="4"><div class="empty-state"><div class="empty-state-sub">Nenhuma empresa cadastrada.</div></div></td></tr>
           }
-          @for (c of clients(); track c.uid) {
+          @for (c of clients(); track c.id) {
             <tr>
-              <td style="font-weight:500">{{ c.name || c.email || '—' }}</td>
+              <td style="font-weight:500">{{ c.branding?.companyName || '—' }}</td>
               <td>
                 <div class="progress-wrap" style="max-width:220px">
                   <div class="progress-bar"><div class="progress-fill" [style.width.%]="usagePct(c.storageUsageBytes || 0, c.storageLimitMb || defaultClientLimitMb())"></div></div>
@@ -141,13 +141,13 @@
               </td>
               <td>
                 <input type="number" class="form-input" min="1" style="max-width:140px"
-                  [ngModel]="clientLimitInput(c)" (ngModelChange)="setClientLimitInput(c.uid, $event)"
+                  [ngModel]="clientLimitInput(c)" (ngModelChange)="setClientLimitInput(c.id, $event)"
                   [disabled]="!isOwner()" [placeholder]="'Padrão: ' + defaultClientLimitMb()">
               </td>
               @if (isOwner()) {
                 <td>
-                  <button class="btn btn-outline btn-sm" [disabled]="savingLimitFor() === c.uid" (click)="saveClientLimit(c.uid)">
-                    {{ savingLimitFor() === c.uid ? 'Salvando…' : 'Salvar' }}
+                  <button class="btn btn-outline btn-sm" [disabled]="savingLimitFor() === c.id" (click)="saveClientLimit(c.id)">
+                    {{ savingLimitFor() === c.id ? 'Salvando…' : 'Salvar' }}
                   </button>
                 </td>
               }
@@ -157,4 +157,19 @@
       </table>
     </div>
   </div>
+
+  @if (isOwner()) {
+    <!-- ── MIGRAÇÃO ÚNICA ── -->
+    <div class="card" style="margin-top:2rem">
+      <div class="card-title"><span class="card-title-bar"></span>Migração de Empresas</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
+        Empresas criadas antes desta versão viviam como uma conta sem login em "Contas". Clique abaixo para movê-las
+        definitivamente para a coleção própria de Empresas (seguro rodar mais de uma vez).
+      </p>
+      @if (migrateMsg()) { <div class="alert alert-success show">{{ migrateMsg() }}</div> }
+      <button class="btn btn-outline" [disabled]="migrating()" (click)="migrateLegacyEmpresas()">
+        {{ migrating() ? 'Migrando…' : 'Migrar Empresas Antigas' }}
+      </button>
+    </div>
+  }
 </div>

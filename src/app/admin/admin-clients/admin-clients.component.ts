@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { AccountsService } from '../../core/accounts.service';
+import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Project } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
@@ -24,7 +24,7 @@ const ADMIN_TABS: PnavTab[] = [
 })
 export class AdminClientsComponent {
   private readonly auth = inject(AuthService);
-  private readonly accountsSvc = inject(AccountsService);
+  private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly router = inject(Router);
 
@@ -32,17 +32,14 @@ export class AdminClientsComponent {
   readonly userData$ = this.auth.userData$;
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });
 
-  readonly clients = toSignal(this.accountsSvc.listCompanies$(), { initialValue: [] });
+  readonly empresas = toSignal(this.empresasSvc.listAll$(), { initialValue: [] });
   readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
   readonly searchTerm = signal('');
 
-  readonly filteredClients = computed(() => {
+  readonly filteredEmpresas = computed(() => {
     const q = this.searchTerm().trim().toLowerCase();
-    if (!q) return this.clients();
-    return this.clients().filter((c) => {
-      const company = this.companyFor(c.uid, c.branding) || c.name || c.email || '';
-      return company.toLowerCase().includes(q);
-    });
+    if (!q) return this.empresas();
+    return this.empresas().filter((e) => (e.branding?.companyName || '').toLowerCase().includes(q));
   });
 
   /* ── NOVA EMPRESA ── */
@@ -69,7 +66,7 @@ export class AdminClientsComponent {
     }
     this.saving.set(true);
     try {
-      const id = await this.accountsSvc.createCompany(name);
+      const id = await this.empresasSvc.create(name);
       this.modalOpen.set(false);
       await this.router.navigate(['/admin/clientes', id]);
     } catch {
@@ -79,17 +76,8 @@ export class AdminClientsComponent {
     }
   }
 
-  projectsFor(uid: string): Project[] {
-    return this.projects().filter((p) => p.ownerId === uid);
-  }
-
-  companyFor(uid: string, branding?: { companyName: string }): string {
-    const proj = this.projectsFor(uid);
-    return branding?.companyName || proj[0]?.branding?.companyName || proj[0]?.clientName || '';
-  }
-
-  logoFor(uid: string, branding?: { logo: string | null }): string | null {
-    return branding?.logo || this.projectsFor(uid)[0]?.branding?.logo || null;
+  projectsFor(empresaId: string): Project[] {
+    return this.projects().filter((p) => p.ownerId === empresaId);
   }
 
   initials(name: string): string {
