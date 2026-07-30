@@ -215,7 +215,8 @@
      PROJECT LISTENER
   ══════════════════════════════════════════ */
   function listenProject() {
-    unsubProject = db.collection('projects').doc(pid).onSnapshot(snap => {
+    const ref = db.collection('projects').doc(pid);
+    unsubProject = listenWithRetry(ref, snap => {
       if (!snap.exists) { location.href = '../admin/'; return; }
       showLoading(false);
       projectData = snap.data();
@@ -230,7 +231,7 @@
       syncGeralUI();
       renderStepsEditor();
       syncBrandingUI();
-    }, () => showLoading(false));
+    }, { onFinalError: () => showLoading(false) });
 
     listenMessages();
     listenFiles();
@@ -380,7 +381,7 @@
   ══════════════════════════════════════════ */
   function listenFiles() {
     const ref = db.collection('projects').doc(pid).collection('files').orderBy('uploadedAt', 'desc');
-    unsubFiles = ref.onSnapshot(snap => {
+    unsubFiles = listenWithRetry(ref, snap => {
       renderFilesAdmin(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
   }
@@ -464,7 +465,7 @@
   ══════════════════════════════════════════ */
   function listenMessages() {
     const ref = db.collection('projects').doc(pid).collection('messages').orderBy('date');
-    unsubMsgs = ref.onSnapshot(snap => {
+    unsubMsgs = listenWithRetry(ref, snap => {
       const feed = document.getElementById('adminMsgFeed');
       if (snap.empty) { feed.innerHTML = '<div class="msg-empty">Nenhuma mensagem ainda.</div>'; return; }
       feed.innerHTML = snap.docs.map(d => {
@@ -614,6 +615,27 @@
   function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
 
   function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+
+  // Logo após restaurar a sessão, o primeiro onSnapshot às vezes esbarra
+  // numa corrida do token de auth e volta "permission-denied" mesmo com
+  // as regras corretas. Como o Firestore não tenta de novo sozinho depois
+  // de um erro de permissão, tentamos de novo manualmente algumas vezes.
+  function listenWithRetry(query, onNext, opts = {}) {
+    const { retries = 3, delay = 700, onFinalError } = opts;
+    let currentUnsub = null, stopped = false;
+    function attempt(remaining, wait) {
+      currentUnsub = query.onSnapshot(onNext, err => {
+        if (stopped) return;
+        if (remaining > 0 && err.code === 'permission-denied') {
+          setTimeout(() => attempt(remaining - 1, wait * 1.5), wait);
+        } else if (onFinalError) {
+          onFinalError(err);
+        }
+      });
+    }
+    attempt(retries, delay);
+    return () => { stopped = true; if (currentUnsub) currentUnsub(); };
+  }
 
   async function resolveUserData(user) {
     let snap = await db.collection('users').doc(user.uid).get().catch(() => null);

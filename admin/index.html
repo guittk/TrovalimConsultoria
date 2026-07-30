@@ -195,11 +195,15 @@
 
     document.getElementById('userName').textContent = data.name || user.email;
 
-    unsub = db.collection('projects').orderBy('createdAt', 'desc').onSnapshot(s => {
-      showLoading(false);
-      allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      applyFilters();
-    }, () => showLoading(false));
+    unsub = listenWithRetry(
+      db.collection('projects').orderBy('createdAt', 'desc'),
+      s => {
+        showLoading(false);
+        allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
+        applyFilters();
+      },
+      { onFinalError: () => showLoading(false) }
+    );
   });
 
   /* ── FILTERS ── */
@@ -421,6 +425,27 @@
   }
   function isStaffRole(role) {
     return ['owner', 'manager'].includes(normRole(role));
+  }
+
+  // Logo após restaurar a sessão, o primeiro onSnapshot às vezes esbarra
+  // numa corrida do token de auth e volta "permission-denied" mesmo com
+  // as regras corretas. Como o Firestore não tenta de novo sozinho depois
+  // de um erro de permissão, tentamos de novo manualmente algumas vezes.
+  function listenWithRetry(query, onNext, opts = {}) {
+    const { retries = 3, delay = 700, onFinalError } = opts;
+    let currentUnsub = null, stopped = false;
+    function attempt(remaining, wait) {
+      currentUnsub = query.onSnapshot(onNext, err => {
+        if (stopped) return;
+        if (remaining > 0 && err.code === 'permission-denied') {
+          setTimeout(() => attempt(remaining - 1, wait * 1.5), wait);
+        } else if (onFinalError) {
+          onFinalError(err);
+        }
+      });
+    }
+    attempt(retries, delay);
+    return () => { stopped = true; if (currentUnsub) currentUnsub(); };
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

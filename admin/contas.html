@@ -129,15 +129,19 @@
       document.getElementById('pageSubtitle').textContent = 'Somente visualização — apenas o Owner pode criar, editar ou excluir contas.';
     }
 
-    unsub = db.collection('users').onSnapshot(s => {
-      showLoading(false);
-      allAccounts = s.docs.map(d => ({ uid: d.id, ...d.data() }))
-                          .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
-      renderAccounts();
-    }, e => {
-      showLoading(false);
-      showPageErr('Erro ao carregar contas: ' + (e.code || e.message));
-    });
+    unsub = listenWithRetry(
+      db.collection('users'),
+      s => {
+        showLoading(false);
+        allAccounts = s.docs.map(d => ({ uid: d.id, ...d.data() }))
+                            .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
+        renderAccounts();
+      },
+      { onFinalError: e => {
+        showLoading(false);
+        showPageErr('Erro ao carregar contas: ' + (e.code || e.message));
+      } }
+    );
   });
 
   function renderAccounts() {
@@ -299,6 +303,23 @@
   }
   function isStaffRole(role) {
     return ['owner', 'manager'].includes(normRole(role));
+  }
+
+  function listenWithRetry(query, onNext, opts = {}) {
+    const { retries = 3, delay = 700, onFinalError } = opts;
+    let currentUnsub = null, stopped = false;
+    function attempt(remaining, wait) {
+      currentUnsub = query.onSnapshot(onNext, err => {
+        if (stopped) return;
+        if (remaining > 0 && err.code === 'permission-denied') {
+          setTimeout(() => attempt(remaining - 1, wait * 1.5), wait);
+        } else if (onFinalError) {
+          onFinalError(err);
+        }
+      });
+    }
+    attempt(retries, delay);
+    return () => { stopped = true; if (currentUnsub) currentUnsub(); };
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

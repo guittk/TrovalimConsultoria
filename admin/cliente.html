@@ -152,7 +152,8 @@
   });
 
   function listenClient() {
-    unsubClient = db.collection('users').doc(cid).onSnapshot(snap => {
+    const ref = db.collection('users').doc(cid);
+    unsubClient = listenWithRetry(ref, snap => {
       if (!snap.exists) { location.href = 'clientes.html'; return; }
       showLoading(false);
       clientData = snap.data() || {};
@@ -165,14 +166,16 @@
       renderHeader();
       syncDadosUI();
       syncMarcaUI();
-    }, () => showLoading(false));
+    }, { onFinalError: () => showLoading(false) });
 
-    unsubProjects = db.collection('projects').where('ownerId', '==', cid).onSnapshot(s => {
-      renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, () => {
-      document.getElementById('clientProjects').innerHTML =
-        `<div class="empty-state-sub">Erro ao carregar projetos.</div>`;
-    });
+    unsubProjects = listenWithRetry(
+      db.collection('projects').where('ownerId', '==', cid),
+      s => renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() }))),
+      { onFinalError: () => {
+        document.getElementById('clientProjects').innerHTML =
+          `<div class="empty-state-sub">Erro ao carregar projetos.</div>`;
+      } }
+    );
   }
 
   function renderHeader() {
@@ -342,6 +345,23 @@
   }
   function isStaffRole(role) {
     return ['owner', 'manager'].includes(normRole(role));
+  }
+
+  function listenWithRetry(query, onNext, opts = {}) {
+    const { retries = 3, delay = 700, onFinalError } = opts;
+    let currentUnsub = null, stopped = false;
+    function attempt(remaining, wait) {
+      currentUnsub = query.onSnapshot(onNext, err => {
+        if (stopped) return;
+        if (remaining > 0 && err.code === 'permission-denied') {
+          setTimeout(() => attempt(remaining - 1, wait * 1.5), wait);
+        } else if (onFinalError) {
+          onFinalError(err);
+        }
+      });
+    }
+    attempt(retries, delay);
+    return () => { stopped = true; if (currentUnsub) currentUnsub(); };
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

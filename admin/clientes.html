@@ -67,13 +67,17 @@
 
     document.getElementById('userName').textContent = data.name || user.email;
 
-    unsubUsers = db.collection('users').onSnapshot(s => {
-      allClients = s.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => !isStaffRole(u.role));
-      showLoading(false);
-      applyFilters();
-    }, () => showLoading(false));
+    unsubUsers = listenWithRetry(
+      db.collection('users'),
+      s => {
+        allClients = s.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => !isStaffRole(u.role));
+        showLoading(false);
+        applyFilters();
+      },
+      { onFinalError: () => showLoading(false) }
+    );
 
-    unsubProjects = db.collection('projects').onSnapshot(s => {
+    unsubProjects = listenWithRetry(db.collection('projects'), s => {
       allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
       applyFilters();
     });
@@ -156,6 +160,23 @@
   }
   function isStaffRole(role) {
     return ['owner', 'manager'].includes(normRole(role));
+  }
+
+  function listenWithRetry(query, onNext, opts = {}) {
+    const { retries = 3, delay = 700, onFinalError } = opts;
+    let currentUnsub = null, stopped = false;
+    function attempt(remaining, wait) {
+      currentUnsub = query.onSnapshot(onNext, err => {
+        if (stopped) return;
+        if (remaining > 0 && err.code === 'permission-denied') {
+          setTimeout(() => attempt(remaining - 1, wait * 1.5), wait);
+        } else if (onFinalError) {
+          onFinalError(err);
+        }
+      });
+    }
+    attempt(retries, delay);
+    return () => { stopped = true; if (currentUnsub) currentUnsub(); };
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
