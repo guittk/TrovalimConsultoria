@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Projetos · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../portal/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <span class="pnav-section">Portal do Cliente</span>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Meus Projetos</h1>
+    <p class="page-subtitle">Acompanhe o andamento dos seus projetos em tempo real</p>
+  </div>
+
+  <div id="projectsGrid" class="cards-grid">
+    <!-- cards rendered via JS -->
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+  let unsub;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { window.location.href = '../login.html'; return; }
+
+    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    const userData = snap?.data() || {};
+
+    if (userData.role === 'admin') { window.location.href = '../admin/'; return; }
+
+    document.getElementById('userName').textContent = userData.name || user.email;
+
+    unsub = db.collection('projects')
+      .where('ownerId', '==', user.uid)
+      .onSnapshot(s => {
+        showLoading(false);
+        renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, () => showLoading(false));
+  });
+
+  function renderProjects(list) {
+    const grid = document.getElementById('projectsGrid');
+    if (!list.length) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-emoji">📂</div>
+          <div class="empty-state-text">Nenhum projeto encontrado</div>
+          <div class="empty-state-sub">Entre em contato para iniciar seu projeto.</div>
+        </div>`;
+      return;
+    }
+    const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
+    grid.innerHTML = list.map(p => {
+      const color = p.branding?.primaryColor || '#C9A96E';
+      return `
+        <a href="projeto.html?id=${p.id}" class="proj-card">
+          <div class="proj-card-brand">
+            ${p.branding?.logo
+              ? `<img src="${p.branding.logo}" class="proj-card-logo" alt="${esc(p.branding.companyName || '')}">`
+              : `<div class="proj-card-logo-ph">${ico}</div>`}
+            <div>
+              <div class="proj-card-company">${esc(p.branding?.companyName || p.clientName || '')}</div>
+              <div class="proj-card-name">${esc(p.name)}</div>
+            </div>
+          </div>
+          <div class="proj-card-status">${statusBadge(p.status)}</div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${p.progress||0}%;background:${color}"></div>
+            </div>
+            <div class="progress-label">${p.progress||0}% concluído</div>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  function statusBadge(s) {
+    const map = {
+      'em-andamento':       { l: 'Em Andamento',       bg: '#DBEAFE', c: '#1D4ED8' },
+      'aguardando-cliente': { l: 'Aguardando Cliente', bg: '#FEF3C7', c: '#B45309' },
+      'em-revisao':         { l: 'Em Revisão',         bg: '#EDE9FE', c: '#6D28D9' },
+      'concluido':          { l: 'Concluído',           bg: '#D1FAE5', c: '#065F46' },
+      'pausado':            { l: 'Pausado',             bg: '#F3F4F6', c: '#374151' },
+    };
+    const v = map[s] || { l: s || '—', bg: '#F3F4F6', c: '#374151' };
+    return `<span class="badge" style="background:${v.bg};color:${v.c}">${v.l}</span>`;
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showLoading(v) {
+    document.getElementById('loadingOverlay').classList.toggle('show', v);
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (unsub) unsub();
+    auth.signOut().then(() => window.location.href = '../login.html');
+  });
+</script>
+</body>
+</html>

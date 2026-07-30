@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeto · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../portal/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <span class="pnav-section">Portal do Cliente</span>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="../portal/">Meus Projetos</a>
+  <span class="breadcrumb-sep">›</span>
+  <span id="bcProject">Projeto</span>
+</div>
+
+<div class="page">
+
+  <!-- Project Header -->
+  <div class="proj-header" id="projHeader" style="display:none">
+    <div id="projLogoWrap"></div>
+    <div class="proj-header-info">
+      <div class="proj-header-company" id="projCompany"></div>
+      <div class="proj-header-name" id="projName"></div>
+      <div id="projBadge"></div>
+    </div>
+    <div style="margin-left:auto;text-align:right">
+      <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Progresso</div>
+      <div style="font-family:var(--serif);font-size:1.6rem;color:var(--wine);font-weight:600" id="projProgress">0%</div>
+    </div>
+  </div>
+
+  <!-- Two-column layout: Timeline | Messages + Files -->
+  <div class="two-col" id="mainContent" style="display:none">
+
+    <!-- LEFT: Timeline -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <span class="card-title-bar"></span>
+          Linha do Tempo
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="empty-state" style="padding:1.5rem 0">
+            <div class="empty-state-sub">Nenhuma etapa cadastrada.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Messages + Files -->
+    <div>
+
+      <!-- Messages -->
+      <div class="card">
+        <div class="card-title">
+          <span class="card-title-bar"></span>
+          Mensagens
+        </div>
+        <div class="messages-feed" id="msgFeed">
+          <div class="msg-empty">Nenhuma mensagem ainda.</div>
+        </div>
+        <div class="msg-form">
+          <input type="text" class="msg-input" id="msgInput" placeholder="Escreva uma mensagem…">
+          <button class="btn btn-primary btn-sm" id="msgSend">Enviar</button>
+        </div>
+      </div>
+
+      <!-- Files -->
+      <div class="card">
+        <div class="card-title">
+          <span class="card-title-bar"></span>
+          Arquivos
+        </div>
+
+        <div id="filesListWrap">
+          <div class="empty-state" style="padding:1.5rem 0">
+            <div class="empty-state-sub">Nenhum arquivo disponível.</div>
+          </div>
+        </div>
+
+        <!-- Client upload -->
+        <div class="file-upload-area" id="uploadArea">
+          <input type="file" id="fileInput" style="display:none" multiple>
+          <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="file-upload-text">Clique ou arraste arquivos aqui</div>
+          <div class="file-upload-sub">para enviar para a consultora</div>
+        </div>
+        <div style="margin-top:.75rem" id="uploadProgress"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="alertErr"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth    = firebase.auth();
+  const db      = firebase.firestore();
+  const storage = firebase.storage();
+
+  const pid = new URLSearchParams(location.search).get('id');
+  if (!pid) location.href = '../portal/';
+
+  let currentUser, currentUserData, unsubProject, unsubMsgs, unsubFiles;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '../login.html'; return; }
+
+    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    const data = snap?.data() || {};
+
+    if (data.role === 'admin') { location.href = '../admin/'; return; }
+
+    currentUser     = user;
+    currentUserData = data;
+    document.getElementById('userName').textContent = data.name || user.email;
+
+    listenProject();
+  });
+
+  function listenProject() {
+    const ref = db.collection('projects').doc(pid);
+    unsubProject = ref.onSnapshot(snap => {
+      if (!snap.exists) { location.href = '../portal/'; return; }
+      const p = snap.data();
+
+      if (p.ownerId !== currentUser.uid) { location.href = '../portal/'; return; }
+
+      showLoading(false);
+      renderHeader(p);
+      renderTimeline(p.steps || []);
+
+      document.getElementById('projHeader').style.display = 'flex';
+      document.getElementById('mainContent').style.display = 'grid';
+    }, () => showLoading(false));
+
+    listenMessages();
+    listenFiles();
+  }
+
+  /* ── HEADER ── */
+  function renderHeader(p) {
+    document.title = `${p.name} · Trovalim`;
+    document.getElementById('bcProject').textContent = p.name;
+
+    const logoWrap = document.getElementById('projLogoWrap');
+    if (p.branding?.logo) {
+      logoWrap.innerHTML = `<img src="${p.branding.logo}" class="proj-header-logo" alt="${esc(p.branding.companyName||'')}">`;
+    } else {
+      logoWrap.innerHTML = `<div class="proj-header-logo-ph"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>`;
+    }
+    document.getElementById('projCompany').textContent = p.branding?.companyName || p.clientName || '';
+    document.getElementById('projName').textContent    = p.name;
+    document.getElementById('projBadge').innerHTML     = statusBadge(p.status);
+    document.getElementById('projProgress').textContent = `${p.progress||0}%`;
+  }
+
+  /* ── TIMELINE ── */
+  function renderTimeline(steps) {
+    const el = document.getElementById('timeline');
+    if (!steps.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:1.5rem 0"><div class="empty-state-sub">Nenhuma etapa cadastrada.</div></div>`;
+      return;
+    }
+    el.innerHTML = steps.map(s => `
+      <div class="timeline-item">
+        <div class="timeline-dot ${s.done ? 'done' : 'pending'}"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">${esc(s.name)}</div>
+          ${s.date ? `<div class="timeline-date">${esc(s.date)}</div>` : ''}
+          <div class="timeline-tag ${s.done ? 'done' : 'pending'}">${s.done ? '✓ Concluído' : 'Pendente'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── MESSAGES ── */
+  function listenMessages() {
+    const ref = db.collection('projects').doc(pid).collection('messages').orderBy('date');
+    unsubMsgs = ref.onSnapshot(snap => {
+      const feed = document.getElementById('msgFeed');
+      if (snap.empty) {
+        feed.innerHTML = '<div class="msg-empty">Nenhuma mensagem ainda.</div>';
+        return;
+      }
+      feed.innerHTML = snap.docs.map(d => {
+        const m    = d.data();
+        const mine = m.authorRole !== 'admin';
+        const ts   = m.date?.toDate ? m.date.toDate() : new Date();
+        return `
+          <div class="msg ${mine ? 'msg-mine' : 'msg-theirs'}">
+            <div class="msg-author">${esc(m.author)}</div>
+            <div>${esc(m.text)}</div>
+            <div class="msg-date">${fmtDate(ts)}</div>
+          </div>`;
+      }).join('');
+      feed.scrollTop = feed.scrollHeight;
+    });
+  }
+
+  document.getElementById('msgSend').addEventListener('click', sendMsg);
+  document.getElementById('msgInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  });
+
+  async function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    try {
+      await db.collection('projects').doc(pid).collection('messages').add({
+        author:     currentUserData.name || currentUser.email,
+        authorRole: 'client',
+        text,
+        date:       firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch(e) { showErr('Erro ao enviar mensagem.'); }
+  }
+
+  /* ── FILES ── */
+  function listenFiles() {
+    const ref = db.collection('projects').doc(pid).collection('files').orderBy('uploadedAt', 'desc');
+    unsubFiles = ref.onSnapshot(snap => {
+      renderFiles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }
+
+  function renderFiles(files) {
+    const wrap = document.getElementById('filesListWrap');
+    if (!files.length) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:1.5rem 0"><div class="empty-state-sub">Nenhum arquivo disponível.</div></div>`;
+      return;
+    }
+
+    const ellen  = files.filter(f => f.uploadedByRole === 'admin');
+    const client = files.filter(f => f.uploadedByRole === 'client');
+
+    let html = '';
+    if (ellen.length) {
+      html += `<div class="file-group-label">Documentos da Consultora</div>`;
+      html += ellen.map(fileRow).join('');
+    }
+    if (client.length) {
+      html += `<div class="file-group-label">Meus Documentos</div>`;
+      html += client.map(fileRow).join('');
+    }
+    wrap.innerHTML = `<div style="border:1px solid var(--border)">${html}</div>`;
+  }
+
+  function fileRow(f) {
+    const ts = f.uploadedAt?.toDate ? f.uploadedAt.toDate() : new Date();
+    return `
+      <div class="file-item">
+        <div class="file-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="file-info">
+          <div class="file-name">${esc(f.name)}</div>
+          <div class="file-meta">${f.sizeKb ? f.sizeKb + ' KB · ' : ''}${fmtDate(ts)}</div>
+        </div>
+        <div class="file-actions">
+          ${f.downloadUrl
+            ? `<a href="${f.downloadUrl}" target="_blank" class="btn btn-outline btn-sm">Baixar</a>`
+            : ''}
+        </div>
+      </div>`;
+  }
+
+  /* ── UPLOAD ── */
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput  = document.getElementById('fileInput');
+
+  uploadArea.addEventListener('click', () => fileInput.click());
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    uploadFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', () => uploadFiles(fileInput.files));
+
+  async function uploadFiles(fileList) {
+    const progWrap = document.getElementById('uploadProgress');
+    for (const file of fileList) {
+      const path = `projects/${pid}/client/${Date.now()}_${file.name}`;
+      const ref  = storage.ref(path);
+      progWrap.innerHTML = `<div style="font-size:.78rem;color:var(--muted)">Enviando ${esc(file.name)}…</div>`;
+      try {
+        const snap        = await ref.put(file);
+        const downloadUrl = await snap.ref.getDownloadURL();
+        await db.collection('projects').doc(pid).collection('files').add({
+          name:           file.name,
+          path,
+          downloadUrl,
+          sizeKb:         Math.round(file.size / 1024),
+          uploadedAt:     firebase.firestore.FieldValue.serverTimestamp(),
+          uploadedByRole: 'client',
+          uploadedByName: currentUserData.name || currentUser.email,
+        });
+        progWrap.innerHTML = `<div style="font-size:.78rem;color:#065F46">${esc(file.name)} enviado com sucesso.</div>`;
+      } catch(e) {
+        progWrap.innerHTML = `<div style="font-size:.78rem;color:#DC2626">Erro ao enviar ${esc(file.name)}.</div>`;
+      }
+    }
+    fileInput.value = '';
+    setTimeout(() => { progWrap.innerHTML = ''; }, 4000);
+  }
+
+  /* ── HELPERS ── */
+  function statusBadge(s) {
+    const map = {
+      'em-andamento':       { l: 'Em Andamento',       bg: '#DBEAFE', c: '#1D4ED8' },
+      'aguardando-cliente': { l: 'Aguardando Cliente', bg: '#FEF3C7', c: '#B45309' },
+      'em-revisao':         { l: 'Em Revisão',         bg: '#EDE9FE', c: '#6D28D9' },
+      'concluido':          { l: 'Concluído',           bg: '#D1FAE5', c: '#065F46' },
+      'pausado':            { l: 'Pausado',             bg: '#F3F4F6', c: '#374151' },
+    };
+    const v = map[s] || { l: s || '—', bg: '#F3F4F6', c: '#374151' };
+    return `<span class="badge" style="background:${v.bg};color:${v.c}">${v.l}</span>`;
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function esc(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+  function showErr(msg) {
+    const el = document.getElementById('alertErr');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 5000);
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    [unsubProject, unsubMsgs, unsubFiles].forEach(u => u && u());
+    auth.signOut().then(() => location.href = '../login.html');
+  });
+</script>
+</body>
+</html>

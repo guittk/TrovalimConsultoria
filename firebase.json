@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "site": "trovalim",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".github",
+      ".git",
+      "**/.*"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+  }
+}

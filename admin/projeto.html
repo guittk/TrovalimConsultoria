@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar Projeto · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../admin/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <span class="pnav-section">Área Admin</span>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="../admin/">Projetos</a>
+  <span class="breadcrumb-sep">›</span>
+  <span id="bcProject">Editar Projeto</span>
+</div>
+
+<div class="page">
+
+  <!-- Project header (read-only) -->
+  <div class="proj-header" id="projHeader" style="display:none">
+    <div id="projLogoWrap"></div>
+    <div class="proj-header-info">
+      <div class="proj-header-company" id="projCompany"></div>
+      <div class="proj-header-name" id="projName"></div>
+      <div id="projBadge"></div>
+    </div>
+  </div>
+
+  <!-- 5 Tabs -->
+  <div class="card" style="padding:0 2rem 2rem" id="tabsCard" style="display:none">
+    <div class="tabs" id="tabBar">
+      <button class="tab active" data-tab="geral">Visão Geral</button>
+      <button class="tab" data-tab="timeline">Linha do Tempo</button>
+      <button class="tab" data-tab="arquivos">Arquivos</button>
+      <button class="tab" data-tab="mensagens">Mensagens</button>
+      <button class="tab" data-tab="marca">Marca do Cliente</button>
+    </div>
+
+    <!-- ═══════ TAB 1 — Visão Geral ═══════ -->
+    <div class="tab-panel active" id="tab-geral">
+      <div class="alert alert-success" id="geralOk">Salvo com sucesso.</div>
+      <div class="alert alert-error"   id="geralErr"></div>
+
+      <div class="form-group">
+        <label class="form-label">Status do Projeto</label>
+        <select class="form-select" id="g-status" style="max-width:320px">
+          <option value="em-andamento">Em Andamento</option>
+          <option value="aguardando-cliente">Aguardando Cliente</option>
+          <option value="em-revisao">Em Revisão</option>
+          <option value="concluido">Concluído</option>
+          <option value="pausado">Pausado</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Progresso — <span id="progressLabel">0</span>%</label>
+        <div class="progress-edit-row">
+          <input type="range" class="progress-slider" id="g-progress" min="0" max="100" value="0">
+          <input type="number" class="progress-number" id="g-progress-num" min="0" max="100" value="0">
+          <span style="font-size:.82rem;color:var(--muted)">%</span>
+        </div>
+        <div style="margin-top:.85rem">
+          <div class="progress-bar" style="height:8px">
+            <div class="progress-fill" id="progressPreview" style="width:0%;background:var(--gold)"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="saveGeral">Salvar Alterações</button>
+    </div>
+
+    <!-- ═══════ TAB 2 — Linha do Tempo ═══════ -->
+    <div class="tab-panel" id="tab-timeline">
+      <div class="alert alert-success" id="timelineOk">Etapas salvas.</div>
+      <div class="alert alert-error"   id="timelineErr"></div>
+
+      <div id="stepsEditor"></div>
+
+      <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" id="addStepBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar Etapa
+        </button>
+        <button class="btn btn-primary btn-sm" id="saveTimeline">Salvar Etapas</button>
+      </div>
+    </div>
+
+    <!-- ═══════ TAB 3 — Arquivos ═══════ -->
+    <div class="tab-panel" id="tab-arquivos">
+      <div class="alert alert-error" id="filesErr"></div>
+
+      <div id="filesListAdmin">
+        <div class="empty-state"><div class="empty-state-sub">Carregando arquivos…</div></div>
+      </div>
+
+      <div class="file-upload-area" id="adminUploadArea" style="margin-top:1.25rem">
+        <input type="file" id="adminFileInput" style="display:none" multiple>
+        <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="file-upload-text">Clique ou arraste arquivos para enviar ao cliente</div>
+        <div class="file-upload-sub">PDF, DOCX, XLSX, imagens — sem limite de tamanho</div>
+      </div>
+      <div id="adminUploadProgress" style="margin-top:.65rem"></div>
+    </div>
+
+    <!-- ═══════ TAB 4 — Mensagens ═══════ -->
+    <div class="tab-panel" id="tab-mensagens">
+      <div class="messages-feed" id="adminMsgFeed">
+        <div class="msg-empty">Nenhuma mensagem ainda.</div>
+      </div>
+      <div class="msg-form">
+        <input type="text" class="msg-input" id="adminMsgInput" placeholder="Escreva uma mensagem para o cliente…">
+        <button class="btn btn-primary btn-sm" id="adminMsgSend">Enviar</button>
+      </div>
+    </div>
+
+    <!-- ═══════ TAB 5 — Marca do Cliente ═══════ -->
+    <div class="tab-panel" id="tab-marca">
+      <div class="alert alert-success" id="marcaOk">Identidade visual salva.</div>
+      <div class="alert alert-error"   id="marcaErr"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome da Empresa</label>
+          <input type="text" class="form-input" id="b-company" placeholder="Ex: Empresa Ltda">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cor Primária</label>
+          <div class="color-row">
+            <input type="color" id="b-color" value="#C9A96E" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none">
+            <input type="text" class="form-input" id="b-color-hex" value="#C9A96E" maxlength="7" style="flex:1">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Logo da Empresa</label>
+        <div class="logo-preview-wrap" id="logoPreviewWrap">
+          <span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>
+        </div>
+        <input type="file" id="b-logo" accept="image/*" style="display:none">
+        <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" id="logoPickBtn">Escolher Logo</button>
+          <button class="btn btn-danger-ghost btn-sm" id="logoRemoveBtn" style="display:none">Remover Logo</button>
+        </div>
+        <div class="form-help">Recomendado: PNG ou SVG com fundo transparente.</div>
+      </div>
+
+      <button class="btn btn-primary" id="saveMarca" style="margin-top:.5rem">Salvar Identidade Visual</button>
+    </div>
+
+  </div><!-- /card -->
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth    = firebase.auth();
+  const db      = firebase.firestore();
+  const storage = firebase.storage();
+
+  const pid = new URLSearchParams(location.search).get('id');
+  if (!pid) location.href = '../admin/';
+
+  let currentAdmin, projectData, stepsData = [];
+  let unsubProject, unsubMsgs, unsubFiles;
+  let pendingLogoFile = null, logoRemoved = false;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '../login.html'; return; }
+
+    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    const data = snap?.data() || {};
+
+    if (data.role !== 'admin') { location.href = '../portal/'; return; }
+
+    currentAdmin = { uid: user.uid, name: data.name || user.email, email: user.email };
+    document.getElementById('userName').textContent = data.name || user.email;
+
+    listenProject();
+  });
+
+  /* ══════════════════════════════════════════
+     PROJECT LISTENER
+  ══════════════════════════════════════════ */
+  function listenProject() {
+    unsubProject = db.collection('projects').doc(pid).onSnapshot(snap => {
+      if (!snap.exists) { location.href = '../admin/'; return; }
+      showLoading(false);
+      projectData = snap.data();
+      stepsData   = (projectData.steps || []).map(s => ({ ...s }));
+
+      document.title = `${projectData.name} · Admin · Trovalim`;
+      document.getElementById('bcProject').textContent = projectData.name;
+      document.getElementById('projHeader').style.display = 'flex';
+      document.getElementById('tabsCard').style.display   = 'block';
+
+      renderHeader();
+      syncGeralUI();
+      renderStepsEditor();
+      syncBrandingUI();
+    }, () => showLoading(false));
+
+    listenMessages();
+    listenFiles();
+  }
+
+  /* ══════════════════════════════════════════
+     HEADER
+  ══════════════════════════════════════════ */
+  function renderHeader() {
+    const p = projectData;
+    const wrap = document.getElementById('projLogoWrap');
+    if (p.branding?.logo) {
+      wrap.innerHTML = `<img src="${p.branding.logo}" class="proj-header-logo" alt="">`;
+    } else {
+      wrap.innerHTML = `<div class="proj-header-logo-ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>`;
+    }
+    document.getElementById('projCompany').textContent = p.branding?.companyName || p.clientName || '';
+    document.getElementById('projName').textContent    = p.name;
+    document.getElementById('projBadge').innerHTML     = statusBadge(p.status);
+  }
+
+  /* ══════════════════════════════════════════
+     TABS
+  ══════════════════════════════════════════ */
+  document.getElementById('tabBar').addEventListener('click', e => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+
+  /* ══════════════════════════════════════════
+     TAB 1 — VISÃO GERAL
+  ══════════════════════════════════════════ */
+  function syncGeralUI() {
+    const p = projectData;
+    document.getElementById('g-status').value      = p.status || 'em-andamento';
+    document.getElementById('g-progress').value    = p.progress || 0;
+    document.getElementById('g-progress-num').value = p.progress || 0;
+    updateProgressUI(p.progress || 0, p.branding?.primaryColor);
+  }
+
+  function updateProgressUI(val, color) {
+    val = Math.min(100, Math.max(0, Number(val) || 0));
+    document.getElementById('progressLabel').textContent = val;
+    const bar = document.getElementById('progressPreview');
+    bar.style.width      = val + '%';
+    bar.style.background = color || projectData?.branding?.primaryColor || '#C9A96E';
+  }
+
+  document.getElementById('g-progress').addEventListener('input', e => {
+    const v = e.target.value;
+    document.getElementById('g-progress-num').value = v;
+    updateProgressUI(v);
+  });
+  document.getElementById('g-progress-num').addEventListener('input', e => {
+    let v = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+    e.target.value = v;
+    document.getElementById('g-progress').value = v;
+    updateProgressUI(v);
+  });
+
+  document.getElementById('saveGeral').addEventListener('click', async () => {
+    hideAlert('geralOk'); hideAlert('geralErr');
+    const btn = document.getElementById('saveGeral');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      await db.collection('projects').doc(pid).update({
+        status:   document.getElementById('g-status').value,
+        progress: Number(document.getElementById('g-progress').value),
+      });
+      showAlert('geralOk');
+    } catch(e) { showAlert('geralErr', 'Erro ao salvar. Tente novamente.'); }
+    btn.disabled = false; btn.textContent = 'Salvar Alterações';
+  });
+
+  /* ══════════════════════════════════════════
+     TAB 2 — LINHA DO TEMPO
+  ══════════════════════════════════════════ */
+  function renderStepsEditor() {
+    const wrap = document.getElementById('stepsEditor');
+    if (!stepsData.length) {
+      wrap.innerHTML = `<div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma etapa. Clique em "Adicionar Etapa".</div>`;
+      return;
+    }
+    wrap.innerHTML = stepsData.map((s, i) => `
+      <div class="step-item" data-idx="${i}">
+        <input type="checkbox" class="step-check" ${s.done ? 'checked' : ''} onchange="toggleDone(${i}, this.checked)">
+        <div class="step-inputs">
+          <input type="text" class="step-name-input" value="${esc(s.name||'')}" placeholder="Nome da etapa" oninput="updateStep(${i}, 'name', this.value)">
+          <input type="text" class="step-date-input" value="${esc(s.date||'')}" placeholder="Data (ex: Jan 2025)" oninput="updateStep(${i}, 'date', this.value)">
+        </div>
+        <div class="step-btns">
+          <button class="btn-icon" title="Mover para cima" onclick="moveStep(${i}, -1)">↑</button>
+          <button class="btn-icon" title="Mover para baixo" onclick="moveStep(${i}, 1)">↓</button>
+          <button class="btn-icon danger" title="Remover" onclick="removeStep(${i})">✕</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function toggleDone(i, v)         { stepsData[i].done = v; }
+  function updateStep(i, field, v)  { stepsData[i][field] = v; }
+
+  function moveStep(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= stepsData.length) return;
+    [stepsData[i], stepsData[j]] = [stepsData[j], stepsData[i]];
+    renderStepsEditor();
+  }
+
+  function removeStep(i) {
+    stepsData.splice(i, 1);
+    renderStepsEditor();
+  }
+
+  document.getElementById('addStepBtn').addEventListener('click', () => {
+    stepsData.push({ name: '', date: '', done: false });
+    renderStepsEditor();
+    // focus last input
+    const inputs = document.querySelectorAll('.step-name-input');
+    inputs[inputs.length - 1]?.focus();
+  });
+
+  document.getElementById('saveTimeline').addEventListener('click', async () => {
+    hideAlert('timelineOk'); hideAlert('timelineErr');
+    const btn = document.getElementById('saveTimeline');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      await db.collection('projects').doc(pid).update({ steps: stepsData });
+      showAlert('timelineOk');
+    } catch(e) { showAlert('timelineErr', 'Erro ao salvar etapas.'); }
+    btn.disabled = false; btn.textContent = 'Salvar Etapas';
+  });
+
+  /* ══════════════════════════════════════════
+     TAB 3 — ARQUIVOS
+  ══════════════════════════════════════════ */
+  function listenFiles() {
+    const ref = db.collection('projects').doc(pid).collection('files').orderBy('uploadedAt', 'desc');
+    unsubFiles = ref.onSnapshot(snap => {
+      renderFilesAdmin(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }
+
+  function renderFilesAdmin(files) {
+    const wrap = document.getElementById('filesListAdmin');
+    if (!files.length) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:1.5rem 0"><div class="empty-state-sub">Nenhum arquivo ainda.</div></div>`;
+      return;
+    }
+    const ellen  = files.filter(f => f.uploadedByRole === 'admin');
+    const client = files.filter(f => f.uploadedByRole === 'client');
+    let html = '';
+    if (ellen.length)  { html += `<div class="file-group-label">Documentos da Consultora</div>` + ellen.map(adminFileRow).join(''); }
+    if (client.length) { html += `<div class="file-group-label">Documentos do Cliente</div>`     + client.map(adminFileRow).join(''); }
+    wrap.innerHTML = `<div style="border:1px solid var(--border)">${html}</div>`;
+  }
+
+  function adminFileRow(f) {
+    const ts = f.uploadedAt?.toDate ? f.uploadedAt.toDate() : new Date();
+    return `
+      <div class="file-item">
+        <div class="file-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="file-info">
+          <div class="file-name">${esc(f.name)}</div>
+          <div class="file-meta">${f.sizeKb ? f.sizeKb + ' KB · ' : ''}${fmtDate(ts)} · ${f.uploadedByName || '—'}</div>
+        </div>
+        <div class="file-actions">
+          ${f.downloadUrl ? `<a href="${f.downloadUrl}" target="_blank" class="btn btn-outline btn-sm">Baixar</a>` : ''}
+          <button class="btn btn-danger-ghost btn-sm" onclick="deleteFile('${f.id}', '${f.path||''}')">Excluir</button>
+        </div>
+      </div>`;
+  }
+
+  async function deleteFile(fid, path) {
+    if (!confirm('Excluir este arquivo permanentemente?')) return;
+    try {
+      await db.collection('projects').doc(pid).collection('files').doc(fid).delete();
+      if (path) await storage.ref(path).delete().catch(() => {});
+    } catch(e) { showAlert('filesErr', 'Erro ao excluir o arquivo.'); }
+  }
+
+  /* Admin file upload */
+  const adminUploadArea  = document.getElementById('adminUploadArea');
+  const adminFileInput   = document.getElementById('adminFileInput');
+
+  adminUploadArea.addEventListener('click', () => adminFileInput.click());
+  adminUploadArea.addEventListener('dragover', e => { e.preventDefault(); adminUploadArea.classList.add('dragover'); });
+  adminUploadArea.addEventListener('dragleave', () => adminUploadArea.classList.remove('dragover'));
+  adminUploadArea.addEventListener('drop', e => { e.preventDefault(); adminUploadArea.classList.remove('dragover'); uploadAdminFiles(e.dataTransfer.files); });
+  adminFileInput.addEventListener('change', () => uploadAdminFiles(adminFileInput.files));
+
+  async function uploadAdminFiles(fileList) {
+    const prog = document.getElementById('adminUploadProgress');
+    for (const file of fileList) {
+      const path = `projects/${pid}/admin/${Date.now()}_${file.name}`;
+      prog.innerHTML = `<div style="font-size:.78rem;color:var(--muted)">Enviando ${esc(file.name)}…</div>`;
+      try {
+        const snap        = await storage.ref(path).put(file);
+        const downloadUrl = await snap.ref.getDownloadURL();
+        await db.collection('projects').doc(pid).collection('files').add({
+          name: file.name, path, downloadUrl,
+          sizeKb:         Math.round(file.size / 1024),
+          uploadedAt:     firebase.firestore.FieldValue.serverTimestamp(),
+          uploadedByRole: 'admin',
+          uploadedByName: currentAdmin.name,
+        });
+        prog.innerHTML = `<div style="font-size:.78rem;color:#065F46">${esc(file.name)} enviado.</div>`;
+      } catch(e) {
+        prog.innerHTML = `<div style="font-size:.78rem;color:#DC2626">Erro ao enviar ${esc(file.name)}.</div>`;
+      }
+    }
+    adminFileInput.value = '';
+    setTimeout(() => { prog.innerHTML = ''; }, 4000);
+  }
+
+  /* ══════════════════════════════════════════
+     TAB 4 — MENSAGENS
+  ══════════════════════════════════════════ */
+  function listenMessages() {
+    const ref = db.collection('projects').doc(pid).collection('messages').orderBy('date');
+    unsubMsgs = ref.onSnapshot(snap => {
+      const feed = document.getElementById('adminMsgFeed');
+      if (snap.empty) { feed.innerHTML = '<div class="msg-empty">Nenhuma mensagem ainda.</div>'; return; }
+      feed.innerHTML = snap.docs.map(d => {
+        const m    = d.data();
+        const mine = m.authorRole === 'admin';
+        const ts   = m.date?.toDate ? m.date.toDate() : new Date();
+        return `
+          <div class="msg ${mine ? 'msg-mine' : 'msg-theirs'}">
+            <div class="msg-author">${esc(m.author)}</div>
+            <div>${esc(m.text)}</div>
+            <div class="msg-date">${fmtDate(ts)}</div>
+          </div>`;
+      }).join('');
+      feed.scrollTop = feed.scrollHeight;
+    });
+  }
+
+  document.getElementById('adminMsgSend').addEventListener('click', sendAdminMsg);
+  document.getElementById('adminMsgInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMsg(); }
+  });
+
+  async function sendAdminMsg() {
+    const input = document.getElementById('adminMsgInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    try {
+      await db.collection('projects').doc(pid).collection('messages').add({
+        author:     currentAdmin.name,
+        authorRole: 'admin',
+        text,
+        date:       firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch(e) { alert('Erro ao enviar mensagem.'); }
+  }
+
+  /* ══════════════════════════════════════════
+     TAB 5 — MARCA DO CLIENTE
+  ══════════════════════════════════════════ */
+  function syncBrandingUI() {
+    const b = projectData.branding || {};
+    document.getElementById('b-company').value   = b.companyName || '';
+    document.getElementById('b-color').value     = b.primaryColor || '#C9A96E';
+    document.getElementById('b-color-hex').value = b.primaryColor || '#C9A96E';
+
+    const pw = document.getElementById('logoPreviewWrap');
+    if (b.logo) {
+      pw.innerHTML = `<img src="${b.logo}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      document.getElementById('logoRemoveBtn').style.display = 'inline-flex';
+    } else {
+      pw.innerHTML = `<span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>`;
+      document.getElementById('logoRemoveBtn').style.display = 'none';
+    }
+  }
+
+  document.getElementById('b-color').addEventListener('input', e => {
+    document.getElementById('b-color-hex').value = e.target.value;
+    updateProgressUI(document.getElementById('g-progress').value, e.target.value);
+  });
+  document.getElementById('b-color-hex').addEventListener('input', e => {
+    const v = e.target.value;
+    if (/^#[0-9A-Fa-f]{6}$/.test(v)) document.getElementById('b-color').value = v;
+  });
+
+  document.getElementById('logoPickBtn').addEventListener('click', () => document.getElementById('b-logo').click());
+  document.getElementById('b-logo').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingLogoFile = file;
+    logoRemoved = false;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('logoPreviewWrap').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      document.getElementById('logoRemoveBtn').style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('logoRemoveBtn').addEventListener('click', () => {
+    pendingLogoFile = null;
+    logoRemoved = true;
+    document.getElementById('logoPreviewWrap').innerHTML = `<span style="font-size:.72rem;color:var(--muted);opacity:.6">Sem logo</span>`;
+    document.getElementById('logoRemoveBtn').style.display = 'none';
+    document.getElementById('b-logo').value = '';
+  });
+
+  document.getElementById('saveMarca').addEventListener('click', async () => {
+    hideAlert('marcaOk'); hideAlert('marcaErr');
+    const btn = document.getElementById('saveMarca');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+
+    try {
+      let logoUrl = logoRemoved ? null : (projectData.branding?.logo || null);
+
+      if (pendingLogoFile) {
+        const path = `projects/${pid}/branding/logo_${Date.now()}`;
+        const snap = await storage.ref(path).put(pendingLogoFile);
+        logoUrl = await snap.ref.getDownloadURL();
+        pendingLogoFile = null;
+      }
+
+      const branding = {
+        companyName:  document.getElementById('b-company').value.trim(),
+        primaryColor: document.getElementById('b-color').value,
+        logo:         logoUrl,
+      };
+
+      await db.collection('projects').doc(pid).update({ branding });
+      showAlert('marcaOk');
+    } catch(e) { showAlert('marcaErr', 'Erro ao salvar a identidade visual.'); }
+
+    btn.disabled = false; btn.textContent = 'Salvar Identidade Visual';
+  });
+
+  /* ══════════════════════════════════════════
+     HELPERS
+  ══════════════════════════════════════════ */
+  function statusBadge(s) {
+    const map = {
+      'em-andamento':       { l: 'Em Andamento',       bg: '#DBEAFE', c: '#1D4ED8' },
+      'aguardando-cliente': { l: 'Aguardando Cliente', bg: '#FEF3C7', c: '#B45309' },
+      'em-revisao':         { l: 'Em Revisão',         bg: '#EDE9FE', c: '#6D28D9' },
+      'concluido':          { l: 'Concluído',           bg: '#D1FAE5', c: '#065F46' },
+      'pausado':            { l: 'Pausado',             bg: '#F3F4F6', c: '#374151' },
+    };
+    const v = map[s] || { l: s||'—', bg: '#F3F4F6', c: '#374151' };
+    return `<span class="badge" style="background:${v.bg};color:${v.c}">${v.l}</span>`;
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function esc(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showAlert(id, msg) {
+    const el = document.getElementById(id);
+    if (msg) el.textContent = msg;
+    el.classList.add('show');
+    if (id.endsWith('Ok')) setTimeout(() => el.classList.remove('show'), 3000);
+  }
+  function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
+
+  function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    [unsubProject, unsubMsgs, unsubFiles].forEach(u => u && u());
+    auth.signOut().then(() => location.href = '../login.html');
+  });
+</script>
+</body>
+</html>

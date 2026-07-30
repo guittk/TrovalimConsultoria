@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin · Trovalim</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../platform.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<nav class="pnav">
+  <div class="pnav-left">
+    <a href="../admin/" class="pnav-logo">
+      <img src="../logo_gt.png" alt="Trovalim">
+      <span class="pnav-logo-text">Trovalim</span>
+    </a>
+    <div class="pnav-sep"></div>
+    <span class="pnav-section">Área Admin</span>
+  </div>
+  <div class="pnav-user">
+    <span class="pnav-name" id="userName"></span>
+    <button class="btn-logout" id="logoutBtn">Sair</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <h1 class="page-title">Projetos</h1>
+      <p class="page-subtitle">Central de clientes e projetos — atualização em tempo real</p>
+    </div>
+    <button class="btn btn-primary" id="newProjectBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Novo Projeto
+    </button>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="text" class="toolbar-search" id="searchInput" placeholder="Buscar por projeto ou cliente…">
+    <select class="toolbar-select" id="statusFilter">
+      <option value="">Todos os status</option>
+      <option value="em-andamento">Em Andamento</option>
+      <option value="aguardando-cliente">Aguardando Cliente</option>
+      <option value="em-revisao">Em Revisão</option>
+      <option value="concluido">Concluído</option>
+      <option value="pausado">Pausado</option>
+    </select>
+  </div>
+
+  <div class="card" style="padding:0">
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Projeto</th>
+            <th>Status</th>
+            <th style="width:130px">Progresso</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody id="projectsBody">
+          <tr><td colspan="5"><div class="empty-state"><div class="empty-state-sub">Carregando…</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal-backdrop" id="newProjectModal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-title">Novo Projeto</div>
+
+    <div class="alert alert-error" id="modalErr"></div>
+
+    <div class="form-group">
+      <label class="form-label">Nome do Projeto *</label>
+      <input type="text" class="form-input" id="np-name" placeholder="Ex: Consultoria de Carreira Q3">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome do Cliente *</label>
+      <input type="text" class="form-input" id="np-client" placeholder="Ex: João Silva">
+    </div>
+    <div class="form-group">
+      <label class="form-label">UID Firebase do Cliente *</label>
+      <input type="text" class="form-input" id="np-uid" placeholder="UID gerado pela Cloud Function createClientUser">
+      <div class="form-help">Obtido após criar o usuário via a Cloud Function <code>createClientUser</code>.</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="modalCancel">Cancelar</button>
+      <button class="btn btn-primary" id="modalSave">Criar Projeto</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+  let allProjects = [], unsub;
+
+  showLoading(true);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '../login.html'; return; }
+
+    const snap = await db.collection('users').doc(user.uid).get().catch(() => null);
+    const data = snap?.data() || {};
+
+    if (data.role !== 'admin') { location.href = '../portal/'; return; }
+
+    document.getElementById('userName').textContent = data.name || user.email;
+
+    unsub = db.collection('projects').orderBy('name').onSnapshot(s => {
+      showLoading(false);
+      allProjects = s.docs.map(d => ({ id: d.id, ...d.data() }));
+      applyFilters();
+    }, () => showLoading(false));
+  });
+
+  /* ── FILTERS ── */
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+  document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+  function applyFilters() {
+    const q  = document.getElementById('searchInput').value.trim().toLowerCase();
+    const st = document.getElementById('statusFilter').value;
+    let list = allProjects;
+    if (q)  list = list.filter(p => p.name?.toLowerCase().includes(q) || p.clientName?.toLowerCase().includes(q) || p.branding?.companyName?.toLowerCase().includes(q));
+    if (st) list = list.filter(p => p.status === st);
+    renderTable(list);
+  }
+
+  function renderTable(list) {
+    const tbody = document.getElementById('projectsBody');
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(p => `
+      <tr>
+        <td style="font-size:.85rem;color:var(--muted)">${esc(p.branding?.companyName || p.clientName || '—')}</td>
+        <td style="font-weight:500">${esc(p.name)}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="progress-bar" style="flex:1">
+              <div class="progress-fill" style="width:${p.progress||0}%;background:${p.branding?.primaryColor||'var(--gold)'}"></div>
+            </div>
+            <span style="font-size:.72rem;color:var(--muted);flex-shrink:0">${p.progress||0}%</span>
+          </div>
+        </td>
+        <td><a href="projeto.html?id=${p.id}" class="link-btn">Gerenciar →</a></td>
+      </tr>`).join('');
+  }
+
+  /* ── NEW PROJECT MODAL ── */
+  document.getElementById('newProjectBtn').addEventListener('click', () => openModal());
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+  function openModal() {
+    document.getElementById('np-name').value   = '';
+    document.getElementById('np-client').value = '';
+    document.getElementById('np-uid').value    = '';
+    hideModalErr();
+    document.getElementById('newProjectModal').classList.add('show');
+    document.getElementById('np-name').focus();
+  }
+  function closeModal() {
+    document.getElementById('newProjectModal').classList.remove('show');
+  }
+
+  document.getElementById('newProjectModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('newProjectModal')) closeModal();
+  });
+
+  document.getElementById('modalSave').addEventListener('click', async () => {
+    const name      = document.getElementById('np-name').value.trim();
+    const clientName = document.getElementById('np-client').value.trim();
+    const ownerId   = document.getElementById('np-uid').value.trim();
+
+    if (!name || !clientName || !ownerId) {
+      showModalErr('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    const btn = document.getElementById('modalSave');
+    btn.disabled = true;
+    btn.textContent = 'Criando…';
+
+    try {
+      const ref = await db.collection('projects').add({
+        name,
+        clientName,
+        ownerId,
+        status:   'em-andamento',
+        progress: 0,
+        steps:    [],
+        branding: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      closeModal();
+      location.href = `projeto.html?id=${ref.id}`;
+    } catch(e) {
+      showModalErr('Erro ao criar projeto. Verifique o UID e tente novamente.');
+      btn.disabled    = false;
+      btn.textContent = 'Criar Projeto';
+    }
+  });
+
+  function showModalErr(msg) {
+    const el = document.getElementById('modalErr');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function hideModalErr() { document.getElementById('modalErr').classList.remove('show'); }
+
+  /* ── HELPERS ── */
+  function statusBadge(s) {
+    const map = {
+      'em-andamento':       { l: 'Em Andamento',       bg: '#DBEAFE', c: '#1D4ED8' },
+      'aguardando-cliente': { l: 'Aguardando Cliente', bg: '#FEF3C7', c: '#B45309' },
+      'em-revisao':         { l: 'Em Revisão',         bg: '#EDE9FE', c: '#6D28D9' },
+      'concluido':          { l: 'Concluído',           bg: '#D1FAE5', c: '#065F46' },
+      'pausado':            { l: 'Pausado',             bg: '#F3F4F6', c: '#374151' },
+    };
+    const v = map[s] || { l: s||'—', bg: '#F3F4F6', c: '#374151' };
+    return `<span class="badge" style="background:${v.bg};color:${v.c}">${v.l}</span>`;
+  }
+
+  function esc(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (unsub) unsub();
+    auth.signOut().then(() => location.href = '../login.html');
+  });
+</script>
+</body>
+</html>
