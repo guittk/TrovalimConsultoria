@@ -80,7 +80,7 @@
             <label class="form-label">Progresso — <span>{{ progress() }}</span>%</label>
             <div class="progress-edit-row">
               <input type="range" class="progress-slider" min="0" max="100" step="5"
-                [style.accent-color]="ownerAccount()?.branding?.primaryColor || '#C9A96E'"
+                [style.background]="sliderBackground()"
                 [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
               <span style="font-size:.82rem;color:var(--muted);width:2.5rem;text-align:right">{{ progress() }}%</span>
             </div>
@@ -189,16 +189,7 @@
 
           @if (uploadErr()) { <div class="alert alert-error show" style="margin-top:1.25rem">{{ uploadErr() }}</div> }
 
-          <div class="form-group" style="max-width:260px;margin-top:1.25rem">
-            <label class="form-label">Categoria do próximo envio</label>
-            <select class="form-select" [ngModel]="uploadCategory()" (ngModelChange)="uploadCategory.set($event)">
-              @for (c of fileCategories; track c.key) {
-                <option [value]="c.key">{{ c.label }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="file-upload-area" (click)="adminFileInput.click()">
+          <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
             <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
             <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar ao cliente' }}</div>

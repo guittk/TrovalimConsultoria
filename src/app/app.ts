@@ -1,13 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  NavigationCancel,
-  NavigationEnd,
-  NavigationError,
-  NavigationStart,
-  Router,
-  RouterOutlet,
-} from '@angular/router';
+import { NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog.component';
 
 @Component({
@@ -22,15 +15,14 @@ export class App {
   readonly navigating = signal(false);
 
   constructor() {
+    // NavigationStart liga o overlay; qualquer outro evento do Router (End,
+    // Cancel, Error, ou Skipped — este último dispara quando se navega pra
+    // uma URL igual à atual, ex: clicar num link já ativo) desliga. Faltava
+    // tratar Skipped: o overlay (z-index acima de tudo) ficava travado
+    // ligado depois de uma navegação "pulada", bloqueando qualquer clique
+    // na página até a próxima navegação completa de verdade.
     this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
-      if (event instanceof NavigationStart) this.navigating.set(true);
-      else if (
-        event instanceof NavigationEnd ||
-        event instanceof NavigationCancel ||
-        event instanceof NavigationError
-      ) {
-        this.navigating.set(false);
-      }
+      this.navigating.set(event instanceof NavigationStart);
     });
   }
 }

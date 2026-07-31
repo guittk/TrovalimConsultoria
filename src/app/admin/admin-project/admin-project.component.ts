@@ -125,6 +125,12 @@ export class AdminProjectComponent {
     return this.projectsSvc.toDate(value);
   }
 
+  sliderBackground(): string {
+    const color = this.ownerAccount()?.branding?.primaryColor || '#C9A96E';
+    const pct = this.progress();
+    return `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #E5E0D8 ${pct}%, #E5E0D8 100%)`;
+  }
+
   /* ── VISÃO GERAL ── */
   async saveGeral(): Promise<void> {
     this.geralOk.set(false);

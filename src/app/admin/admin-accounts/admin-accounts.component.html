@@ -116,8 +116,8 @@
               <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhum projeto cadastrado ainda.</div>
             }
             @for (p of allProjects(); track p.id) {
-              <label style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;font-size:.85rem;cursor:pointer">
-                <input type="checkbox" [checked]="selectedProjectIds().has(p.id)" (change)="toggleProject(p.id, $any($event.target).checked)" style="accent-color:var(--gold)">
+              <label style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;font-size:.85rem;cursor:pointer" (click)="$event.preventDefault(); toggleProject(p.id, !selectedProjectIds().has(p.id))">
+                <input type="checkbox" [checked]="selectedProjectIds().has(p.id)" tabindex="-1" style="accent-color:var(--gold);pointer-events:none">
                 <span>{{ p.name }}<span style="color:var(--muted)"> — {{ p.clientName || 'sem cliente' }}</span></span>
               </label>
             }
