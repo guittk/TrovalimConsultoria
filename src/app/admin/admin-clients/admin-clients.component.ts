@@ -95,7 +95,6 @@ export class AdminClientsComponent {
   }
 
   onColorChange(value: string): void {
-    console.log("aaaaa");
     this.newBrandingColor.set(value);
   }
 
