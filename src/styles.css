@@ -750,9 +750,16 @@ img { max-width: 100%; display: block; }
   inset: 0;
   background: rgba(0,0,0,.6);
   z-index: 300;
-  align-items: center;
-  justify-content: center;
   padding: 2rem;
+  /*
+   * O scroll (quando o conteúdo é maior que a tela) fica aqui no fundo
+   * fixo, não numa caixa aninhada dentro dele — um <input type=color> ou
+   * type=file dentro de um scroll aninhado (position:fixed > overflow:auto)
+   * faz o Chrome/Windows não conseguir ancorar o diálogo nativo perto do
+   * campo, e ele simplesmente não abre (sem erro nenhum). Um único
+   * container com scroll resolve.
+   */
+  overflow-y: auto;
 }
 .modal-backdrop.show { display: flex; }
 .modal {
@@ -761,8 +768,7 @@ img { max-width: 100%; display: block; }
   max-width: 520px;
   padding: 2.5rem;
   position: relative;
-  max-height: 90vh;
-  overflow-y: auto;
+  margin: auto;
 }
 .modal-title {
   font-family: var(--serif);
