@@ -6,7 +6,7 @@
   <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div>
       <h1 class="page-title">Projetos</h1>
-      <p class="page-subtitle">Central de clientes e projetos — atualização em tempo real</p>
+      <p class="page-subtitle">Central de empresas e projetos — atualização em tempo real</p>
     </div>
     <button class="btn btn-primary" (click)="openModal()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -15,7 +15,7 @@
   </div>
 
   <div class="toolbar">
-    <input type="text" class="toolbar-search" placeholder="Buscar por projeto ou cliente…"
+    <input type="text" class="toolbar-search" placeholder="Buscar por projeto ou empresa…"
       [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
     <select class="toolbar-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
       <option value="">Todos os status</option>
@@ -30,7 +30,7 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Cliente</th>
+            <th>Empresa</th>
             <th>Projeto</th>
             <th>Descrição</th>
             <th>Status</th>
@@ -109,7 +109,7 @@
       <label class="form-label">Status Inicial</label>
       <select class="form-select" [ngModel]="npStatus()" (ngModelChange)="npStatus.set($event)">
         <option value="em-andamento">Em Andamento</option>
-        <option value="aguardando-cliente">Aguardando Cliente</option>
+        <option value="aguardando-cliente">Aguardando Empresa</option>
         <option value="em-revisao">Em Revisão</option>
         <option value="concluido">Concluído</option>
         <option value="pausado">Pausado</option>

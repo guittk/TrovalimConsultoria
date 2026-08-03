@@ -25,7 +25,7 @@
           <app-status-badge [status]="p.status" />
           @if (isOverdue()) { <span class="badge" style="background:#FEE2E2;color:#DC2626">Prazo Vencido</span> }
           @if (p.ownerId) {
-            <a [routerLink]="['/admin/clientes', p.ownerId]" class="link-btn">Ver Cliente →</a>
+            <a [routerLink]="['/admin/clientes', p.ownerId]" class="link-btn">Ver Empresa →</a>
           }
         </div>
       </div>
@@ -89,7 +89,7 @@
           <div class="form-group">
             <label class="form-label">
               Notas Internas
-              <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(visível só para a equipe — o cliente nunca vê isso)</span>
+              <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(visível só para a equipe — a empresa nunca vê isso)</span>
             </label>
             <textarea class="form-textarea" rows="3" placeholder="Observações internas sobre este projeto…"
               [ngModel]="internalNotes()" (ngModelChange)="internalNotes.set($event)"></textarea>
@@ -168,7 +168,7 @@
                   }
                 }
                 @if (clientFiles(files).length) {
-                  <div class="file-group-label">Documentos do Cliente</div>
+                  <div class="file-group-label">Documentos da Empresa</div>
                   @for (f of clientFiles(files); track f.id) {
                     <div class="file-item">
                       <app-file-icon [name]="f.name" />
@@ -192,8 +192,8 @@
           <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
             <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
             <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar ao cliente' }}</div>
-            <div class="file-upload-sub">Limites por tipo de arquivo e por cliente configurados em Configurações</div>
+            <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar à empresa' }}</div>
+            <div class="file-upload-sub">Limites por tipo de arquivo e por empresa configurados em Configurações</div>
           </div>
         </div>
       }
@@ -218,7 +218,7 @@
             }
           </div>
           <div class="msg-form">
-            <input type="text" class="msg-input" placeholder="Escreva uma mensagem para o cliente…"
+            <input type="text" class="msg-input" placeholder="Escreva uma mensagem para a empresa…"
               [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
               (keydown.enter)="sendMessage()">
             <button class="btn btn-primary btn-sm" (click)="sendMessage()">Enviar</button>

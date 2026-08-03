@@ -90,11 +90,12 @@ export class AccountsService {
 
   /**
    * Vincula uma conta client já existente (criada em Contas) como
-   * colaborador de uma empresa, com foto e cargo próprios. A conta passa a
-   * herdar branding/projetos/limites de armazenamento da empresa.
+   * colaborador de uma empresa. A conta passa a herdar branding/projetos/
+   * limites de armazenamento da empresa; foto e cargo são definidos depois
+   * em "Contas".
    */
-  linkTeamMember(uid: string, companyId: string, jobTitle: string, photoUrl: string | null): Promise<void> {
-    return updateDoc(doc(this.db, 'users', uid), { companyId, jobTitle, photoUrl });
+  linkTeamMember(uid: string, companyId: string): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { companyId });
   }
 
   /** Desvincula um colaborador da empresa, sem excluir a conta (login continua existindo em Contas). */

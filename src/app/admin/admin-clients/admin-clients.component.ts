@@ -21,9 +21,6 @@ interface StagedCollaborator {
   uid: string;
   name: string;
   email: string;
-  jobTitle: string;
-  photoPreview: string | null;
-  photoFile: File | null;
 }
 
 @Component({
@@ -98,9 +95,6 @@ export class AdminClientsComponent {
   /* ── NOVA EMPRESA: colaboradores a vincular ── */
   readonly stagedCollaborators = signal<StagedCollaborator[]>([]);
   readonly tmSelectedUid = signal('');
-  readonly tmJobTitle = signal('');
-  readonly tmPhotoPreview = signal<string | null>(null);
-  private tmPendingPhotoFile: File | null = null;
 
   private readonly unlinkedClients = toSignal(this.accountsSvc.listUnlinkedClients$(), {
     initialValue: [] as UserAccount[],
@@ -116,7 +110,7 @@ export class AdminClientsComponent {
     this.newLogoPreview.set(null);
     this.pendingLogoFile = null;
     this.stagedCollaborators.set([]);
-    this.resetTmStaging();
+    this.tmSelectedUid.set('');
     this.modalErr.set('');
     this.modalOpen.set(true);
   }
@@ -144,39 +138,15 @@ export class AdminClientsComponent {
     this.newLogoPreview.set(null);
   }
 
-  private resetTmStaging(): void {
-    this.tmSelectedUid.set('');
-    this.tmJobTitle.set('');
-    this.tmPhotoPreview.set(null);
-    this.tmPendingPhotoFile = null;
-  }
-
-  onTmPhotoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    this.tmPendingPhotoFile = file;
-    const reader = new FileReader();
-    reader.onload = (ev) => this.tmPhotoPreview.set(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  }
-
   addStagedCollaborator(): void {
     const uid = this.tmSelectedUid();
     const account = this.availableAccounts().find((a) => a.uid === uid);
     if (!account) return;
     this.stagedCollaborators.update((list) => [
       ...list,
-      {
-        uid,
-        name: account.name || account.email || '',
-        email: account.email || '',
-        jobTitle: this.tmJobTitle().trim(),
-        photoPreview: this.tmPhotoPreview(),
-        photoFile: this.tmPendingPhotoFile,
-      },
+      { uid, name: account.name || account.email || '', email: account.email || '' },
     ]);
-    this.resetTmStaging();
+    this.tmSelectedUid.set('');
   }
 
   removeStagedCollaborator(uid: string): void {
@@ -209,11 +179,7 @@ export class AdminClientsComponent {
       });
 
       for (const c of this.stagedCollaborators()) {
-        let photoUrl: string | null = null;
-        if (c.photoFile) {
-          photoUrl = await this.projectsSvc.uploadBrandingLogo(`clients/${id}/collab/${c.uid}_${Date.now()}`, c.photoFile);
-        }
-        await this.accountsSvc.linkTeamMember(c.uid, id, c.jobTitle, photoUrl);
+        await this.accountsSvc.linkTeamMember(c.uid, id);
       }
 
       this.modalOpen.set(false);

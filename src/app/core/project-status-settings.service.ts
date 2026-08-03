@@ -7,7 +7,7 @@ import { ProjectStatusOption, ProjectStatusSettings } from './models';
 
 export const DEFAULT_PROJECT_STATUSES: ProjectStatusOption[] = [
   { key: 'em-andamento', label: 'Em Andamento', bg: '#DBEAFE', color: '#1D4ED8' },
-  { key: 'aguardando-cliente', label: 'Aguardando Cliente', bg: '#FEF3C7', color: '#B45309' },
+  { key: 'aguardando-cliente', label: 'Aguardando Empresa', bg: '#FEF3C7', color: '#B45309' },
   { key: 'em-revisao', label: 'Em Revisão', bg: '#EDE9FE', color: '#6D28D9' },
   { key: 'concluido', label: 'Concluído', bg: '#D1FAE5', color: '#065F46' },
   { key: 'pausado', label: 'Pausado', bg: '#F3F4F6', color: '#374151' },

@@ -104,10 +104,10 @@
           @for (c of stagedCollaborators(); track c.uid) {
             <div class="file-item">
               <div style="width:32px;height:32px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.75rem;flex-shrink:0;overflow:hidden">
-                @if (c.photoPreview) { <img [src]="c.photoPreview" alt="" style="width:100%;height:100%;object-fit:cover"> } @else { {{ initials(c.name || c.email) }} }
+                {{ initials(c.name || c.email) }}
               </div>
               <div class="file-info">
-                <div class="file-name">{{ c.name || '—' }}{{ c.jobTitle ? ' · ' + c.jobTitle : '' }}</div>
+                <div class="file-name">{{ c.name || '—' }}</div>
                 <div class="file-meta">{{ c.email }}</div>
               </div>
               <div class="file-actions">
@@ -131,24 +131,7 @@
               }
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Cargo</label>
-            <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="tmJobTitle()" (ngModelChange)="tmJobTitle.set($event)">
-          </div>
-          <div class="form-group" style="margin-bottom:.75rem">
-            <label class="form-label">Foto</label>
-            <div style="display:flex;align-items:center;gap:.75rem">
-              <div class="logo-preview-wrap" style="width:46px;height:46px;border-radius:50%">
-                @if (tmPhotoPreview()) {
-                  <img [src]="tmPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
-                } @else {
-                  <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
-                }
-              </div>
-              <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
-              <button class="btn btn-outline btn-sm" (click)="triggerFilePicker(tmPhotoInput)">Escolher</button>
-            </div>
-          </div>
+          <div class="form-help" style="margin-bottom:.75rem">Foto e cargo do colaborador são editados em "Contas".</div>
           <button class="btn btn-outline btn-sm" [disabled]="!tmSelectedUid()" (click)="addStagedCollaborator()">+ Adicionar à lista</button>
         </div>
       }

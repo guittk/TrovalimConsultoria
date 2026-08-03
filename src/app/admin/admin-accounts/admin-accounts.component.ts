@@ -1,9 +1,9 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
-import { AuthService, normRole } from '../../core/auth.service';
+import { AuthService, isStaffRole, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
@@ -31,6 +31,7 @@ export class AdminAccountsComponent {
   private readonly accountsSvc = inject(AccountsService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly confirmSvc = inject(ConfirmService);
+  private readonly zone = inject(NgZone);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -57,35 +58,88 @@ export class AdminAccountsComponent {
   readonly modalErr = signal('');
   readonly saving = signal(false);
   readonly editingUid = signal<string | null>(null);
+  readonly editingAccount = signal<UserAccount | null>(null);
+  readonly isEditingClient = computed(() => {
+    const a = this.editingAccount();
+    return !!a && !isStaffRole(a.role);
+  });
   readonly accName = signal('');
   readonly accEmail = signal('');
   readonly accPassword = signal('');
   readonly accRole = signal<Role>('client');
   readonly restrictProjects = signal(false);
   readonly selectedProjectIds = signal<Set<string>>(new Set());
+  readonly accJobTitle = signal('');
+  readonly accPhotoPreview = signal<string | null>(null);
+  private pendingPhotoFile: File | null = null;
+  private photoRemoved = false;
+
+  /**
+   * input.click() num input[type=file] oculto dentro de uma modal corre
+   * contra o zone.js e o diálogo nativo simplesmente não abre, sem erro
+   * nenhum. showPicker() (fora da zone) é o que efetivamente funciona;
+   * o fallback pra click() cobre navegadores sem showPicker() em inputs
+   * de arquivo.
+   */
+  triggerFilePicker(input: HTMLInputElement): void {
+    this.zone.runOutsideAngular(() => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.click();
+      }
+    });
+  }
 
   openCreate(): void {
     this.editingUid.set(null);
+    this.editingAccount.set(null);
     this.accName.set('');
     this.accEmail.set('');
     this.accPassword.set('');
     this.accRole.set('client');
     this.restrictProjects.set(false);
     this.selectedProjectIds.set(new Set());
+    this.accJobTitle.set('');
+    this.accPhotoPreview.set(null);
+    this.pendingPhotoFile = null;
+    this.photoRemoved = false;
     this.modalErr.set('');
     this.modalOpen.set(true);
   }
 
   openEdit(acc: UserAccount): void {
     this.editingUid.set(acc.uid);
+    this.editingAccount.set(acc);
     this.accName.set(acc.name || '');
     this.accEmail.set(acc.email || '');
     this.accPassword.set('');
     this.accRole.set(normRole(acc.role) === 'manager' ? 'manager' : 'client');
     this.restrictProjects.set(Array.isArray(acc.projectAccess));
     this.selectedProjectIds.set(new Set(acc.projectAccess || []));
+    this.accJobTitle.set(acc.jobTitle || '');
+    this.accPhotoPreview.set(acc.photoUrl || null);
+    this.pendingPhotoFile = null;
+    this.photoRemoved = false;
     this.modalErr.set('');
     this.modalOpen.set(true);
+  }
+
+  onAccPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.pendingPhotoFile = file;
+    this.photoRemoved = false;
+    const reader = new FileReader();
+    reader.onload = (ev) => this.accPhotoPreview.set(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeAccPhoto(): void {
+    this.pendingPhotoFile = null;
+    this.photoRemoved = true;
+    this.accPhotoPreview.set(null);
   }
 
   closeModal(): void {
@@ -122,6 +176,15 @@ export class AdminAccountsComponent {
         // aqui rebaixaria o próprio Owner por acidente).
         const payload = this.editingIsSelf() ? { name } : { name, role: this.accRole(), projectAccess };
         await this.accountsSvc.updateProfile(editingUid, payload);
+
+        if (this.isEditingClient()) {
+          let photoUrl: string | null = this.photoRemoved ? null : this.editingAccount()?.photoUrl || null;
+          if (this.pendingPhotoFile) {
+            const path = `accounts/${editingUid}/photo_${Date.now()}`;
+            photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.pendingPhotoFile);
+          }
+          await this.accountsSvc.updateCollaboratorProfile(editingUid, this.accJobTitle().trim(), photoUrl);
+        }
       } else {
         if (this.accPassword().length < 6) {
           throw new Error('WEAK_PASSWORD');
@@ -150,7 +213,7 @@ export class AdminAccountsComponent {
     } catch (e) {
       if (e instanceof Error && e.message === 'HAS_TEAM_MEMBERS') {
         this.pageErr.set(
-          `"${acc.name || acc.email}" ainda tem colaboradores vinculados. Remova-os (ou realoque-os) na tela do cliente antes de excluir esta conta.`,
+          `"${acc.name || acc.email}" ainda tem colaboradores vinculados. Remova-os (ou realoque-os) na tela da empresa antes de excluir esta conta.`,
         );
         return;
       }

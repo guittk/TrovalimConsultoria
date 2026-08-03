@@ -22,7 +22,12 @@
         <div class="proj-header-company">{{ c.branding?.companyName || 'Empresa' }}</div>
         <div class="proj-header-name">{{ teamMembers().length }} colaborador{{ teamMembers().length === 1 ? '' : 'es' }} · {{ projects().length }} projeto{{ projects().length === 1 ? '' : 's' }}</div>
       </div>
+      @if (isOwner()) {
+        <button class="btn btn-danger-ghost btn-sm" [disabled]="deletingEmpresa()" (click)="deleteEmpresa()">{{ deletingEmpresa() ? 'Excluindo…' : 'Excluir Empresa' }}</button>
+      }
     </div>
+
+    @if (deleteErr()) { <div class="alert alert-error show">{{ deleteErr() }}</div> }
 
     <div class="two-col">
       <div>
@@ -99,7 +104,7 @@
             }
           </div>
           <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
-            Cada colaborador tem seu próprio login, cadastrado antes em "Contas". Aqui você vincula essa conta à empresa e define foto e cargo — todos compartilham os mesmos projetos e a mesma identidade visual.
+            Cada colaborador tem seu próprio login, cadastrado antes em "Contas". Aqui você só vincula a conta à empresa — foto e cargo são editados em "Contas".
           </p>
 
           @if (!teamMembers().length) {
@@ -107,50 +112,20 @@
           } @else {
             <div style="border:1px solid var(--border);margin-bottom:1.25rem">
               @for (m of teamMembers(); track m.uid) {
-                @if (editingMemberUid() === m.uid) {
-                  <div style="padding:.85rem;border-bottom:1px solid var(--border)">
-                    <div class="form-group">
-                      <div class="logo-preview-wrap" style="width:64px;height:64px;border-radius:50%">
-                        @if (editPhotoPreview()) {
-                          <img [src]="editPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
-                        } @else {
-                          <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
-                        }
-                      </div>
-                      <input #editPhotoInput type="file" accept="image/*" style="display:none" (change)="onEditPhotoSelected($event)">
-                      <div style="display:flex;gap:.65rem;margin-top:.65rem;flex-wrap:wrap">
-                        <button class="btn btn-outline btn-sm" (click)="editPhotoInput.click()">Escolher Foto</button>
-                        @if (editPhotoPreview()) {
-                          <button class="btn btn-danger-ghost btn-sm" (click)="removeEditPhoto()">Remover Foto</button>
-                        }
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Cargo</label>
-                      <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="editJobTitle()" (ngModelChange)="editJobTitle.set($event)">
-                    </div>
-                    <div style="display:flex;gap:.65rem">
-                      <button class="btn btn-outline btn-sm" (click)="cancelEditMember()">Cancelar</button>
-                      <button class="btn btn-primary btn-sm" [disabled]="editSaving()" (click)="saveEditMember(m)">{{ editSaving() ? 'Salvando…' : 'Salvar' }}</button>
-                    </div>
+                <div class="file-item">
+                  <div style="width:36px;height:36px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.75rem;flex-shrink:0;overflow:hidden">
+                    @if (m.photoUrl) { <img [src]="m.photoUrl" alt="" style="width:100%;height:100%;object-fit:cover"> } @else { {{ initials(m.name || m.email || '') }} }
                   </div>
-                } @else {
-                  <div class="file-item">
-                    <div style="width:36px;height:36px;border-radius:50%;background:var(--wine);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:.75rem;flex-shrink:0;overflow:hidden">
-                      @if (m.photoUrl) { <img [src]="m.photoUrl" alt="" style="width:100%;height:100%;object-fit:cover"> } @else { {{ initials(m.name || m.email || '') }} }
-                    </div>
-                    <div class="file-info">
-                      <div class="file-name">{{ m.name || '—' }}{{ m.jobTitle ? ' · ' + m.jobTitle : '' }}</div>
-                      <div class="file-meta">{{ m.email }}</div>
-                    </div>
-                    @if (isOwner()) {
-                      <div class="file-actions">
-                        <a href="#" class="link-btn" (click)="startEditMember(m); $event.preventDefault()">Editar</a>
-                        <button class="btn btn-danger-ghost btn-sm" (click)="unlinkTeamMember(m)">Remover</button>
-                      </div>
-                    }
+                  <div class="file-info">
+                    <div class="file-name">{{ m.name || '—' }}{{ m.jobTitle ? ' · ' + m.jobTitle : '' }}</div>
+                    <div class="file-meta">{{ m.email }}</div>
                   </div>
-                }
+                  @if (isOwner()) {
+                    <div class="file-actions">
+                      <button class="btn btn-danger-ghost btn-sm" (click)="unlinkTeamMember(m)">Remover</button>
+                    </div>
+                  }
+                </div>
               }
             </div>
           }
@@ -183,22 +158,7 @@
         </select>
       }
     </div>
-    <div class="form-group">
-      <label class="form-label">Cargo</label>
-      <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="tmJobTitle()" (ngModelChange)="tmJobTitle.set($event)">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Foto</label>
-      <div class="logo-preview-wrap" style="width:64px;height:64px;border-radius:50%">
-        @if (tmPhotoPreview()) {
-          <img [src]="tmPhotoPreview()" alt="" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">
-        } @else {
-          <span style="font-size:.6rem;color:var(--muted);opacity:.6">Sem foto</span>
-        }
-      </div>
-      <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
-      <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="triggerFilePicker(tmPhotoInput)">Escolher Foto</button>
-    </div>
+    <div class="form-help" style="margin-bottom:.5rem">Foto e cargo do colaborador são editados em "Contas".</div>
 
     <div class="modal-footer">
       <button class="btn btn-outline" (click)="closeAddMemberModal()">Cancelar</button>
