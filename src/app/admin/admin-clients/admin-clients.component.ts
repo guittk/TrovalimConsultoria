@@ -41,14 +41,20 @@ export class AdminClientsComponent {
   private readonly zone = inject(NgZone);
 
   /**
-   * Abre o seletor nativo de arquivo fora da zone do Angular. Suspeita:
-   * dentro da modal, algum ciclo de change detection do zone.js (disparado
-   * por um listener do Firestore em tempo real) coincide com o clique e
-   * consome o "gesto do usuário" antes do navegador abrir o diálogo nativo
-   * — sem gerar nenhum erro, só o diálogo nunca aparece.
+   * input.click() num input[type=file] oculto dentro de uma modal corre
+   * contra o zone.js e o diálogo nativo simplesmente não abre, sem erro
+   * nenhum. showPicker() (fora da zone) é o que efetivamente funciona;
+   * o fallback pra click() cobre navegadores sem showPicker() em inputs
+   * de arquivo.
    */
   triggerFilePicker(input: HTMLInputElement): void {
-    this.zone.runOutsideAngular(() => input.click());
+    this.zone.runOutsideAngular(() => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.click();
+      }
+    });
   }
 
   /**

@@ -39,15 +39,20 @@ export class AdminClientComponent {
   private readonly zone = inject(NgZone);
 
   /**
-   * O clique no botão "Escolher Foto" do modal "Novo Colaborador" dispara
-   * .click() num input[type=file] oculto. Dentro da modal, esse clique
-   * corre contra um ciclo de change detection do zone.js (listener em
-   * tempo real do Firestore) que consome o gesto do usuário antes do
-   * navegador abrir o diálogo nativo — sem erro nenhum. Rodar fora da
-   * zone evita a corrida.
+   * input.click() num input[type=file] oculto dentro de uma modal corre
+   * contra o zone.js e o diálogo nativo simplesmente não abre, sem erro
+   * nenhum. showPicker() (fora da zone) é o que efetivamente funciona;
+   * o fallback pra click() cobre navegadores sem showPicker() em inputs
+   * de arquivo.
    */
   triggerFilePicker(input: HTMLInputElement): void {
-    this.zone.runOutsideAngular(() => input.click());
+    this.zone.runOutsideAngular(() => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.click();
+      }
+    });
   }
 
   readonly statusSettings = toSignal(this.statusSettingsSvc.get$(), {
