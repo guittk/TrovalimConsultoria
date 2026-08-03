@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -38,6 +38,31 @@ export class AdminClientsComponent {
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly router = inject(Router);
+  private readonly zone = inject(NgZone);
+
+  /**
+   * Abre o seletor nativo de arquivo fora da zone do Angular. Suspeita:
+   * dentro da modal, algum ciclo de change detection do zone.js (disparado
+   * por um listener do Firestore em tempo real) coincide com o clique e
+   * consome o "gesto do usuário" antes do navegador abrir o diálogo nativo
+   * — sem gerar nenhum erro, só o diálogo nunca aparece.
+   */
+  triggerFilePicker(input: HTMLInputElement): void {
+    this.zone.runOutsideAngular(() => input.click());
+  }
+
+  /**
+   * Mesmo problema do triggerFilePicker, mas para o input[type=color]: o
+   * clique direto no swatch abre o diálogo nativo via ação padrão do
+   * navegador, que também é vítima da corrida com o zone.js dentro da
+   * modal. Bloqueamos a ação padrão e reabrimos o diálogo manualmente via
+   * showPicker() fora da zone.
+   */
+  openColorPicker(event: MouseEvent): void {
+    event.preventDefault();
+    const input = event.currentTarget as HTMLInputElement;
+    this.zone.runOutsideAngular(() => input.showPicker?.());
+  }
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;

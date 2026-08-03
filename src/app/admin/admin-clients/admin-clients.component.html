@@ -71,7 +71,7 @@
         <label class="form-label">Cor Primária</label>
         <div class="color-row">
           <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
-            [ngModel]="newBrandingColor()" (ngModelChange)="onColorChange($event)">
+            [value]="newBrandingColor()" (input)="onColorChange($any($event.target).value)" (click)="openColorPicker($event)">
           <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="newBrandingColor()" (ngModelChange)="onColorChange($event)">
         </div>
       </div>
@@ -86,7 +86,7 @@
             }
           </div>
           <input #newLogoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)">
-          <button class="btn btn-outline btn-sm" (click)="newLogoInput.click()">Escolher</button>
+          <button class="btn btn-outline btn-sm" (click)="triggerFilePicker(newLogoInput)">Escolher</button>
           @if (newLogoPreview()) {
             <button class="btn btn-danger-ghost btn-sm" (click)="removeLogo()">Remover</button>
           }
@@ -146,7 +146,7 @@
                 }
               </div>
               <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
-              <button class="btn btn-outline btn-sm" (click)="tmPhotoInput.click()">Escolher</button>
+              <button class="btn btn-outline btn-sm" (click)="triggerFilePicker(tmPhotoInput)">Escolher</button>
             </div>
           </div>
           <button class="btn btn-outline btn-sm" [disabled]="!tmSelectedUid()" (click)="addStagedCollaborator()">+ Adicionar à lista</button>
