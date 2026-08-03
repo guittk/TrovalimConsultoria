@@ -250,17 +250,14 @@ export class AdminConfigComponent {
   readonly statusSaving = signal(false);
 
   addStatus(): void {
-    this.statusForm.update((rows) => [
-      ...rows,
-      { key: `status-${Date.now()}`, label: 'Novo Status', bg: '#F3F4F6', color: '#374151' },
-    ]);
+    this.statusForm.update((rows) => [...rows, { key: `status-${Date.now()}`, label: 'Novo Status' }]);
   }
 
   removeStatus(index: number): void {
     this.statusForm.update((rows) => rows.filter((_, i) => i !== index));
   }
 
-  updateStatus(index: number, field: 'label' | 'bg' | 'color', value: string): void {
+  updateStatus(index: number, field: 'label', value: string): void {
     this.statusForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   }
 

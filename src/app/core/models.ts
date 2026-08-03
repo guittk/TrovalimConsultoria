@@ -73,8 +73,6 @@ export type ProjectStatus =
 export interface ProjectStatusOption {
   key: string;
   label: string;
-  bg: string;
-  color: string;
 }
 
 export interface ProjectStatusSettings {

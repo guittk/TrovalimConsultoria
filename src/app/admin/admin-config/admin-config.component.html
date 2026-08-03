@@ -44,7 +44,7 @@
     }
 
     <div class="form-help" style="margin-bottom:.85rem">
-      Lista de status disponíveis para os projetos. Renomear um status já em uso não quebra nada, mas mudar a cor de identificação interna (a "chave") faz os projetos que já usavam esse status perderem a cor/rótulo — evite trocar a chave de um status existente.
+      Lista de status disponíveis para os projetos. Renomear um status já em uso não quebra nada, mas mudar a chave interna faz os projetos que já usavam esse status perderem o rótulo — evite trocar a chave de um status existente.
     </div>
 
     <div class="data-table-wrap">
@@ -52,7 +52,6 @@
         <thead>
           <tr>
             <th>Rótulo</th>
-            <th style="width:90px">Cor</th>
             <th style="width:60px"></th>
           </tr>
         </thead>
@@ -61,10 +60,6 @@
             <tr>
               <td>
                 <input type="text" class="form-input" [ngModel]="s.label" (ngModelChange)="updateStatus(i, 'label', $event)" [disabled]="!isOwner()">
-              </td>
-              <td>
-                <input type="color" style="width:38px;height:38px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
-                  [ngModel]="s.color" (ngModelChange)="updateStatus(i, 'color', $event)" [disabled]="!isOwner()">
               </td>
               @if (isOwner()) {
                 <td><button class="btn btn-danger-ghost btn-sm" (click)="removeStatus(i)">Excluir</button></td>
