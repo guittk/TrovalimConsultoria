@@ -197,7 +197,7 @@
         }
       </div>
       <input #tmPhotoInput type="file" accept="image/*" style="display:none" (change)="onTmPhotoSelected($event)">
-      <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="tmPhotoInput.click()">Escolher Foto</button>
+      <button class="btn btn-outline btn-sm" style="margin-top:.65rem" (click)="triggerFilePicker(tmPhotoInput)">Escolher Foto</button>
     </div>
 
     <div class="modal-footer">

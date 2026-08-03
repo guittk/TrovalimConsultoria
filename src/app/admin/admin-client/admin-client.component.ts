@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, NgZone, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -36,6 +36,19 @@ export class AdminClientComponent {
   private readonly projectsSvc = inject(ProjectsService);
   private readonly confirmSvc = inject(ConfirmService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
+  private readonly zone = inject(NgZone);
+
+  /**
+   * O clique no botão "Escolher Foto" do modal "Novo Colaborador" dispara
+   * .click() num input[type=file] oculto. Dentro da modal, esse clique
+   * corre contra um ciclo de change detection do zone.js (listener em
+   * tempo real do Firestore) que consome o gesto do usuário antes do
+   * navegador abrir o diálogo nativo — sem erro nenhum. Rodar fora da
+   * zone evita a corrida.
+   */
+  triggerFilePicker(input: HTMLInputElement): void {
+    this.zone.runOutsideAngular(() => input.click());
+  }
 
   readonly statusSettings = toSignal(this.statusSettingsSvc.get$(), {
     initialValue: DEFAULT_PROJECT_STATUS_SETTINGS,
