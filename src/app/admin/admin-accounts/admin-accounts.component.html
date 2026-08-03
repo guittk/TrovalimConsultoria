@@ -87,11 +87,7 @@
       </div>
     }
 
-    @if (isEditingClient()) {
-      <div class="form-group">
-        <label class="form-label">Cargo</label>
-        <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="accJobTitle()" (ngModelChange)="accJobTitle.set($event)">
-      </div>
+    @if (isEditingAccount()) {
       <div class="form-group">
         <label class="form-label">Foto</label>
         <div style="display:flex;align-items:center;gap:.75rem">
@@ -108,6 +104,12 @@
             <button class="btn btn-danger-ghost btn-sm" (click)="removeAccPhoto()">Remover</button>
           }
         </div>
+      </div>
+    }
+    @if (isEditingClient()) {
+      <div class="form-group">
+        <label class="form-label">Cargo</label>
+        <input type="text" class="form-input" placeholder="Ex: Gerente de RH" [ngModel]="accJobTitle()" (ngModelChange)="accJobTitle.set($event)">
       </div>
     }
     @if (editingIsSelf()) {

@@ -107,4 +107,9 @@ export class AccountsService {
   updateCollaboratorProfile(uid: string, jobTitle: string, photoUrl: string | null): Promise<void> {
     return updateDoc(doc(this.db, 'users', uid), { jobTitle, photoUrl });
   }
+
+  /** Atualiza a foto de perfil de uma conta staff (owner/manager), sem cargo. */
+  updatePhoto(uid: string, photoUrl: string | null): Promise<void> {
+    return updateDoc(doc(this.db, 'users', uid), { photoUrl });
+  }
 }

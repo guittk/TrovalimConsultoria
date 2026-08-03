@@ -63,6 +63,7 @@ export class AdminAccountsComponent {
     const a = this.editingAccount();
     return !!a && !isStaffRole(a.role);
   });
+  readonly isEditingAccount = computed(() => !!this.editingAccount());
   readonly accName = signal('');
   readonly accEmail = signal('');
   readonly accPassword = signal('');
@@ -177,13 +178,15 @@ export class AdminAccountsComponent {
         const payload = this.editingIsSelf() ? { name } : { name, role: this.accRole(), projectAccess };
         await this.accountsSvc.updateProfile(editingUid, payload);
 
+        let photoUrl: string | null = this.photoRemoved ? null : this.editingAccount()?.photoUrl || null;
+        if (this.pendingPhotoFile) {
+          const path = `accounts/${editingUid}/photo_${Date.now()}`;
+          photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.pendingPhotoFile);
+        }
         if (this.isEditingClient()) {
-          let photoUrl: string | null = this.photoRemoved ? null : this.editingAccount()?.photoUrl || null;
-          if (this.pendingPhotoFile) {
-            const path = `accounts/${editingUid}/photo_${Date.now()}`;
-            photoUrl = await this.projectsSvc.uploadBrandingLogo(path, this.pendingPhotoFile);
-          }
           await this.accountsSvc.updateCollaboratorProfile(editingUid, this.accJobTitle().trim(), photoUrl);
+        } else {
+          await this.accountsSvc.updatePhoto(editingUid, photoUrl);
         }
       } else {
         if (this.accPassword().length < 6) {
