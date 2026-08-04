@@ -73,6 +73,7 @@ export class AdminClientsComponent {
 
   readonly empresas = toSignal(this.empresasSvc.listAll$(), { initialValue: [] });
   readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
+  readonly accounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] as UserAccount[] });
   readonly searchTerm = signal('');
 
   readonly filteredEmpresas = computed(() => {
@@ -193,5 +194,9 @@ export class AdminClientsComponent {
 
   projectsFor(empresaId: string): Project[] {
     return this.projects().filter((p) => p.ownerId === empresaId);
+  }
+
+  collaboratorsFor(empresaId: string): UserAccount[] {
+    return this.accounts().filter((a) => a.companyId === empresaId);
   }
 }

@@ -78,7 +78,13 @@
       <div>
         <!-- PROJETOS DA EMPRESA -->
         <div class="card">
-          <div class="card-title"><span class="card-title-bar"></span>Projetos</div>
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:.75rem"><span class="card-title-bar"></span>Projetos</span>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" (click)="openAddProjectModal()">+ Adicionar Projeto</button>
+              <a [routerLink]="['/admin']" [queryParams]="{ empresa: cid }" class="btn btn-primary btn-sm">+ Criar Projeto</a>
+            </div>
+          </div>
           @if (!projects().length) {
             <div class="empty-state-sub">Nenhum projeto para esta empresa ainda.</div>
           }
@@ -90,6 +96,7 @@
               </div>
               <div class="file-actions">
                 <a [routerLink]="['/admin/projeto', p.id]" class="link-btn">Gerenciar →</a>
+                <button class="btn btn-danger-ghost btn-sm" [disabled]="removingProjectId() === p.id" (click)="removeProjectFromCompany(p)">{{ removingProjectId() === p.id ? 'Removendo…' : 'Remover' }}</button>
               </div>
             </div>
           }
@@ -163,6 +170,35 @@
     <div class="modal-footer">
       <button class="btn btn-outline" (click)="closeAddMemberModal()">Cancelar</button>
       <button class="btn btn-primary" [disabled]="tmSaving() || !availableAccounts().length" (click)="addTeamMember()">{{ tmSaving() ? 'Adicionando…' : 'Adicionar' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADICIONAR PROJETO EXISTENTE MODAL ── -->
+<div class="modal-backdrop" [class.show]="apModalOpen()" (click)="$event.target === $event.currentTarget && closeAddProjectModal()">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" (click)="closeAddProjectModal()">✕</button>
+    <div class="modal-title">Adicionar Projeto Existente</div>
+
+    @if (apErr()) { <div class="alert alert-error show">{{ apErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Projeto sem empresa vinculada</label>
+      @if (!unlinkedProjects().length) {
+        <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhum projeto sem empresa disponível.</div>
+      } @else {
+        <select class="form-select" [ngModel]="apSelectedProjectId()" (ngModelChange)="apSelectedProjectId.set($event)">
+          <option value="">— Selecione —</option>
+          @for (p of unlinkedProjects(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeAddProjectModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="apSaving() || !unlinkedProjects().length" (click)="attachProject()">{{ apSaving() ? 'Adicionando…' : 'Adicionar' }}</button>
     </div>
   </div>
 </div>

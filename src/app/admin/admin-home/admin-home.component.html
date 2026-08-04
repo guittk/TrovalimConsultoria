@@ -39,10 +39,10 @@
           </tr>
         </thead>
         <tbody>
-          @if (!filteredProjects().length) {
+          @if (!projectsWithCompany().length) {
             <tr><td colspan="6"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>
           }
-          @for (p of filteredProjects(); track p.id) {
+          @for (p of projectsWithCompany(); track p.id) {
             <tr>
               <td>
                 <div style="display:flex;align-items:center;gap:.6rem">
@@ -58,7 +58,10 @@
                   </div>
                 </div>
               </td>
-              <td style="font-weight:500;max-width:200px">{{ p.name }}</td>
+              <td style="font-weight:500;max-width:200px">
+                {{ p.name }}
+                @if (p.hidden) { <span class="badge" style="margin-left:.4rem;background:rgba(0,0,0,.08)" title="Oculto para a empresa">Oculto</span> }
+              </td>
               <td style="max-width:220px">
                 <div style="font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="p.description || ''">
                   {{ p.description || '—' }}
@@ -80,6 +83,57 @@
       </table>
     </div>
   </div>
+
+  @if (projectsWithoutCompany().length) {
+    <div class="page-header" style="margin-top:2rem">
+      <h2 class="page-title" style="font-size:1.15rem">Sem Empresa Vinculada</h2>
+      <p class="page-subtitle">Projetos que ainda não foram atribuídos a uma empresa</p>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Projeto</th>
+              <th>Descrição</th>
+              <th>Status</th>
+              <th style="width:130px">Progresso</th>
+              <th style="width:90px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of projectsWithoutCompany(); track p.id) {
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.6rem">
+                    <div title="Sem empresa vinculada" style="width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.08);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
+                    </div>
+                    <span style="font-weight:500">{{ p.name }}</span>
+                  </div>
+                </td>
+                <td style="max-width:220px">
+                  <div style="font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="p.description || ''">
+                    {{ p.description || '—' }}
+                  </div>
+                </td>
+                <td><app-status-badge [status]="p.status" /></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.5rem">
+                    <div class="progress-bar" style="flex:1">
+                      <div class="progress-fill" [style.width.%]="p.progress || 0" style="background:var(--muted)"></div>
+                    </div>
+                    <span style="font-size:.72rem;color:var(--muted);flex-shrink:0">{{ p.progress || 0 }}%</span>
+                  </div>
+                </td>
+                <td><a [routerLink]="['/admin/projeto', p.id]" class="link-btn">Gerenciar →</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
 </div>
 
 <!-- ── NEW PROJECT MODAL ── -->

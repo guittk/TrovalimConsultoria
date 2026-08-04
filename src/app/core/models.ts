@@ -83,6 +83,8 @@ export interface TimelineStep {
   name: string;
   date: string;
   done: boolean;
+  /** Peso da etapa (%) usado para calcular o progresso do projeto. */
+  weight?: number;
 }
 
 export interface Project {
@@ -101,15 +103,9 @@ export interface Project {
   deadline?: string | null;
   /** uid da conta (owner/manager) responsável por este projeto. */
   responsibleUid?: string | null;
+  /** Quando true, o projeto fica invisível para a empresa-cliente no portal. */
+  hidden?: boolean;
 }
-
-export const PROJECT_FILE_CATEGORIES: { key: string; label: string }[] = [
-  { key: 'contrato', label: 'Contrato' },
-  { key: 'briefing', label: 'Briefing' },
-  { key: 'curriculo', label: 'Currículo' },
-  { key: 'relatorio', label: 'Relatório' },
-  { key: 'outro', label: 'Outro' },
-];
 
 export interface ProjectMessage {
   id?: string;
@@ -128,6 +124,4 @@ export interface ProjectFile {
   uploadedAt?: unknown;
   uploadedByRole: 'admin' | 'client' | string;
   uploadedByName?: string;
-  /** Categoria do arquivo (ver PROJECT_FILE_CATEGORIES). */
-  category?: string;
 }

@@ -43,7 +43,7 @@
             <div class="client-card-name">{{ e.branding?.companyName || 'Sem nome' }}</div>
           </div>
         </div>
-        <div class="client-card-meta">{{ projectsFor(e.id).length }} projeto{{ projectsFor(e.id).length === 1 ? '' : 's' }}</div>
+        <div class="client-card-meta">{{ collaboratorsFor(e.id).length }} colaborador{{ collaboratorsFor(e.id).length === 1 ? '' : 'es' }} · {{ projectsFor(e.id).length }} projeto{{ projectsFor(e.id).length === 1 ? '' : 's' }}</div>
         <div class="client-card-footer">
           <a [routerLink]="['/admin/clientes', e.id]" class="btn btn-outline btn-sm">Ver Empresa →</a>
         </div>

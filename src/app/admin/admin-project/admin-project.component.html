@@ -29,6 +29,13 @@
           }
         </div>
       </div>
+      <label class="switch-row" [class.disabled]="togglingHidden()" title="Controla se a empresa consegue ver este projeto no portal dela">
+        <span class="switch" [class.on]="!hidden()">
+          <input type="checkbox" style="display:none" [checked]="!hidden()" [disabled]="togglingHidden()" (change)="toggleHidden()">
+          <span class="switch-knob"></span>
+        </span>
+        <span class="switch-label">Visível para a empresa</span>
+      </label>
     </div>
 
     <div class="card" style="padding:0 2rem 2rem">
@@ -78,12 +85,10 @@
 
           <div class="form-group">
             <label class="form-label">Progresso — <span>{{ progress() }}</span>%</label>
-            <div class="progress-edit-row">
-              <input type="range" class="progress-slider" min="0" max="100" step="5"
-                [style.background]="sliderBackground()"
-                [ngModel]="progress()" (ngModelChange)="progress.set(+$event)">
-              <span style="font-size:.82rem;color:var(--muted);width:2.5rem;text-align:right">{{ progress() }}%</span>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="progress()" [style.background]="ownerAccount()?.branding?.primaryColor || '#C9A96E'"></div>
             </div>
+            <div class="form-help">Calculado automaticamente a partir do peso das etapas concluídas na Linha do Tempo.</div>
           </div>
 
           <div class="form-group">
@@ -114,12 +119,25 @@
               <div class="step-inputs">
                 <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="s.name" (ngModelChange)="updateStep(i, 'name', $event)">
                 <input type="text" class="step-date-input" placeholder="Data (ex: Jan 2025)" [ngModel]="s.date" (ngModelChange)="updateStep(i, 'date', $event)">
+                <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+                  <input type="range" class="progress-slider" style="width:100px" min="0" max="100" step="5"
+                    [style.background]="weightSliderBackground(s.weight || 0)"
+                    [ngModel]="s.weight || 0" (ngModelChange)="updateStep(i, 'weight', +$event)">
+                  <span style="font-size:.75rem;color:var(--muted);width:2.4rem;text-align:right;flex-shrink:0">{{ s.weight || 0 }}%</span>
+                </div>
               </div>
               <div class="step-btns">
                 <button class="btn-icon" title="Mover para cima" (click)="moveStep(i, -1)">↑</button>
                 <button class="btn-icon" title="Mover para baixo" (click)="moveStep(i, 1)">↓</button>
                 <button class="btn-icon danger" title="Remover" (click)="removeStep(i)">✕</button>
               </div>
+            </div>
+          }
+
+          @if (stepsData().length) {
+            <div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">
+              Soma dos pesos: {{ totalWeight() }}%
+              @if (totalWeight() !== 100) { <span style="color:#DC2626"> — o ideal é somar 100% para um progresso preciso</span> }
             </div>
           }
 
@@ -136,16 +154,6 @@
       <!-- ARQUIVOS -->
       @if (activeTab() === 'arquivos') {
         <div class="tab-panel active">
-          <div class="form-group" style="max-width:260px">
-            <label class="form-label">Filtrar por categoria</label>
-            <select class="form-select" [ngModel]="fileCategoryFilter()" (ngModelChange)="fileCategoryFilter.set($event)">
-              <option value="">Todas</option>
-              @for (c of fileCategories; track c.key) {
-                <option [value]="c.key">{{ c.label }}</option>
-              }
-            </select>
-          </div>
-
           @if (files$ | async; as files) {
             @if (!files.length) {
               <div class="empty-state"><div class="empty-state-sub">Nenhum arquivo ainda.</div></div>
@@ -158,7 +166,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }} · {{ categoryLabel(f.category) }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
@@ -174,7 +182,7 @@
                       <app-file-icon [name]="f.name" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }} · {{ categoryLabel(f.category) }}</div>
+                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
@@ -189,9 +197,17 @@
 
           @if (uploadErr()) { <div class="alert alert-error show" style="margin-top:1.25rem">{{ uploadErr() }}</div> }
 
-          <div class="file-upload-area" style="margin-top:1.25rem" (click)="adminFileInput.click()">
+          <div class="file-upload-area" style="margin-top:1.25rem" [class.dragover]="dragOver()"
+            (click)="adminFileInput.click()"
+            (dragover)="$event.preventDefault(); dragOver.set(true)"
+            (dragleave)="dragOver.set(false)"
+            (drop)="onDropFile($event)">
             <input #adminFileInput type="file" style="display:none" (change)="onFileSelected($event)">
-            <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            @if (uploading()) {
+              <div class="spinner" style="width:28px;height:28px;margin:0 auto .65rem"></div>
+            } @else {
+              <svg class="file-upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            }
             <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar à empresa' }}</div>
             <div class="file-upload-sub">Limites por tipo de arquivo e por empresa configurados em Configurações</div>
           </div>

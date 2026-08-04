@@ -44,9 +44,12 @@ service cloud.firestore {
 
     // Um cliente pode ser o dono direto do projeto (ownerId == seu uid) ou um
     // colaborador de uma empresa-cliente (seu companyId == ownerId do projeto).
+    // Projetos marcados como "hidden" ficam invisíveis para o cliente, mesmo
+    // sendo o dono.
     function isProjectOwner(projectId) {
-      let ownerId = get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId;
-      return isSignedIn() && (ownerId == request.auth.uid || ownerId == myCompanyId());
+      let project = get(/databases/$(database)/documents/projects/$(projectId)).data;
+      return isSignedIn() && !project.get('hidden', false) &&
+        (project.ownerId == request.auth.uid || project.ownerId == myCompanyId());
     }
 
     // Users: staff lê todos; usuário lê o próprio doc (por UID) ou um doc
@@ -83,7 +86,7 @@ service cloud.firestore {
     // Projetos: staff tem acesso, managers restritos ao projectAccess se definido
     match /projects/{projectId} {
       allow read, write: if canAccessProject(projectId);
-      allow read: if isSignedIn() && (
+      allow read: if isSignedIn() && !resource.data.get('hidden', false) && (
         resource.data.ownerId == request.auth.uid || resource.data.ownerId == myCompanyId()
       );
 

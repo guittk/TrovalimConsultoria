@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { of, switchMap } from 'rxjs';
+import { map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ProjectsService } from '../../core/projects.service';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
@@ -20,5 +20,6 @@ export class PortalHomeComponent {
   readonly userData$ = this.auth.userData$;
   readonly projects$ = this.userData$.pipe(
     switchMap((data) => (data?.companyId ? this.projectsSvc.listForOwner$(data.companyId) : of([]))),
+    map((projects) => projects.filter((p) => !p.hidden)),
   );
 }

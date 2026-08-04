@@ -15,7 +15,7 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { PROJECT_FILE_CATEGORIES, ProjectFile, TimelineStep } from '../../core/models';
+import { ProjectFile, TimelineStep } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -71,17 +71,16 @@ export class AdminProjectComponent {
   });
   readonly staffAccounts = toSignal(this.accountsSvc.listStaff$(), { initialValue: [] });
   readonly internalNotesSaved = toSignal(this.projectsSvc.internalNotes$(this.pid), { initialValue: '' });
-  readonly fileCategories = PROJECT_FILE_CATEGORIES;
 
   readonly activeTab = signal<TabKey>('geral');
 
   /* ── VISÃO GERAL ── */
   readonly status = signal('em-andamento');
-  readonly progress = signal(0);
   readonly description = signal('');
   readonly deadline = signal('');
   readonly internalNotes = signal('');
   readonly responsibleUid = signal('');
+  readonly hidden = signal(false);
   readonly geralOk = signal(false);
   readonly geralErr = signal('');
   readonly savingGeral = signal(false);
@@ -98,11 +97,21 @@ export class AdminProjectComponent {
   readonly timelineErr = signal('');
   readonly savingTimeline = signal(false);
 
+  /** Progresso derivado do peso das etapas concluídas na Linha do Tempo. */
+  readonly progress = computed(() => {
+    const steps = this.stepsData();
+    const totalWeight = steps.reduce((sum, s) => sum + (s.weight || 0), 0);
+    if (totalWeight <= 0) return 0;
+    const doneWeight = steps.filter((s) => s.done).reduce((sum, s) => sum + (s.weight || 0), 0);
+    return Math.round((doneWeight / totalWeight) * 100);
+  });
+
+  readonly totalWeight = computed(() => this.stepsData().reduce((sum, s) => sum + (s.weight || 0), 0));
+
   /* ── ARQUIVOS ── */
   readonly uploading = signal(false);
   readonly uploadErr = signal('');
-  readonly uploadCategory = signal('outro');
-  readonly fileCategoryFilter = signal('');
+  readonly dragOver = signal(false);
 
   /* ── MENSAGENS ── */
   readonly messageText = signal('');
@@ -112,10 +121,10 @@ export class AdminProjectComponent {
       const p = this.project();
       if (!p) return;
       this.status.set(p.status);
-      this.progress.set(p.progress || 0);
       this.description.set(p.description || '');
       this.deadline.set(p.deadline || '');
       this.responsibleUid.set(p.responsibleUid || '');
+      this.hidden.set(!!p.hidden);
       this.stepsData.set((p.steps || []).map((s) => ({ ...s })));
     });
     effect(() => this.internalNotes.set(this.internalNotesSaved()));
@@ -125,9 +134,8 @@ export class AdminProjectComponent {
     return this.projectsSvc.toDate(value);
   }
 
-  sliderBackground(): string {
+  weightSliderBackground(pct: number): string {
     const color = this.ownerAccount()?.branding?.primaryColor || '#C9A96E';
-    const pct = this.progress();
     return `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #E5E0D8 ${pct}%, #E5E0D8 100%)`;
   }
 
@@ -140,7 +148,6 @@ export class AdminProjectComponent {
       await Promise.all([
         this.projectsSvc.update(this.pid, {
           status: this.status(),
-          progress: this.progress(),
           description: this.description().trim(),
           deadline: this.deadline() || null,
           responsibleUid: this.responsibleUid() || null,
@@ -156,11 +163,24 @@ export class AdminProjectComponent {
     }
   }
 
+  /* ── CABEÇALHO: visibilidade ── */
+  readonly togglingHidden = signal(false);
+  async toggleHidden(): Promise<void> {
+    const next = !this.hidden();
+    this.togglingHidden.set(true);
+    try {
+      await this.projectsSvc.update(this.pid, { hidden: next });
+      this.hidden.set(next);
+    } finally {
+      this.togglingHidden.set(false);
+    }
+  }
+
   /* ── LINHA DO TEMPO ── */
   addStep(): void {
-    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false }]);
+    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false, weight: 0 }]);
   }
-  updateStep(i: number, field: keyof TimelineStep, value: string | boolean): void {
+  updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
     this.stepsData.update((steps) => steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
   }
   moveStep(i: number, dir: number): void {
@@ -181,7 +201,10 @@ export class AdminProjectComponent {
     this.timelineErr.set('');
     this.savingTimeline.set(true);
     try {
-      await this.projectsSvc.updateSteps(this.pid, this.stepsData());
+      await Promise.all([
+        this.projectsSvc.updateSteps(this.pid, this.stepsData()),
+        this.projectsSvc.update(this.pid, { progress: this.progress() }),
+      ]);
       this.timelineOk.set(true);
       setTimeout(() => this.timelineOk.set(false), 3000);
     } catch {
@@ -192,10 +215,23 @@ export class AdminProjectComponent {
   }
 
   /* ── ARQUIVOS ── */
+  async onDropFile(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.dragOver.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    await this.handleUpload(file);
+  }
+
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    await this.handleUpload(file);
+    input.value = '';
+  }
+
+  private async handleUpload(file: File): Promise<void> {
     this.uploadErr.set('');
     const ownerId = this.project()?.ownerId ?? null;
     const owner = this.ownerAccount();
@@ -209,26 +245,15 @@ export class AdminProjectComponent {
     );
     if (err) {
       this.uploadErr.set(err);
-      input.value = '';
       return;
     }
     this.uploading.set(true);
     const data = await firstValueFrom(this.userData$);
     try {
-      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'admin', data?.name || 'Admin', this.uploadCategory());
+      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'admin', data?.name || 'Admin');
     } finally {
       this.uploading.set(false);
-      input.value = '';
     }
-  }
-
-  categoryLabel(key: string | undefined): string {
-    return this.fileCategories.find((c) => c.key === key)?.label || 'Outro';
-  }
-
-  filesFiltered(files: ProjectFile[]): ProjectFile[] {
-    const cat = this.fileCategoryFilter();
-    return cat ? files.filter((f) => (f.category || 'outro') === cat) : files;
   }
 
   async deleteFile(f: ProjectFile): Promise<void> {
@@ -245,11 +270,11 @@ export class AdminProjectComponent {
   }
 
   adminFiles(files: ProjectFile[]): ProjectFile[] {
-    return this.filesFiltered(files).filter((f) => f.uploadedByRole === 'admin');
+    return files.filter((f) => f.uploadedByRole === 'admin');
   }
 
   clientFiles(files: ProjectFile[]): ProjectFile[] {
-    return this.filesFiltered(files).filter((f) => f.uploadedByRole === 'client');
+    return files.filter((f) => f.uploadedByRole === 'client');
   }
 
   /* ── MENSAGENS ── */

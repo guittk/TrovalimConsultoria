@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -11,7 +11,7 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { UserAccount } from '../../core/models';
+import { Project, UserAccount } from '../../core/models';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -50,6 +50,8 @@ export class AdminClientComponent {
   readonly empresa = toSignal(this.empresasSvc.get$(this.cid), { initialValue: null });
   readonly projects = toSignal(this.projectsSvc.listForOwner$(this.cid), { initialValue: [] });
   readonly teamMembers = toSignal(this.accountsSvc.listTeamMembers$(this.cid), { initialValue: [] });
+  readonly allProjects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
+  readonly unlinkedProjects = computed(() => this.allProjects().filter((p) => !p.ownerId));
 
   /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
   readonly availableAccounts = toSignal(this.accountsSvc.listUnlinkedClients$(), { initialValue: [] as UserAccount[] });
@@ -73,6 +75,15 @@ export class AdminClientComponent {
   readonly tmSelectedUid = signal('');
   readonly tmSaving = signal(false);
   readonly tmErr = signal('');
+
+  /* ── PROJETOS: adicionar existente ── */
+  readonly apModalOpen = signal(false);
+  readonly apSelectedProjectId = signal('');
+  readonly apSaving = signal(false);
+  readonly apErr = signal('');
+
+  /* ── PROJETOS: remover da empresa ── */
+  readonly removingProjectId = signal('');
 
   constructor() {
     effect(() => {
@@ -203,5 +214,55 @@ export class AdminClientComponent {
 
   initials(name: string): string {
     return name.split(' ').slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+  }
+
+  /* ── PROJETOS: adicionar existente ── */
+  openAddProjectModal(): void {
+    this.apSelectedProjectId.set('');
+    this.apErr.set('');
+    this.apModalOpen.set(true);
+  }
+
+  closeAddProjectModal(): void {
+    this.apModalOpen.set(false);
+  }
+
+  async attachProject(): Promise<void> {
+    const projectId = this.apSelectedProjectId();
+    this.apErr.set('');
+    if (!projectId) {
+      this.apErr.set('Selecione um projeto.');
+      return;
+    }
+    const e = this.empresa();
+    this.apSaving.set(true);
+    try {
+      await this.projectsSvc.update(projectId, {
+        ownerId: this.cid,
+        clientName: e?.branding?.companyName || '',
+        branding: e?.branding || null,
+      });
+      this.apModalOpen.set(false);
+    } catch {
+      this.apErr.set('Erro ao vincular projeto.');
+    } finally {
+      this.apSaving.set(false);
+    }
+  }
+
+  async removeProjectFromCompany(project: Project): Promise<void> {
+    const ok = await this.confirmSvc.confirm({
+      title: 'Remover projeto da empresa',
+      message: `Remover "${project.name}" desta empresa? O projeto deixa de ficar vinculado e a empresa perde o acesso a ele — ele continua existindo, sem empresa.`,
+      confirmLabel: 'Remover',
+      danger: true,
+    });
+    if (!ok) return;
+    this.removingProjectId.set(project.id);
+    try {
+      await this.projectsSvc.update(project.id, { ownerId: null, clientName: '', branding: null });
+    } finally {
+      this.removingProjectId.set('');
+    }
   }
 }

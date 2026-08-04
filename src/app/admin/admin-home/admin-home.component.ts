@@ -2,7 +2,7 @@ import { AsyncPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
@@ -33,6 +33,7 @@ export class AdminHomeComponent {
   private readonly projectsSvc = inject(ProjectsService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly statusSettings = toSignal(this.statusSettingsSvc.get$(), {
     initialValue: DEFAULT_PROJECT_STATUS_SETTINGS,
@@ -64,6 +65,9 @@ export class AdminHomeComponent {
     return list;
   });
 
+  readonly projectsWithCompany = computed(() => this.filteredProjects().filter((p) => !!p.ownerId));
+  readonly projectsWithoutCompany = computed(() => this.filteredProjects().filter((p) => !p.ownerId));
+
   /* ── MODAL ── */
   readonly modalOpen = signal(false);
   readonly modalError = signal('');
@@ -77,11 +81,19 @@ export class AdminHomeComponent {
 
   readonly selectedClient = computed(() => this.clients().find((c) => c.id === this.npClientUid()));
 
-  openModal(): void {
+  constructor() {
+    const empresaId = this.route.snapshot.queryParamMap.get('empresa');
+    if (empresaId) {
+      this.openModal(empresaId);
+      this.router.navigate([], { queryParams: {} });
+    }
+  }
+
+  openModal(preselectedEmpresaId?: string): void {
     this.npName.set('');
     this.npDesc.set('');
     this.npStatus.set('em-andamento');
-    this.npClientUid.set('');
+    this.npClientUid.set(preselectedEmpresaId || '');
     this.modalError.set('');
     this.modalOpen.set(true);
     this.loadClients();

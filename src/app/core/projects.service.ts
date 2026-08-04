@@ -114,7 +114,6 @@ export class ProjectsService {
     file: File,
     uploadedByRole: string,
     uploadedByName: string,
-    category: string = 'outro',
   ): Promise<void> {
     const path = `projects/${projectId}/${uploadedByRole}/${Date.now()}_${file.name}`;
     const storageRef = ref(this.storage, path);
@@ -128,7 +127,6 @@ export class ProjectsService {
       uploadedAt: serverTimestamp(),
       uploadedByRole,
       uploadedByName,
-      category,
     });
     await this.bumpUsage(ownerId, file.size);
   }

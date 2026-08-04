@@ -9,7 +9,6 @@ import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
-import { PROJECT_FILE_CATEGORIES } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -44,8 +43,7 @@ export class PortalProjectComponent {
   readonly messageText = signal('');
   readonly uploading = signal(false);
   readonly uploadErr = signal('');
-  readonly uploadCategory = signal('outro');
-  readonly fileCategories = PROJECT_FILE_CATEGORIES;
+  readonly dragOver = signal(false);
 
   constructor() {
     combineLatest([this.auth.user$, this.userData$, this.project$])
@@ -53,7 +51,7 @@ export class PortalProjectComponent {
       .subscribe(([user, data, project]) => {
         if (!user) return;
         const ownerId = data?.companyId ?? null;
-        if (!project || !ownerId || project.ownerId !== ownerId) {
+        if (!project || !ownerId || project.ownerId !== ownerId || project.hidden) {
           this.router.navigateByUrl('/portal');
         }
       });
@@ -73,10 +71,23 @@ export class PortalProjectComponent {
     await this.projectsSvc.sendMessage(this.pid, data?.name || user.email || '', 'client', text);
   }
 
+  async onDropFile(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.dragOver.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    await this.handleUpload(file);
+  }
+
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    await this.handleUpload(file);
+    input.value = '';
+  }
+
+  private async handleUpload(file: File): Promise<void> {
     const user = this.auth.currentUser;
     if (!user) return;
     this.uploadErr.set('');
@@ -91,21 +102,15 @@ export class PortalProjectComponent {
     );
     if (err) {
       this.uploadErr.set(err);
-      input.value = '';
       return;
     }
     this.uploading.set(true);
     try {
       const project = await firstValueFrom(this.project$);
       const ownerId = project?.ownerId ?? (data?.companyId || user.uid);
-      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'client', data?.name || user.email || '', this.uploadCategory());
+      await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'client', data?.name || user.email || '');
     } finally {
       this.uploading.set(false);
-      input.value = '';
     }
-  }
-
-  categoryLabel(key: string | undefined): string {
-    return this.fileCategories.find((c) => c.key === key)?.label || 'Outro';
   }
 }
