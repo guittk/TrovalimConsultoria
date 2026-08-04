@@ -2,7 +2,7 @@ import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
@@ -39,6 +39,7 @@ type TabKey = 'geral' | 'timeline' | 'arquivos' | 'mensagens';
 })
 export class AdminProjectComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
   private readonly projectsSvc = inject(ProjectsService);
@@ -214,6 +215,31 @@ export class AdminProjectComponent {
       this.hidden.set(next);
     } finally {
       this.togglingHidden.set(false);
+    }
+  }
+
+  /* ── CABEÇALHO: excluir projeto ── */
+  readonly deletingProject = signal(false);
+  readonly deleteProjectErr = signal('');
+  async deleteProject(): Promise<void> {
+    const p = this.project();
+    if (!p) return;
+    const ok = await this.confirmSvc.confirm({
+      title: 'Excluir projeto',
+      message: `Excluir "${p.name}" permanentemente?\n\nIsso não pode ser desfeito — arquivos, mensagens e notas internas deste projeto também são excluídos.`,
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+    this.deleteProjectErr.set('');
+    this.deletingProject.set(true);
+    try {
+      await this.projectsSvc.deleteProject(this.pid);
+      await this.router.navigate(['/admin']);
+    } catch {
+      this.deleteProjectErr.set('Erro ao excluir projeto. Tente novamente.');
+    } finally {
+      this.deletingProject.set(false);
     }
   }
 

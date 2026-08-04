@@ -13,6 +13,7 @@ Todas as mudanças notáveis do projeto são documentadas aqui.
 - Exclusão de empresa agora lista os projetos e colaboradores vinculados com uma caixa de seleção por item: marque para excluir junto, deixe desmarcado para apenas desvincular (o projeto/conta continua existindo, só perde o vínculo com a empresa).
 - Excluir uma conta agora também remove o login no Firebase Authentication automaticamente (via Cloud Function), não só o cadastro na plataforma.
 - `public/_redirects` para o SPA funcionar corretamente também se hospedado no Netlify (o 404 ao recarregar a página era falta dessa regra — no Firebase Hosting isso já funcionava).
+- Botão "Excluir Projeto" na tela do projeto no admin, igual ao "Excluir Empresa": exclui o projeto e seus arquivos, mensagens e notas internas permanentemente.
 
 ### Alterado
 - Nomes dos papéis de acesso traduzidos para português: Owner → Proprietário, Manager → Gerente, Client → Cliente.

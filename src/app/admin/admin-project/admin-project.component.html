@@ -36,7 +36,10 @@
         </span>
         <span class="switch-label">Visível para a empresa</span>
       </label>
+      <button class="btn btn-danger-ghost btn-sm" [disabled]="deletingProject()" (click)="deleteProject()">{{ deletingProject() ? 'Excluindo…' : 'Excluir Projeto' }}</button>
     </div>
+
+    @if (deleteProjectErr()) { <div class="alert alert-error show">{{ deleteProjectErr() }}</div> }
 
     <div class="card" style="padding:0 2rem 2rem">
       <div class="tabs">
