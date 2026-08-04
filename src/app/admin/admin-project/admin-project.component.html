@@ -14,8 +14,8 @@
       @if (ownerAccount()?.branding?.logo) {
         <img [src]="ownerAccount()!.branding!.logo" class="proj-header-logo" alt="">
       } @else {
-        <div class="proj-header-logo-ph">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <div class="proj-header-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:1.3rem">
+          {{ initials(ownerAccount()?.branding?.companyName || p.clientName || '') }}
         </div>
       }
       <div class="proj-header-info">
@@ -51,6 +51,11 @@
         <div class="tab-panel active">
           @if (geralOk()) { <div class="alert alert-success show">Salvo com sucesso.</div> }
           @if (geralErr()) { <div class="alert alert-error show">{{ geralErr() }}</div> }
+
+          <div class="form-group">
+            <label class="form-label">Nome do Projeto</label>
+            <input type="text" class="form-input" placeholder="Ex: Recrutamento — Analista de RH" [ngModel]="name()" (ngModelChange)="name.set($event)">
+          </div>
 
           <div class="form-row">
             <div class="form-group">
@@ -118,13 +123,8 @@
               <input type="checkbox" class="step-check" [checked]="s.done" (change)="updateStep(i, 'done', $any($event.target).checked)">
               <div class="step-inputs">
                 <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="s.name" (ngModelChange)="updateStep(i, 'name', $event)">
-                <input type="text" class="step-date-input" placeholder="Data (ex: Jan 2025)" [ngModel]="s.date" (ngModelChange)="updateStep(i, 'date', $event)">
-                <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
-                  <input type="range" class="progress-slider" style="width:100px" min="0" max="100" step="5"
-                    [style.background]="weightSliderBackground(s.weight || 0)"
-                    [ngModel]="s.weight || 0" (ngModelChange)="updateStep(i, 'weight', +$event)">
-                  <span style="font-size:.75rem;color:var(--muted);width:2.4rem;text-align:right;flex-shrink:0">{{ s.weight || 0 }}%</span>
-                </div>
+                <input type="date" class="step-date-input" [ngModel]="s.date" (ngModelChange)="updateStep(i, 'date', $event)">
+                <span style="font-size:.75rem;color:var(--muted);width:5rem;text-align:right;flex-shrink:0">{{ stepIntervalDays(i) }} dias</span>
               </div>
               <div class="step-btns">
                 <button class="btn-icon" title="Mover para cima" (click)="moveStep(i, -1)">↑</button>
@@ -136,8 +136,8 @@
 
           @if (stepsData().length) {
             <div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">
-              Soma dos pesos: {{ totalWeight() }}%
-              @if (totalWeight() !== 100) { <span style="color:#DC2626"> — o ideal é somar 100% para um progresso preciso</span> }
+              Peso de cada etapa = dias entre a data dela e a data da etapa anterior (a primeira conta a partir da criação do projeto). Duração total considerada: {{ totalWeight() }} dias.
+              @if (!totalWeight()) { <span style="color:#DC2626"> — defina datas nas etapas para calcular o progresso.</span> }
             </div>
           }
 

@@ -205,14 +205,19 @@ export class AdminAccountsComponent {
   async deleteAccount(acc: UserAccount): Promise<void> {
     const ok = await this.confirmSvc.confirm({
       title: 'Excluir conta',
-      message: `Excluir o acesso de "${acc.name || acc.email}"?\n\nIsso remove os dados da conta na plataforma, mas o login no Firebase Authentication precisa ser removido separadamente pelo Console do Firebase.`,
+      message: `Excluir o acesso de "${acc.name || acc.email}"?\n\nIsso remove os dados da conta na plataforma e o login no Firebase Authentication.`,
       confirmLabel: 'Excluir',
       danger: true,
     });
     if (!ok) return;
     this.pageErr.set('');
     try {
-      await this.accountsSvc.deleteAccount(acc.uid);
+      const { authDeleted } = await this.accountsSvc.deleteAccount(acc.uid);
+      if (!authDeleted) {
+        this.pageErr.set(
+          `"${acc.name || acc.email}" foi removido da plataforma, mas o login no Firebase Authentication não pôde ser removido automaticamente (verifique se as Cloud Functions estão implantadas). Remova-o pelo Console do Firebase se necessário.`,
+        );
+      }
     } catch (e) {
       if (e instanceof Error && e.message === 'HAS_TEAM_MEMBERS') {
         this.pageErr.set(

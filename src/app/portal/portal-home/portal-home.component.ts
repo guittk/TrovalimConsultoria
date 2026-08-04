@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ProjectsService } from '../../core/projects.service';
+import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
@@ -22,4 +23,8 @@ export class PortalHomeComponent {
     switchMap((data) => (data?.companyId ? this.projectsSvc.listForOwner$(data.companyId) : of([]))),
     map((projects) => projects.filter((p) => !p.hidden)),
   );
+
+  initials(name: string): string {
+    return initials(name);
+  }
 }

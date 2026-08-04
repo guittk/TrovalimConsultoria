@@ -8,6 +8,7 @@ import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Project, UserAccount } from '../../core/models';
+import { initials } from '../../shared/initials';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 
 const ADMIN_TABS: PnavTab[] = [
@@ -155,7 +156,7 @@ export class AdminClientsComponent {
   }
 
   initials(name: string): string {
-    return name.split(' ').slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+    return initials(name);
   }
 
   async createCompany(): Promise<void> {

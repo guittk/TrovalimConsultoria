@@ -96,10 +96,13 @@ service cloud.firestore {
         allow update, delete: if canAccessProject(projectId);
       }
 
-      // Arquivos (metadados): dono e staff (com acesso ao projeto) leem/criam
+      // Arquivos (metadados): dono e staff (com acesso ao projeto) leem/criam.
+      // Exclusão: staff exclui qualquer arquivo; o cliente dono do projeto só
+      // pode excluir os arquivos que ele mesmo enviou (uploadedByRole == 'client').
       match /files/{fileId} {
         allow read, create: if canAccessProject(projectId) || isProjectOwner(projectId);
-        allow delete: if canAccessProject(projectId);
+        allow delete: if canAccessProject(projectId) ||
+          (isProjectOwner(projectId) && resource.data.uploadedByRole == 'client');
       }
 
       // Notas internas: só a equipe (nunca o cliente dono do projeto) lê/escreve.

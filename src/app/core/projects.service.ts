@@ -7,6 +7,8 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
+  getDocs,
   increment,
   orderBy,
   query,
@@ -57,6 +59,35 @@ export class ProjectsService {
 
   update(id: string, data: Partial<Project>): Promise<void> {
     return updateDoc(doc(this.db, 'projects', id), data as DocumentData);
+  }
+
+  /**
+   * Exclui o projeto por completo: arquivos (Storage + metadados), mensagens,
+   * notas internas e o doc do projeto. Usado quando a empresa é excluída e o
+   * admin opta por excluir (em vez de desvincular) um projeto vinculado.
+   */
+  async deleteProject(id: string): Promise<void> {
+    const projectSnap = await getDoc(doc(this.db, 'projects', id));
+    const ownerId = (projectSnap.data()?.['ownerId'] as string | null) ?? null;
+
+    const filesSnap = await getDocs(collection(this.db, 'projects', id, 'files'));
+    let totalBytes = 0;
+    for (const d of filesSnap.docs) {
+      const data = d.data() as ProjectFile;
+      if (data.path) await deleteObject(ref(this.storage, data.path)).catch(() => undefined);
+      totalBytes += (data.sizeKb || 0) * 1024;
+    }
+
+    const messagesSnap = await getDocs(collection(this.db, 'projects', id, 'messages'));
+
+    await Promise.all([
+      ...filesSnap.docs.map((d) => deleteDoc(d.ref)),
+      ...messagesSnap.docs.map((d) => deleteDoc(d.ref)),
+      deleteDoc(doc(this.db, 'projects', id, 'internal', 'notes')).catch(() => undefined),
+    ]);
+
+    await deleteDoc(doc(this.db, 'projects', id));
+    if (totalBytes) await this.bumpUsage(ownerId, -totalBytes);
   }
 
   updateSteps(id: string, steps: TimelineStep[]): Promise<void> {

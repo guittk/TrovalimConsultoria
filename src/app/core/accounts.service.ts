@@ -12,9 +12,10 @@ import {
 } from 'firebase/firestore';
 import { deleteApp, initializeApp } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
+import { Functions, httpsCallable } from 'firebase/functions';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { FIRESTORE } from './firebase.providers';
+import { FIRESTORE, FIREBASE_FUNCTIONS } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
 import { Role, UserAccount } from './models';
 import { isStaffRole } from './auth.service';
@@ -22,6 +23,7 @@ import { isStaffRole } from './auth.service';
 @Injectable({ providedIn: 'root' })
 export class AccountsService {
   private readonly db: Firestore = inject(FIRESTORE);
+  private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
 
   listAll$(): Observable<UserAccount[]> {
     return collectionData$<DocumentData>(collection(this.db, 'users')).pipe(
@@ -61,8 +63,26 @@ export class AccountsService {
     return updateDoc(doc(this.db, 'users', uid), data as DocumentData);
   }
 
-  deleteAccount(uid: string): Promise<void> {
-    return deleteDoc(doc(this.db, 'users', uid));
+  /**
+   * Exclui a conta: remove o doc em /users e, via Cloud Function (Admin SDK,
+   * único jeito de apagar o login de outra pessoa), o usuário no Firebase
+   * Authentication. A exclusão no Authentication é best-effort — se a Cloud
+   * Function ainda não estiver implantada (ex: projeto ainda não está no
+   * plano Blaze) ou falhar, o doc em /users é removido mesmo assim, revogando
+   * o acesso à plataforma; `authDeleted: false` sinaliza ao chamador que o
+   * login pode ter sobrado no Authentication.
+   */
+  async deleteAccount(uid: string): Promise<{ authDeleted: boolean }> {
+    let authDeleted = false;
+    try {
+      const deleteAccountAuth = httpsCallable(this.functions, 'deleteAccountAuth');
+      await deleteAccountAuth({ uid });
+      authDeleted = true;
+    } catch {
+      authDeleted = false;
+    }
+    await deleteDoc(doc(this.db, 'users', uid));
+    return { authDeleted };
   }
 
   /**

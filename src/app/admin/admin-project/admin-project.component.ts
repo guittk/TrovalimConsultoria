@@ -16,6 +16,7 @@ import {
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
 import { ProjectFile, TimelineStep } from '../../core/models';
+import { initials } from '../../shared/initials';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -75,6 +76,7 @@ export class AdminProjectComponent {
   readonly activeTab = signal<TabKey>('geral');
 
   /* ── VISÃO GERAL ── */
+  readonly name = signal('');
   readonly status = signal('em-andamento');
   readonly description = signal('');
   readonly deadline = signal('');
@@ -97,16 +99,49 @@ export class AdminProjectComponent {
   readonly timelineErr = signal('');
   readonly savingTimeline = signal(false);
 
-  /** Progresso derivado do peso das etapas concluídas na Linha do Tempo. */
+  /**
+   * Peso de cada etapa = intervalo em dias entre a data dela e a data da
+   * etapa anterior (a primeira etapa é medida a partir da criação do
+   * projeto). Etapas sem data válida (ou fora de ordem) contam 0 dias —
+   * datas antigas em texto livre ("Jan 2025") não são reconhecidas até
+   * serem reeditadas no novo campo de data.
+   */
+  stepIntervalDays(i: number): number {
+    const steps = this.stepsData();
+    const step = steps[i];
+    if (!step) return 0;
+    const prevDate = i > 0 ? this.parseStepDate(steps[i - 1].date) : this.projectCreatedDate();
+    const thisDate = this.parseStepDate(step.date);
+    if (!prevDate || !thisDate) return 0;
+    const diffDays = Math.round((thisDate.getTime() - prevDate.getTime()) / 86400000);
+    return diffDays > 0 ? diffDays : 0;
+  }
+
+  private parseStepDate(value: string | undefined): Date | null {
+    if (!value) return null;
+    const d = new Date(`${value}T00:00:00`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private projectCreatedDate(): Date | null {
+    const p = this.project();
+    return p?.createdAt ? this.projectsSvc.toDate(p.createdAt) : null;
+  }
+
+  /** Progresso derivado do peso (dias) das etapas concluídas na Linha do Tempo. */
   readonly progress = computed(() => {
     const steps = this.stepsData();
-    const totalWeight = steps.reduce((sum, s) => sum + (s.weight || 0), 0);
+    if (!steps.length) return 0;
+    const weights = steps.map((_, i) => this.stepIntervalDays(i));
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
     if (totalWeight <= 0) return 0;
-    const doneWeight = steps.filter((s) => s.done).reduce((sum, s) => sum + (s.weight || 0), 0);
+    const doneWeight = steps.reduce((sum, s, i) => sum + (s.done ? weights[i] : 0), 0);
     return Math.round((doneWeight / totalWeight) * 100);
   });
 
-  readonly totalWeight = computed(() => this.stepsData().reduce((sum, s) => sum + (s.weight || 0), 0));
+  readonly totalWeight = computed(() =>
+    this.stepsData().reduce((sum, _, i) => sum + this.stepIntervalDays(i), 0),
+  );
 
   /* ── ARQUIVOS ── */
   readonly uploading = signal(false);
@@ -120,6 +155,7 @@ export class AdminProjectComponent {
     effect(() => {
       const p = this.project();
       if (!p) return;
+      this.name.set(p.name || '');
       this.status.set(p.status);
       this.description.set(p.description || '');
       this.deadline.set(p.deadline || '');
@@ -134,19 +170,24 @@ export class AdminProjectComponent {
     return this.projectsSvc.toDate(value);
   }
 
-  weightSliderBackground(pct: number): string {
-    const color = this.ownerAccount()?.branding?.primaryColor || '#C9A96E';
-    return `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #E5E0D8 ${pct}%, #E5E0D8 100%)`;
+  initials(name: string): string {
+    return initials(name);
   }
 
   /* ── VISÃO GERAL ── */
   async saveGeral(): Promise<void> {
     this.geralOk.set(false);
     this.geralErr.set('');
+    const name = this.name().trim();
+    if (!name) {
+      this.geralErr.set('O nome do projeto é obrigatório.');
+      return;
+    }
     this.savingGeral.set(true);
     try {
       await Promise.all([
         this.projectsSvc.update(this.pid, {
+          name,
           status: this.status(),
           description: this.description().trim(),
           deadline: this.deadline() || null,
@@ -178,7 +219,7 @@ export class AdminProjectComponent {
 
   /* ── LINHA DO TEMPO ── */
   addStep(): void {
-    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false, weight: 0 }]);
+    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false }]);
   }
   updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
     this.stepsData.update((steps) => steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
@@ -201,8 +242,9 @@ export class AdminProjectComponent {
     this.timelineErr.set('');
     this.savingTimeline.set(true);
     try {
+      const steps = this.stepsData().map((s) => ({ name: s.name, date: s.date, done: s.done }));
       await Promise.all([
-        this.projectsSvc.updateSteps(this.pid, this.stepsData()),
+        this.projectsSvc.updateSteps(this.pid, steps),
         this.projectsSvc.update(this.pid, { progress: this.progress() }),
       ]);
       this.timelineOk.set(true);

@@ -15,7 +15,7 @@
     @if (savingErr()) { <div class="alert alert-error show">{{ savingErr() }}</div> }
 
     @if (!isOwner()) {
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Owner pode alterar esta configuração.</p>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Proprietário pode alterar esta configuração.</p>
     }
 
     <div class="form-group">
@@ -40,7 +40,7 @@
     @if (statusSavingErr()) { <div class="alert alert-error show">{{ statusSavingErr() }}</div> }
 
     @if (!isOwner()) {
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Owner pode alterar esta configuração.</p>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Proprietário pode alterar esta configuração.</p>
     }
 
     <div class="form-help" style="margin-bottom:.85rem">

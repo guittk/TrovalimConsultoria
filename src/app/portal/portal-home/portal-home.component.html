@@ -22,8 +22,8 @@
               @if (userData.branding?.logo) {
                 <img [src]="userData.branding!.logo" class="proj-card-logo" [alt]="userData.branding?.companyName || ''">
               } @else {
-                <div class="proj-card-logo-ph">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                <div class="proj-card-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:.95rem">
+                  {{ initials(userData.branding?.companyName || p.clientName || '') }}
                 </div>
               }
               <div>

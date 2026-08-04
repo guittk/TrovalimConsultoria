@@ -10,7 +10,7 @@
         @if (isOwner()) {
           Gerenciamento de acesso à plataforma
         } @else {
-          Somente visualização — apenas o Owner pode criar, editar ou excluir contas.
+          Somente visualização — apenas o Proprietário pode criar, editar ou excluir contas.
         }
       </p>
     </div>
@@ -115,16 +115,16 @@
     @if (editingIsSelf()) {
       <div class="form-group">
         <label class="form-label">Papel</label>
-        <div style="font-size:.85rem;color:var(--graphite)">Owner — não é possível alterar o próprio papel por aqui.</div>
+        <div style="font-size:.85rem;color:var(--graphite)">Proprietário — não é possível alterar o próprio papel por aqui.</div>
       </div>
     } @else {
       <div class="form-group">
         <label class="form-label">Papel</label>
         <select class="form-select" [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
-          <option value="client">Client — acesso apenas ao próprio projeto</option>
-          <option value="manager">Manager — acesso total ao admin, exceto contas</option>
+          <option value="client">Cliente — acesso apenas ao próprio projeto</option>
+          <option value="manager">Gerente — acesso total ao admin, exceto contas</option>
         </select>
-        <div class="form-help">Para promover alguém a Owner, isso deve ser feito manualmente por segurança.</div>
+        <div class="form-help">Para promover alguém a Proprietário, isso deve ser feito manualmente por segurança.</div>
       </div>
     }
 

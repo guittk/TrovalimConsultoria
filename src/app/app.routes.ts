@@ -51,5 +51,9 @@ export const routes: Routes = [
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-config/admin-config.component').then((m) => m.AdminConfigComponent),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '404',
+    loadComponent: () => import('./not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
+  { path: '**', redirectTo: '/404' },
 ];

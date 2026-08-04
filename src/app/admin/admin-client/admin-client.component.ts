@@ -12,6 +12,7 @@ import {
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
 import { Project, UserAccount } from '../../core/models';
+import { initials } from '../../shared/initials';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -69,6 +70,9 @@ export class AdminClientComponent {
   /* ── EXCLUIR EMPRESA ── */
   readonly deletingEmpresa = signal(false);
   readonly deleteErr = signal('');
+  readonly deleteModalOpen = signal(false);
+  readonly deleteAccountUids = signal<Set<string>>(new Set());
+  readonly deleteProjectIds = signal<Set<string>>(new Set());
 
   /* ── COLABORADORES: adicionar ── */
   readonly tmModalOpen = signal(false);
@@ -148,27 +152,69 @@ export class AdminClientComponent {
     }
   }
 
+  openDeleteEmpresaModal(): void {
+    this.deleteAccountUids.set(new Set());
+    this.deleteProjectIds.set(new Set());
+    this.deleteErr.set('');
+    this.deleteModalOpen.set(true);
+  }
+
+  closeDeleteEmpresaModal(): void {
+    this.deleteModalOpen.set(false);
+  }
+
+  toggleDeleteAccount(uid: string, checked: boolean): void {
+    this.deleteAccountUids.update((set) => {
+      const copy = new Set(set);
+      if (checked) copy.add(uid);
+      else copy.delete(uid);
+      return copy;
+    });
+  }
+
+  toggleDeleteProject(id: string, checked: boolean): void {
+    this.deleteProjectIds.update((set) => {
+      const copy = new Set(set);
+      if (checked) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  }
+
+  /**
+   * Antes de excluir a empresa, resolve cada colaborador/projeto vinculado:
+   * exclui os marcados na modal, e apenas desvincula (mantém existindo) os
+   * demais — para que a empresa nunca seja excluída com pendências.
+   */
   async deleteEmpresa(): Promise<void> {
     const e = this.empresa();
     if (!e) return;
-    const ok = await this.confirmSvc.confirm({
-      title: 'Excluir empresa',
-      message: `Excluir "${e.branding?.companyName || 'esta empresa'}" permanentemente?\n\nIsso não pode ser desfeito. Todos os projetos e arquivos associados continuam existindo, mas ficam sem empresa vinculada.`,
-      confirmLabel: 'Excluir',
-      danger: true,
-    });
-    if (!ok) return;
     this.deleteErr.set('');
     this.deletingEmpresa.set(true);
     try {
-      await this.empresasSvc.delete(this.cid);
-      await this.router.navigate(['/admin/clientes']);
-    } catch (err) {
-      if (err instanceof Error && err.message === 'HAS_TEAM_MEMBERS') {
-        this.deleteErr.set('Remova (ou realoque) todos os colaboradores vinculados antes de excluir esta empresa.');
-      } else {
-        this.deleteErr.set('Erro ao excluir empresa.');
+      const accountUidsToDelete = this.deleteAccountUids();
+      for (const m of this.teamMembers()) {
+        if (accountUidsToDelete.has(m.uid)) {
+          await this.accountsSvc.deleteAccount(m.uid);
+        } else {
+          await this.accountsSvc.unlinkTeamMember(m.uid);
+        }
       }
+
+      const projectIdsToDelete = this.deleteProjectIds();
+      for (const p of this.projects()) {
+        if (projectIdsToDelete.has(p.id)) {
+          await this.projectsSvc.deleteProject(p.id);
+        } else {
+          await this.projectsSvc.update(p.id, { ownerId: null, clientName: '', branding: null });
+        }
+      }
+
+      await this.empresasSvc.delete(this.cid);
+      this.deleteModalOpen.set(false);
+      await this.router.navigate(['/admin/clientes']);
+    } catch {
+      this.deleteErr.set('Erro ao excluir empresa. Tente novamente.');
     } finally {
       this.deletingEmpresa.set(false);
     }
@@ -213,7 +259,7 @@ export class AdminClientComponent {
   }
 
   initials(name: string): string {
-    return name.split(' ').slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+    return initials(name);
   }
 
   /* ── PROJETOS: adicionar existente ── */

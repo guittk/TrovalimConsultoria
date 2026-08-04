@@ -13,14 +13,20 @@
         @if (userData.branding?.logo) {
           <img [src]="userData.branding!.logo" class="proj-header-logo" alt="">
         } @else {
-          <div class="proj-header-logo-ph">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          <div class="proj-header-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:1.3rem">
+            {{ initials(userData.branding?.companyName || p.clientName || '') }}
           </div>
         }
         <div class="proj-header-info">
           <div class="proj-header-company">{{ userData.branding?.companyName || p.clientName || '' }}</div>
           <div class="proj-header-name">{{ p.name }}</div>
           <app-status-badge [status]="p.status" />
+          <div class="progress-wrap" style="margin-top:.85rem;max-width:320px">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="p.progress || 0" [style.background]="userData.branding?.primaryColor || '#C9A96E'"></div>
+            </div>
+            <div class="progress-label">{{ p.progress || 0 }}% concluído</div>
+          </div>
         </div>
       </div>
 
@@ -38,7 +44,7 @@
                     [style.background]="s.done ? (userData.branding?.primaryColor || null) : null"
                     [style.border-color]="s.done ? (userData.branding?.primaryColor || null) : null"></div>
                   <div class="timeline-title">{{ s.name }}</div>
-                  @if (s.date) { <div class="timeline-date">{{ s.date }}</div> }
+                  @if (s.date) { <div class="timeline-date">{{ s.date | date:'dd/MM/yyyy' }}</div> }
                   <div class="timeline-tag" [class.done]="s.done" [class.pending]="!s.done" [style.color]="s.done ? (userData.branding?.primaryColor || null) : null">{{ s.done ? '✓ Concluído' : 'Pendente' }}</div>
                 </div>
               }
@@ -91,6 +97,9 @@
                       </div>
                       <div class="file-actions">
                         <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        @if (f.uploadedByRole === 'client') {
+                          <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
+                        }
                       </div>
                     </div>
                   }

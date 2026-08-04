@@ -81,10 +81,9 @@ export interface ProjectStatusSettings {
 
 export interface TimelineStep {
   name: string;
+  /** Data no formato yyyy-mm-dd. */
   date: string;
   done: boolean;
-  /** Peso da etapa (%) usado para calcular o progresso do projeto. */
-  weight?: number;
 }
 
 export interface Project {

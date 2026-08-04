@@ -9,9 +9,12 @@ import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
+import { ProjectFile } from '../../core/models';
+import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-portal-project',
@@ -27,6 +30,7 @@ export class PortalProjectComponent {
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
+  private readonly confirmSvc = inject(ConfirmService);
 
   readonly pid = this.route.snapshot.paramMap.get('id')!;
   readonly userData$ = this.auth.userData$;
@@ -59,6 +63,10 @@ export class PortalProjectComponent {
 
   toDate(value: unknown): Date {
     return this.projectsSvc.toDate(value);
+  }
+
+  initials(name: string): string {
+    return initials(name);
   }
 
   async sendMessage(): Promise<void> {
@@ -112,5 +120,18 @@ export class PortalProjectComponent {
     } finally {
       this.uploading.set(false);
     }
+  }
+
+  async deleteFile(f: ProjectFile): Promise<void> {
+    const ok = await this.confirmSvc.confirm({
+      title: 'Excluir arquivo',
+      message: 'Excluir este arquivo que você enviou? Isso não pode ser desfeito.',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+    const project = await firstValueFrom(this.project$);
+    const sizeBytes = (f.sizeKb || 0) * 1024;
+    await this.projectsSvc.deleteFile(this.pid, f.id!, f.path, project?.ownerId ?? null, sizeBytes);
   }
 }
