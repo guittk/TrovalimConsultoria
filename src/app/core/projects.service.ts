@@ -162,6 +162,23 @@ export class ProjectsService {
     await this.bumpUsage(ownerId, file.size);
   }
 
+  addFileLink(
+    projectId: string,
+    url: string,
+    name: string,
+    uploadedByRole: string,
+    uploadedByName: string,
+  ): Promise<unknown> {
+    return addDoc(collection(this.db, 'projects', projectId, 'files'), {
+      name,
+      downloadUrl: url,
+      kind: 'link',
+      uploadedAt: serverTimestamp(),
+      uploadedByRole,
+      uploadedByName,
+    });
+  }
+
   async deleteFile(
     projectId: string,
     fileId: string,

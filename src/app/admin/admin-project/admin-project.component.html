@@ -70,19 +70,26 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Prazo de Entrega</label>
-              <input type="date" class="form-input" [ngModel]="deadline()" (ngModelChange)="deadline.set($event)">
+              <label class="form-label">Responsável pelo Projeto</label>
+              <select class="form-select" [ngModel]="responsibleUid()" (ngModelChange)="responsibleUid.set($event)">
+                <option value="">— Sem responsável definido —</option>
+                @for (u of staffAccounts(); track u.uid) {
+                  <option [value]="u.uid">{{ u.name || u.email }}</option>
+                }
+              </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Responsável pelo Projeto</label>
-            <select class="form-select" style="max-width:320px" [ngModel]="responsibleUid()" (ngModelChange)="responsibleUid.set($event)">
-              <option value="">— Sem responsável definido —</option>
-              @for (u of staffAccounts(); track u.uid) {
-                <option [value]="u.uid">{{ u.name || u.email }}</option>
-              }
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Data de Início</label>
+              <input type="date" class="form-input" [ngModel]="startDate()" (ngModelChange)="startDate.set($event)">
+              <div class="form-help">Usada como base para calcular o peso da primeira etapa na Linha do Tempo (modo por Data).</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prazo de Entrega</label>
+              <input type="date" class="form-input" [ngModel]="deadline()" (ngModelChange)="deadline.set($event)">
+            </div>
           </div>
 
           <div class="form-group">
@@ -118,29 +125,68 @@
           @if (timelineOk()) { <div class="alert alert-success show">Etapas salvas.</div> }
           @if (timelineErr()) { <div class="alert alert-error show">{{ timelineErr() }}</div> }
 
+          <div class="form-group" style="max-width:360px">
+            <label class="form-label">Ordenação das Etapas</label>
+            <select class="form-select" [ngModel]="timelineMode()" (ngModelChange)="timelineMode.set($event)">
+              <option value="data">Por Data (cronológica)</option>
+              <option value="ordem">Manual (ordem + peso)</option>
+            </select>
+            <div class="form-help">
+              @if (timelineMode() === 'data') {
+                As etapas são ordenadas automaticamente pela data, com as sem data no final. O peso de cada etapa é o intervalo de dias até a etapa (ou grupo de mesma data) anterior, contado a partir da Data de Início do projeto.
+              } @else {
+                Ordem definida manualmente pelas setas. Defina o peso (número) de cada etapa.
+              }
+            </div>
+          </div>
+
+          @if (timelineMode() === 'data' && calendarEnabled) {
+            <div class="form-group" style="max-width:480px">
+              @if (calendarErr()) { <div class="alert alert-error show">{{ calendarErr() }}</div> }
+              @if (calendarConnected()) {
+                <div style="display:flex;align-items:center;gap:.6rem;font-size:.82rem">
+                  <span style="color:#166534">✓ Google Calendar conectado</span>
+                  <button class="btn btn-outline btn-sm" (click)="disconnectCalendar()">Desconectar</button>
+                </div>
+                <div class="form-help">Ao salvar, as etapas com data viram eventos na sua agenda — e todos com acesso a este projeto (dono, gerentes e a empresa) são convidados por e-mail, recebendo as atualizações automaticamente na própria agenda.</div>
+              } @else {
+                <button class="btn btn-outline btn-sm" [disabled]="connectingCalendar()" (click)="connectCalendar()">{{ connectingCalendar() ? 'Conectando…' : 'Conectar Google Calendar' }}</button>
+                <div class="form-help">Conecte para que salvar as etapas também crie eventos na sua agenda do Google.</div>
+              }
+            </div>
+          }
+
           @if (!stepsData().length) {
             <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma etapa. Clique em "Adicionar Etapa".</div>
           }
-          @for (s of stepsData(); track $index; let i = $index) {
+          @for (item of displaySteps(); track item.originalIndex; let i = $index) {
             <div class="step-item">
-              <input type="checkbox" class="step-check" [checked]="s.done" (change)="updateStep(i, 'done', $any($event.target).checked)">
+              <input type="checkbox" class="step-check" [checked]="item.s.done" (change)="updateStep(item.originalIndex, 'done', $any($event.target).checked)">
               <div class="step-inputs">
-                <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="s.name" (ngModelChange)="updateStep(i, 'name', $event)">
-                <input type="date" class="step-date-input" [ngModel]="s.date" (ngModelChange)="updateStep(i, 'date', $event)">
-                <span style="font-size:.75rem;color:var(--muted);width:5rem;text-align:right;flex-shrink:0">{{ stepIntervalDays(i) }} dias</span>
+                <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="item.s.name" (ngModelChange)="updateStep(item.originalIndex, 'name', $event)">
+                @if (timelineMode() === 'data') {
+                  <input type="date" class="step-date-input" [ngModel]="item.s.date" (ngModelChange)="updateStep(item.originalIndex, 'date', $event)">
+                  <span style="font-size:.75rem;color:var(--muted);width:5rem;text-align:right;flex-shrink:0">{{ displayWeights()[i] | number:'1.0-1' }} dias</span>
+                } @else {
+                  <input type="number" class="step-date-input" style="width:5rem" min="0" placeholder="Peso" [ngModel]="item.s.weight ?? 0" (ngModelChange)="updateStep(item.originalIndex, 'weight', $event)">
+                }
               </div>
               <div class="step-btns">
-                <button class="btn-icon" title="Mover para cima" (click)="moveStep(i, -1)">↑</button>
-                <button class="btn-icon" title="Mover para baixo" (click)="moveStep(i, 1)">↓</button>
-                <button class="btn-icon danger" title="Remover" (click)="removeStep(i)">✕</button>
+                @if (timelineMode() === 'ordem') {
+                  <button class="btn-icon" title="Mover para cima" (click)="moveStep(item.originalIndex, -1)">↑</button>
+                  <button class="btn-icon" title="Mover para baixo" (click)="moveStep(item.originalIndex, 1)">↓</button>
+                }
+                <button class="btn-icon danger" title="Remover" (click)="removeStep(item.originalIndex)">✕</button>
               </div>
             </div>
           }
 
           @if (stepsData().length) {
             <div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">
-              Peso de cada etapa = dias entre a data dela e a data da etapa anterior (a primeira conta a partir da criação do projeto). Duração total considerada: {{ totalWeight() }} dias.
-              @if (!totalWeight()) { <span style="color:#DC2626"> — defina datas nas etapas para calcular o progresso.</span> }
+              Peso total considerado: {{ totalWeight() | number:'1.0-1' }}{{ timelineMode() === 'data' ? ' dias' : '' }}.
+              @if (!totalWeight()) {
+                <span style="color:#DC2626"> — {{ timelineMode() === 'data' ? 'defina a Data de Início do projeto e datas nas etapas' : 'defina pesos nas etapas' }} para calcular o progresso.</span>
+              }
             </div>
           }
 
@@ -166,13 +212,13 @@
                   <div class="file-group-label">Documentos da Consultora</div>
                   @for (f of adminFiles(files); track f.id) {
                     <div class="file-item">
-                      <app-file-icon [name]="f.name" />
+                      <app-file-icon [name]="f.name" [link]="f.kind === 'link'" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                        <div class="file-meta">{{ f.kind === 'link' ? 'Link externo · ' : (f.sizeKb ? f.sizeKb + ' KB · ' : '') }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
                       </div>
                       <div class="file-actions">
-                        <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        <a [href]="f.downloadUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm">{{ f.kind === 'link' ? 'Abrir' : 'Baixar' }}</a>
                         <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
                       </div>
                     </div>
@@ -182,13 +228,13 @@
                   <div class="file-group-label">Documentos da Empresa</div>
                   @for (f of clientFiles(files); track f.id) {
                     <div class="file-item">
-                      <app-file-icon [name]="f.name" />
+                      <app-file-icon [name]="f.name" [link]="f.kind === 'link'" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
+                        <div class="file-meta">{{ f.kind === 'link' ? 'Link externo · ' : (f.sizeKb ? f.sizeKb + ' KB · ' : '') }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || '—' }}</div>
                       </div>
                       <div class="file-actions">
-                        <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        <a [href]="f.downloadUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm">{{ f.kind === 'link' ? 'Abrir' : 'Baixar' }}</a>
                         <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
                       </div>
                     </div>
@@ -214,6 +260,32 @@
             <div class="file-upload-text">{{ uploading() ? 'Enviando…' : 'Clique ou arraste arquivos para enviar à empresa' }}</div>
             <div class="file-upload-sub">Limites por tipo de arquivo e por empresa configurados em Configurações</div>
           </div>
+
+          @if (linkErr()) { <div class="alert alert-error show" style="margin-top:.75rem">{{ linkErr() }}</div> }
+
+          @if (!showLinkForm()) {
+            <button class="btn btn-outline btn-sm" style="margin-top:.75rem" (click)="showLinkForm.set(true)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Adicionar Link (ex: SharePoint)
+            </button>
+          } @else {
+            <div class="card" style="padding:1rem;margin-top:.75rem;background:var(--cream, #FAF8F5)">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Nome</label>
+                  <input type="text" class="form-input" placeholder="Ex: Pasta de Contratos" [ngModel]="linkName()" (ngModelChange)="linkName.set($event)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Link</label>
+                  <input type="text" class="form-input" placeholder="https://…" [ngModel]="linkUrl()" (ngModelChange)="linkUrl.set($event)">
+                </div>
+              </div>
+              <div style="display:flex;gap:.5rem">
+                <button class="btn btn-primary btn-sm" [disabled]="savingLink()" (click)="addLink()">{{ savingLink() ? 'Salvando…' : 'Salvar Link' }}</button>
+                <button class="btn btn-outline btn-sm" (click)="showLinkForm.set(false); linkErr.set('')">Cancelar</button>
+              </div>
+            </div>
+          }
         </div>
       }
 

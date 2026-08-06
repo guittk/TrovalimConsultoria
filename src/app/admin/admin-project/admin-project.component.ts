@@ -1,10 +1,10 @@
-import { AsyncPipe, DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, of, switchMap } from 'rxjs';
-import { AuthService } from '../../core/auth.service';
+import { AuthService, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
@@ -15,12 +15,13 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { ProjectFile, TimelineStep } from '../../core/models';
+import { ProjectFile, TimelineMode, TimelineStep } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { GoogleCalendarService } from '../../core/google-calendar.service';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
@@ -34,7 +35,16 @@ type TabKey = 'geral' | 'timeline' | 'arquivos' | 'mensagens';
 @Component({
   selector: 'app-admin-project',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, PnavComponent, StatusBadgeComponent, FileIconComponent],
+  imports: [
+    AsyncPipe,
+    DatePipe,
+    DecimalPipe,
+    FormsModule,
+    RouterLink,
+    PnavComponent,
+    StatusBadgeComponent,
+    FileIconComponent,
+  ],
   templateUrl: './admin-project.component.html',
 })
 export class AdminProjectComponent {
@@ -49,6 +59,7 @@ export class AdminProjectComponent {
   private readonly storageUsageSvc = inject(StorageUsageService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
   private readonly confirmSvc = inject(ConfirmService);
+  private readonly calendarSvc = inject(GoogleCalendarService);
 
   readonly tabs = ADMIN_TABS;
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -80,6 +91,7 @@ export class AdminProjectComponent {
   readonly name = signal('');
   readonly status = signal('em-andamento');
   readonly description = signal('');
+  readonly startDate = signal('');
   readonly deadline = signal('');
   readonly internalNotes = signal('');
   readonly responsibleUid = signal('');
@@ -96,29 +108,35 @@ export class AdminProjectComponent {
 
   /* ── LINHA DO TEMPO ── */
   readonly stepsData = signal<TimelineStep[]>([]);
+  readonly timelineMode = signal<TimelineMode>('data');
   readonly timelineOk = signal(false);
   readonly timelineErr = signal('');
   readonly savingTimeline = signal(false);
+  private originalStepsSnapshot: TimelineStep[] = [];
 
-  /**
-   * Peso de cada etapa = intervalo em dias entre a data dela e a data da
-   * etapa anterior (a primeira etapa é medida a partir da criação do
-   * projeto). Etapas sem data válida (ou fora de ordem) contam 0 dias —
-   * datas antigas em texto livre ("Jan 2025") não são reconhecidas até
-   * serem reeditadas no novo campo de data.
-   */
-  stepIntervalDays(i: number): number {
-    const steps = this.stepsData();
-    const step = steps[i];
-    if (!step) return 0;
-    const prevDate = i > 0 ? this.parseStepDate(steps[i - 1].date) : this.projectCreatedDate();
-    const thisDate = this.parseStepDate(step.date);
-    if (!prevDate || !thisDate) return 0;
-    const diffDays = Math.round((thisDate.getTime() - prevDate.getTime()) / 86400000);
-    return diffDays > 0 ? diffDays : 0;
+  /* ── GOOGLE CALENDAR ── */
+  readonly calendarEnabled = this.calendarSvc.enabled;
+  readonly calendarConnected = this.calendarSvc.connected;
+  readonly calendarErr = signal('');
+  readonly connectingCalendar = signal(false);
+
+  async connectCalendar(): Promise<void> {
+    this.calendarErr.set('');
+    this.connectingCalendar.set(true);
+    try {
+      await this.calendarSvc.connect();
+    } catch {
+      this.calendarErr.set('Não foi possível conectar ao Google Calendar.');
+    } finally {
+      this.connectingCalendar.set(false);
+    }
   }
 
-  private parseStepDate(value: string | undefined): Date | null {
+  disconnectCalendar(): void {
+    this.calendarSvc.disconnect();
+  }
+
+  private parseStepDate(value: string | undefined | null): Date | null {
     if (!value) return null;
     const d = new Date(`${value}T00:00:00`);
     return isNaN(d.getTime()) ? null : d;
@@ -129,25 +147,82 @@ export class AdminProjectComponent {
     return p?.createdAt ? this.projectsSvc.toDate(p.createdAt) : null;
   }
 
-  /** Progresso derivado do peso (dias) das etapas concluídas na Linha do Tempo. */
-  readonly progress = computed(() => {
-    const steps = this.stepsData();
-    if (!steps.length) return 0;
-    const weights = steps.map((_, i) => this.stepIntervalDays(i));
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-    if (totalWeight <= 0) return 0;
-    const doneWeight = steps.reduce((sum, s, i) => sum + (s.done ? weights[i] : 0), 0);
-    return Math.round((doneWeight / totalWeight) * 100);
+  /**
+   * Etapas com o índice original (posição em stepsData), na ordem de
+   * exibição conforme o modo:
+   * - "ordem": mesma ordem de stepsData (controlada pelos botões subir/descer).
+   * - "data": ordenadas cronologicamente pela data; etapas sem data vão para
+   *   o final, mantendo a ordem original entre elas.
+   */
+  readonly displaySteps = computed(() => {
+    const items = this.stepsData().map((s, originalIndex) => ({ s, originalIndex }));
+    if (this.timelineMode() === 'ordem') return items;
+    const withDate = items.filter((x) => this.parseStepDate(x.s.date));
+    const withoutDate = items.filter((x) => !this.parseStepDate(x.s.date));
+    withDate.sort((a, b) => {
+      if (a.s.date !== b.s.date) return a.s.date < b.s.date ? -1 : 1;
+      return a.originalIndex - b.originalIndex;
+    });
+    return [...withDate, ...withoutDate];
   });
 
-  readonly totalWeight = computed(() =>
-    this.stepsData().reduce((sum, _, i) => sum + this.stepIntervalDays(i), 0),
-  );
+  /**
+   * Peso de cada etapa exibida (mesmo índice de displaySteps()).
+   * Modo "data": dias entre a data da etapa e a data anterior (a primeira
+   * conta a partir da Data de Início do projeto, ou da criação do projeto
+   * se a Data de Início não estiver definida). Etapas com a mesma data
+   * dividem igualmente o intervalo entre si, para terem o mesmo peso —
+   * afinal são concluídas no mesmo dia. Etapas sem data contam 0.
+   * Modo "ordem": peso definido manualmente pelo usuário.
+   */
+  readonly displayWeights = computed(() => {
+    const items = this.displaySteps();
+    if (this.timelineMode() === 'ordem') {
+      return items.map((x) => Number(x.s.weight) || 0);
+    }
+    const weights = new Array(items.length).fill(0);
+    let prevDate = this.parseStepDate(this.startDate()) || this.projectCreatedDate();
+    let i = 0;
+    while (i < items.length) {
+      const date = this.parseStepDate(items[i].s.date);
+      if (!date) break;
+      let j = i;
+      while (j < items.length && items[j].s.date === items[i].s.date) j++;
+      const groupSize = j - i;
+      let interval = 0;
+      if (prevDate) {
+        const diffDays = Math.round((date.getTime() - prevDate.getTime()) / 86400000);
+        interval = diffDays > 0 ? diffDays : 0;
+      }
+      const perStep = interval / groupSize;
+      for (let k = i; k < j; k++) weights[k] = perStep;
+      prevDate = date;
+      i = j;
+    }
+    return weights;
+  });
+
+  readonly totalWeight = computed(() => this.displayWeights().reduce((sum, w) => sum + w, 0));
+
+  /** Progresso derivado do peso das etapas concluídas na Linha do Tempo. */
+  readonly progress = computed(() => {
+    const items = this.displaySteps();
+    const weights = this.displayWeights();
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    if (total <= 0) return 0;
+    const done = items.reduce((sum, x, idx) => sum + (x.s.done ? weights[idx] : 0), 0);
+    return Math.round((done / total) * 100);
+  });
 
   /* ── ARQUIVOS ── */
   readonly uploading = signal(false);
   readonly uploadErr = signal('');
   readonly dragOver = signal(false);
+  readonly showLinkForm = signal(false);
+  readonly linkName = signal('');
+  readonly linkUrl = signal('');
+  readonly linkErr = signal('');
+  readonly savingLink = signal(false);
 
   /* ── MENSAGENS ── */
   readonly messageText = signal('');
@@ -159,10 +234,14 @@ export class AdminProjectComponent {
       this.name.set(p.name || '');
       this.status.set(p.status);
       this.description.set(p.description || '');
+      this.startDate.set(p.startDate || '');
       this.deadline.set(p.deadline || '');
       this.responsibleUid.set(p.responsibleUid || '');
       this.hidden.set(!!p.hidden);
-      this.stepsData.set((p.steps || []).map((s) => ({ ...s })));
+      this.timelineMode.set(p.timelineMode === 'ordem' ? 'ordem' : 'data');
+      const steps = (p.steps || []).map((s) => ({ ...s, id: s.id || crypto.randomUUID() }));
+      this.stepsData.set(steps);
+      this.originalStepsSnapshot = steps.map((s) => ({ ...s }));
     });
     effect(() => this.internalNotes.set(this.internalNotesSaved()));
   }
@@ -191,6 +270,7 @@ export class AdminProjectComponent {
           name,
           status: this.status(),
           description: this.description().trim(),
+          startDate: this.startDate() || null,
           deadline: this.deadline() || null,
           responsibleUid: this.responsibleUid() || null,
         }),
@@ -245,7 +325,7 @@ export class AdminProjectComponent {
 
   /* ── LINHA DO TEMPO ── */
   addStep(): void {
-    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false }]);
+    this.stepsData.update((steps) => [...steps, { id: crypto.randomUUID(), name: '', date: '', done: false }]);
   }
   updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
     this.stepsData.update((steps) => steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
@@ -263,15 +343,106 @@ export class AdminProjectComponent {
     this.stepsData.update((steps) => steps.filter((_, idx) => idx !== i));
   }
 
+  /**
+   * Todos os e-mails de quem tem acesso ao projeto: dono, gerentes com
+   * acesso (sem projectAccess, ou com este projeto incluído), e cliente(s)
+   * vinculados à empresa dona do projeto (ou o e-mail avulso do projeto,
+   * quando não há empresa vinculada).
+   */
+  private async collectAttendeeEmails(): Promise<string[]> {
+    const project = this.project();
+    const emails = new Set<string>();
+
+    for (const acc of this.staffAccounts()) {
+      const role = normRole(acc.role);
+      const hasAccess = role === 'owner' || !acc.projectAccess || acc.projectAccess.includes(this.pid);
+      if (hasAccess && acc.email) emails.add(acc.email.trim().toLowerCase());
+    }
+
+    if (project?.ownerId) {
+      const collaborators = await firstValueFrom(this.accountsSvc.listTeamMembers$(project.ownerId));
+      for (const c of collaborators) {
+        if (c.email) emails.add(c.email.trim().toLowerCase());
+      }
+    } else if (project?.clientEmail) {
+      emails.add(project.clientEmail.trim().toLowerCase());
+    }
+
+    return [...emails];
+  }
+
+  /**
+   * Cria/atualiza/exclui os eventos no Google Calendar do staff conforme as
+   * etapas com data. Etapas removidas ou que perderam a data têm seu evento
+   * excluído; falhas isoladas (ex: sem rede) não travam o salvamento — a
+   * etapa mantém o googleEventId anterior e tenta de novo na próxima vez.
+   */
+  private async syncCalendarEvents(steps: TimelineStep[]): Promise<TimelineStep[]> {
+    const project = this.project();
+    const attendeeEmails = await this.collectAttendeeEmails();
+
+    for (const orig of this.originalStepsSnapshot) {
+      if (!orig.googleEventId) continue;
+      const stillPresent = steps.find((s) => s.id === orig.id);
+      if (!stillPresent || !stillPresent.date) {
+        try {
+          await this.calendarSvc.deleteEvent(orig.googleEventId);
+        } catch {
+          /* ignora falha isolada de exclusão */
+        }
+      }
+    }
+
+    const result: TimelineStep[] = [];
+    for (const step of steps) {
+      if (!step.date) {
+        const { googleEventId: _drop, ...rest } = step;
+        result.push(rest as TimelineStep);
+        continue;
+      }
+      const input = {
+        title: step.name || 'Etapa do projeto',
+        description: `Etapa do projeto "${project?.name || ''}"`,
+        date: step.date,
+        attendeeEmails,
+      };
+      try {
+        const eventId = step.googleEventId
+          ? await this.calendarSvc.updateEvent(step.googleEventId, input)
+          : await this.calendarSvc.createEvent(input);
+        result.push({ ...step, googleEventId: eventId });
+      } catch {
+        result.push(step);
+      }
+    }
+    return result;
+  }
+
   async saveTimeline(): Promise<void> {
     this.timelineOk.set(false);
     this.timelineErr.set('');
     this.savingTimeline.set(true);
     try {
-      const steps = this.stepsData().map((s) => ({ name: s.name, date: s.date, done: s.done }));
+      const mode = this.timelineMode();
+      let steps: TimelineStep[] =
+        mode === 'ordem'
+          ? this.stepsData().map((s) => ({ id: s.id, name: s.name, date: '', done: s.done, weight: Number(s.weight) || 0 }))
+          : this.displaySteps().map((x) => ({
+              id: x.s.id,
+              name: x.s.name,
+              date: x.s.date,
+              done: x.s.done,
+              ...(x.s.googleEventId ? { googleEventId: x.s.googleEventId } : {}),
+            }));
+
+      if (mode === 'data' && this.calendarEnabled && this.calendarConnected()) {
+        steps = await this.syncCalendarEvents(steps);
+      }
+
+      this.stepsData.set(steps.map((s) => ({ ...s })));
       await Promise.all([
         this.projectsSvc.updateSteps(this.pid, steps),
-        this.projectsSvc.update(this.pid, { progress: this.progress() }),
+        this.projectsSvc.update(this.pid, { progress: this.progress(), timelineMode: mode }),
       ]);
       this.timelineOk.set(true);
       setTimeout(() => this.timelineOk.set(false), 3000);
@@ -321,6 +492,29 @@ export class AdminProjectComponent {
       await this.projectsSvc.uploadFile(this.pid, ownerId, file, 'admin', data?.name || 'Admin');
     } finally {
       this.uploading.set(false);
+    }
+  }
+
+  async addLink(): Promise<void> {
+    this.linkErr.set('');
+    const name = this.linkName().trim();
+    let url = this.linkUrl().trim();
+    if (!name || !url) {
+      this.linkErr.set('Preencha o nome e o link.');
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    this.savingLink.set(true);
+    try {
+      const data = await firstValueFrom(this.userData$);
+      await this.projectsSvc.addFileLink(this.pid, url, name, 'admin', data?.name || 'Admin');
+      this.linkName.set('');
+      this.linkUrl.set('');
+      this.showLinkForm.set(false);
+    } catch {
+      this.linkErr.set('Erro ao adicionar link.');
+    } finally {
+      this.savingLink.set(false);
     }
   }
 
