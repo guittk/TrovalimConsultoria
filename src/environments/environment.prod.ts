@@ -8,6 +8,4 @@ export const environment = {
     messagingSenderId: '906128365375',
     appId: '1:906128365375:web:b4b92616e245cd1158658a',
   },
-  /** OAuth Client ID (Google Cloud Console) para o staff conectar o Google Calendar. Vazio = recurso desativado. */
-  googleClientId: '',
 };

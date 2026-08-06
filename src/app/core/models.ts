@@ -82,16 +82,12 @@ export interface ProjectStatusSettings {
 export type TimelineMode = 'data' | 'ordem';
 
 export interface TimelineStep {
-  /** Identificador estável da etapa (gerado no cliente), usado para vincular o evento do Google Calendar mesmo após reordenar/editar. Etapas antigas sem id recebem um ao serem carregadas. */
-  id?: string;
   name: string;
   /** Data no formato yyyy-mm-dd. Usada apenas quando o projeto está no modo "data". */
   date: string;
   done: boolean;
   /** Peso manual da etapa. Usado apenas quando o projeto está no modo "ordem". */
   weight?: number;
-  /** ID do evento criado no Google Calendar (modo "data"), para atualizar/excluir o evento certo ao salvar. */
-  googleEventId?: string;
 }
 
 export interface Project {

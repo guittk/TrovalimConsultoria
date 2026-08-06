@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, of, switchMap } from 'rxjs';
-import { AuthService, normRole } from '../../core/auth.service';
+import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
@@ -21,7 +21,6 @@ import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-import { GoogleCalendarService } from '../../core/google-calendar.service';
 
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
@@ -59,7 +58,6 @@ export class AdminProjectComponent {
   private readonly storageUsageSvc = inject(StorageUsageService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
   private readonly confirmSvc = inject(ConfirmService);
-  private readonly calendarSvc = inject(GoogleCalendarService);
 
   readonly tabs = ADMIN_TABS;
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -112,29 +110,6 @@ export class AdminProjectComponent {
   readonly timelineOk = signal(false);
   readonly timelineErr = signal('');
   readonly savingTimeline = signal(false);
-  private originalStepsSnapshot: TimelineStep[] = [];
-
-  /* ── GOOGLE CALENDAR ── */
-  readonly calendarEnabled = this.calendarSvc.enabled;
-  readonly calendarConnected = this.calendarSvc.connected;
-  readonly calendarErr = signal('');
-  readonly connectingCalendar = signal(false);
-
-  async connectCalendar(): Promise<void> {
-    this.calendarErr.set('');
-    this.connectingCalendar.set(true);
-    try {
-      await this.calendarSvc.connect();
-    } catch {
-      this.calendarErr.set('Não foi possível conectar ao Google Calendar.');
-    } finally {
-      this.connectingCalendar.set(false);
-    }
-  }
-
-  disconnectCalendar(): void {
-    this.calendarSvc.disconnect();
-  }
 
   private parseStepDate(value: string | undefined | null): Date | null {
     if (!value) return null;
@@ -239,9 +214,7 @@ export class AdminProjectComponent {
       this.responsibleUid.set(p.responsibleUid || '');
       this.hidden.set(!!p.hidden);
       this.timelineMode.set(p.timelineMode === 'ordem' ? 'ordem' : 'data');
-      const steps = (p.steps || []).map((s) => ({ ...s, id: s.id || crypto.randomUUID() }));
-      this.stepsData.set(steps);
-      this.originalStepsSnapshot = steps.map((s) => ({ ...s }));
+      this.stepsData.set((p.steps || []).map((s) => ({ ...s })));
     });
     effect(() => this.internalNotes.set(this.internalNotesSaved()));
   }
@@ -325,7 +298,7 @@ export class AdminProjectComponent {
 
   /* ── LINHA DO TEMPO ── */
   addStep(): void {
-    this.stepsData.update((steps) => [...steps, { id: crypto.randomUUID(), name: '', date: '', done: false }]);
+    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false }]);
   }
   updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
     this.stepsData.update((steps) => steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
@@ -343,102 +316,16 @@ export class AdminProjectComponent {
     this.stepsData.update((steps) => steps.filter((_, idx) => idx !== i));
   }
 
-  /**
-   * Todos os e-mails de quem tem acesso ao projeto: dono, gerentes com
-   * acesso (sem projectAccess, ou com este projeto incluído), e cliente(s)
-   * vinculados à empresa dona do projeto (ou o e-mail avulso do projeto,
-   * quando não há empresa vinculada).
-   */
-  private async collectAttendeeEmails(): Promise<string[]> {
-    const project = this.project();
-    const emails = new Set<string>();
-
-    for (const acc of this.staffAccounts()) {
-      const role = normRole(acc.role);
-      const hasAccess = role === 'owner' || !acc.projectAccess || acc.projectAccess.includes(this.pid);
-      if (hasAccess && acc.email) emails.add(acc.email.trim().toLowerCase());
-    }
-
-    if (project?.ownerId) {
-      const collaborators = await firstValueFrom(this.accountsSvc.listTeamMembers$(project.ownerId));
-      for (const c of collaborators) {
-        if (c.email) emails.add(c.email.trim().toLowerCase());
-      }
-    } else if (project?.clientEmail) {
-      emails.add(project.clientEmail.trim().toLowerCase());
-    }
-
-    return [...emails];
-  }
-
-  /**
-   * Cria/atualiza/exclui os eventos no Google Calendar do staff conforme as
-   * etapas com data. Etapas removidas ou que perderam a data têm seu evento
-   * excluído; falhas isoladas (ex: sem rede) não travam o salvamento — a
-   * etapa mantém o googleEventId anterior e tenta de novo na próxima vez.
-   */
-  private async syncCalendarEvents(steps: TimelineStep[]): Promise<TimelineStep[]> {
-    const project = this.project();
-    const attendeeEmails = await this.collectAttendeeEmails();
-
-    for (const orig of this.originalStepsSnapshot) {
-      if (!orig.googleEventId) continue;
-      const stillPresent = steps.find((s) => s.id === orig.id);
-      if (!stillPresent || !stillPresent.date) {
-        try {
-          await this.calendarSvc.deleteEvent(orig.googleEventId);
-        } catch {
-          /* ignora falha isolada de exclusão */
-        }
-      }
-    }
-
-    const result: TimelineStep[] = [];
-    for (const step of steps) {
-      if (!step.date) {
-        const { googleEventId: _drop, ...rest } = step;
-        result.push(rest as TimelineStep);
-        continue;
-      }
-      const input = {
-        title: step.name || 'Etapa do projeto',
-        description: `Etapa do projeto "${project?.name || ''}"`,
-        date: step.date,
-        attendeeEmails,
-      };
-      try {
-        const eventId = step.googleEventId
-          ? await this.calendarSvc.updateEvent(step.googleEventId, input)
-          : await this.calendarSvc.createEvent(input);
-        result.push({ ...step, googleEventId: eventId });
-      } catch {
-        result.push(step);
-      }
-    }
-    return result;
-  }
-
   async saveTimeline(): Promise<void> {
     this.timelineOk.set(false);
     this.timelineErr.set('');
     this.savingTimeline.set(true);
     try {
       const mode = this.timelineMode();
-      let steps: TimelineStep[] =
+      const steps: TimelineStep[] =
         mode === 'ordem'
-          ? this.stepsData().map((s) => ({ id: s.id, name: s.name, date: '', done: s.done, weight: Number(s.weight) || 0 }))
-          : this.displaySteps().map((x) => ({
-              id: x.s.id,
-              name: x.s.name,
-              date: x.s.date,
-              done: x.s.done,
-              ...(x.s.googleEventId ? { googleEventId: x.s.googleEventId } : {}),
-            }));
-
-      if (mode === 'data' && this.calendarEnabled && this.calendarConnected()) {
-        steps = await this.syncCalendarEvents(steps);
-      }
-
+          ? this.stepsData().map((s) => ({ name: s.name, date: '', done: s.done, weight: Number(s.weight) || 0 }))
+          : this.displaySteps().map((x) => ({ name: x.s.name, date: x.s.date, done: x.s.done }));
       this.stepsData.set(steps.map((s) => ({ ...s })));
       await Promise.all([
         this.projectsSvc.updateSteps(this.pid, steps),

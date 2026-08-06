@@ -140,22 +140,6 @@
             </div>
           </div>
 
-          @if (timelineMode() === 'data' && calendarEnabled) {
-            <div class="form-group" style="max-width:480px">
-              @if (calendarErr()) { <div class="alert alert-error show">{{ calendarErr() }}</div> }
-              @if (calendarConnected()) {
-                <div style="display:flex;align-items:center;gap:.6rem;font-size:.82rem">
-                  <span style="color:#166534">✓ Google Calendar conectado</span>
-                  <button class="btn btn-outline btn-sm" (click)="disconnectCalendar()">Desconectar</button>
-                </div>
-                <div class="form-help">Ao salvar, as etapas com data viram eventos na sua agenda — e todos com acesso a este projeto (dono, gerentes e a empresa) são convidados por e-mail, recebendo as atualizações automaticamente na própria agenda.</div>
-              } @else {
-                <button class="btn btn-outline btn-sm" [disabled]="connectingCalendar()" (click)="connectCalendar()">{{ connectingCalendar() ? 'Conectando…' : 'Conectar Google Calendar' }}</button>
-                <div class="form-help">Conecte para que salvar as etapas também crie eventos na sua agenda do Google.</div>
-              }
-            </div>
-          }
-
           @if (!stepsData().length) {
             <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma etapa. Clique em "Adicionar Etapa".</div>
           }
