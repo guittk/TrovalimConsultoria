@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git workflow (read this first)
+
+- **Default working branch is `dev`.** Unless told otherwise, start every session on `dev`, make changes there, and stay there.
+- **Never modify `prod` or `main` without asking first.** These two branches are kept in sync with each other and represent what's actually live for the client. If a change seems like it should also apply to `prod` (e.g. a bug fix that isn't tied to a dev-only feature), ask the user before touching that branch — don't assume, don't do it silently.
+- **`main` and `prod` are equivalent** — `main` is only updated by fast-forwarding it to `prod` once the user has validated `prod` and explicitly asks for it. Don't merge into `main` on your own initiative.
+- **`dev` currently has features that `prod`/`main` intentionally lack**: Mentoria (+ `mentorado` role), Kanban (per-project + general board), the Treinamentos tab, and the Google Calendar integration. These were deliberately excluded from `prod` (see the two "Corrige bugs..." commits' messages for the exact split) — don't assume something missing from `prod` is a bug; it may be an intentional gap awaiting the user's go-ahead to promote it.
+- **Auto-commit and auto-deploy**: after making a change on `dev`, commit it and run `npm run deploy:dev` without waiting to be asked, unless the user says otherwise for that turn. Never do the equivalent on `prod`/`main` (commit or `npm run deploy`) without explicit confirmation first.
+
 ## Commands
 
 ```bash
@@ -13,7 +21,7 @@ npm run deploy               # ng build --configuration production && firebase d
 npm run deploy:dev            # ng build --configuration development && firebase deploy --project dev (DEV)
 ```
 
-Two separate Firebase projects, aliased in `.firebaserc`: `prod` → `geovana-trovalim-prod` (live), `dev` → `geovana-trovalim-dev` (for testing rules/changes safely before they hit prod), plus `legacy` → `ellen-cavalcanti` (old project, kept as a read-only backup after the 2026-08 migration — no longer deployed to). Angular's `environment.ts` (dev) and `environment.prod.ts` (prod) hold each project's `firebaseConfig`, swapped via `fileReplacements` in `angular.json` when building with `--configuration production`. Hosting site is `trovalim` on the old project; the new projects serve on their default `*.web.app` domain (no custom domain configured yet). Deploy targets can be scoped:
+Two separate Firebase projects, aliased in `.firebaserc`: `prod` → `geovana-trovalim-prod` (live), `dev` → `geovana-trovalim-dev` (for testing rules/changes safely before they hit prod), plus `legacy` → `ellen-cavalcanti` (old project, kept as a read-only backup after the 2026-08 migration — no longer deployed to). Angular's `environment.ts` (dev) and `environment.prod.ts` (prod) hold each project's `firebaseConfig`, swapped via `fileReplacements` in `angular.json` when building with `--configuration production`. Hosting site is `trovalim` on the old project; the new projects serve on their default `*.web.app` domain (no custom domain configured yet). The `dev` git branch deploys to the `dev` Firebase project; the `prod` (and `main`) git branch deploys to the `prod` Firebase project. Deploy targets can be scoped:
 
 ```bash
 firebase deploy --only hosting --project prod
