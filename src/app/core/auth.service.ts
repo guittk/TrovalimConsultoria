@@ -32,6 +32,10 @@ export function isStaffRole(role: unknown): boolean {
   return STAFF_ROLES.includes(normRole(role));
 }
 
+export function isMentoradoRole(role: unknown): boolean {
+  return normRole(role) === 'mentorado';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly auth: Auth = inject(FIREBASE_AUTH);

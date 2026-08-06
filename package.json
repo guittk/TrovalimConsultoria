@@ -8,7 +8,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy": "ng build && firebase deploy --project ellen-cavalcanti"
+    "deploy": "ng build --configuration production && firebase deploy --project prod --only hosting:prod,firestore,storage,functions",
+    "deploy:dev": "ng build --configuration development && firebase deploy --project dev --only hosting:dev,firestore,storage,functions"
   },
   "prettier": {
     "printWidth": 100,

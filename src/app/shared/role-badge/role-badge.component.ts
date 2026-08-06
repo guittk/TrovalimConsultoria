@@ -11,6 +11,7 @@ const ROLE_MAP: Record<string, BadgeInfo> = {
   owner: { label: 'Proprietário', bg: '#F5EDD9', color: '#3D0B12' },
   manager: { label: 'Gerente', bg: '#DBEAFE', color: '#1D4ED8' },
   client: { label: 'Cliente', bg: '#F3F4F6', color: '#374151' },
+  mentorado: { label: 'Mentorado', bg: '#E0E7FF', color: '#4338CA' },
 };
 
 @Component({

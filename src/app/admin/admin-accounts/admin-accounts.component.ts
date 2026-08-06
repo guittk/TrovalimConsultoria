@@ -3,7 +3,7 @@ import { Component, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
-import { AuthService, isStaffRole, normRole } from '../../core/auth.service';
+import { AuthService, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
@@ -14,11 +14,14 @@ import { ConfirmService } from '../../shared/confirm/confirm.service';
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
+  { key: 'mentoria', label: 'Mentoria', path: '/admin/mentoria' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
+  { key: 'treinamentos', label: 'Treinamentos', path: '/admin/treinamentos' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
-const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
+const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2, mentorado: 3 };
 
 @Component({
   selector: 'app-admin-accounts',
@@ -59,9 +62,10 @@ export class AdminAccountsComponent {
   readonly saving = signal(false);
   readonly editingUid = signal<string | null>(null);
   readonly editingAccount = signal<UserAccount | null>(null);
+  /** Colaborador de empresa-cliente (tem cargo/foto vinculados à empresa) — não inclui mentorado. */
   readonly isEditingClient = computed(() => {
     const a = this.editingAccount();
-    return !!a && !isStaffRole(a.role);
+    return !!a && normRole(a.role) === 'client';
   });
   readonly isEditingAccount = computed(() => !!this.editingAccount());
   readonly accName = signal('');
@@ -115,7 +119,8 @@ export class AdminAccountsComponent {
     this.accName.set(acc.name || '');
     this.accEmail.set(acc.email || '');
     this.accPassword.set('');
-    this.accRole.set(normRole(acc.role) === 'manager' ? 'manager' : 'client');
+    const editingRole = normRole(acc.role);
+    this.accRole.set(editingRole === 'manager' ? 'manager' : editingRole === 'mentorado' ? 'mentorado' : 'client');
     this.restrictProjects.set(Array.isArray(acc.projectAccess));
     this.selectedProjectIds.set(new Set(acc.projectAccess || []));
     this.accJobTitle.set(acc.jobTitle || '');

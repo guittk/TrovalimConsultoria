@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { loginGuard, portalGuard, staffGuard } from './core/guards';
+import { loginGuard, mentoriaGuard, portalGuard, staffGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -20,6 +20,11 @@ export const routes: Routes = [
     path: 'portal/:id',
     canActivate: [portalGuard],
     loadComponent: () => import('./portal/portal-project/portal-project.component').then((m) => m.PortalProjectComponent),
+  },
+  {
+    path: 'mentoria',
+    canActivate: [mentoriaGuard],
+    loadComponent: () => import('./mentoria/mentoria-home/mentoria-home.component').then((m) => m.MentoriaHomeComponent),
   },
   {
     path: 'admin',
@@ -45,6 +50,26 @@ export const routes: Routes = [
     path: 'admin/contas',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
+  },
+  {
+    path: 'admin/mentoria',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-mentoria/admin-mentoria.component').then((m) => m.AdminMentoriaComponent),
+  },
+  {
+    path: 'admin/mentoria/:uid',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-mentorado/admin-mentorado.component').then((m) => m.AdminMentoradoComponent),
+  },
+  {
+    path: 'admin/kanban',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-kanban/admin-kanban.component').then((m) => m.AdminKanbanComponent),
+  },
+  {
+    path: 'admin/treinamentos',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-training/admin-training.component').then((m) => m.AdminTrainingComponent),
   },
   {
     path: 'admin/config',

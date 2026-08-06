@@ -14,7 +14,10 @@ import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
 const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
+  { key: 'mentoria', label: 'Mentoria', path: '/admin/mentoria' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
+  { key: 'treinamentos', label: 'Treinamentos', path: '/admin/treinamentos' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 

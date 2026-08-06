@@ -1,4 +1,4 @@
-export type Role = 'owner' | 'manager' | 'client';
+export type Role = 'owner' | 'manager' | 'client' | 'mentorado';
 
 export interface Branding {
   companyName: string;
@@ -79,11 +79,19 @@ export interface ProjectStatusSettings {
   statuses: ProjectStatusOption[];
 }
 
+export type TimelineMode = 'data' | 'ordem';
+
 export interface TimelineStep {
+  /** Identificador estável da etapa (gerado no cliente), usado para vincular o evento do Google Calendar mesmo após reordenar/editar. Etapas antigas sem id recebem um ao serem carregadas. */
+  id?: string;
   name: string;
-  /** Data no formato yyyy-mm-dd. */
+  /** Data no formato yyyy-mm-dd. Usada apenas quando o projeto está no modo "data". */
   date: string;
   done: boolean;
+  /** Peso manual da etapa. Usado apenas quando o projeto está no modo "ordem". */
+  weight?: number;
+  /** ID do evento criado no Google Calendar (modo "data"), para atualizar/excluir o evento certo ao salvar. */
+  googleEventId?: string;
 }
 
 export interface Project {
@@ -98,12 +106,16 @@ export interface Project {
   steps: TimelineStep[];
   branding: Branding | null;
   createdAt?: unknown;
+  /** Data de início do projeto (yyyy-mm-dd), opcional — base para o cálculo do peso das etapas por data. */
+  startDate?: string | null;
   /** Prazo de entrega (yyyy-mm-dd), opcional. */
   deadline?: string | null;
   /** uid da conta (owner/manager) responsável por este projeto. */
   responsibleUid?: string | null;
   /** Quando true, o projeto fica invisível para a empresa-cliente no portal. */
   hidden?: boolean;
+  /** Modo de ordenação da Linha do Tempo. Padrão: 'data'. */
+  timelineMode?: TimelineMode;
 }
 
 export interface ProjectMessage {
@@ -117,10 +129,56 @@ export interface ProjectMessage {
 export interface ProjectFile {
   id?: string;
   name: string;
-  path: string;
+  /** Ausente quando kind === 'link' (não há objeto no Storage). */
+  path?: string;
   downloadUrl: string;
   sizeKb?: number;
   uploadedAt?: unknown;
   uploadedByRole: 'admin' | 'client' | string;
   uploadedByName?: string;
+  /** 'link' = URL externa cadastrada (ex: pasta no SharePoint), sem upload. Ausente/'upload' = arquivo real no Storage. */
+  kind?: 'upload' | 'link';
+}
+
+export interface TrainingMaterial {
+  id?: string;
+  title: string;
+  description?: string;
+  type: 'text' | 'video';
+  /** Conteúdo em texto livre. Usado quando type === 'text'. */
+  content?: string;
+  /** URL do vídeo (ex: YouTube). Usado quando type === 'video'. */
+  videoUrl?: string;
+  createdAt?: unknown;
+  createdByName?: string;
+}
+
+export type KanbanColumnKey = 'todo' | 'doing' | 'done';
+
+export interface KanbanCard {
+  id?: string;
+  columnKey: KanbanColumnKey;
+  title: string;
+  description?: string;
+  /** Usado para ordenar os cartões dentro de uma coluna. */
+  order: number;
+  createdAt?: unknown;
+  createdByName?: string;
+}
+
+export type MentorshipActivityStatus = 'pendente' | 'enviado' | 'concluido';
+
+export interface MentorshipActivity {
+  id?: string;
+  /** uid da conta mentorado a que esta atividade pertence. */
+  mentoradoUid: string;
+  title: string;
+  description?: string;
+  status: MentorshipActivityStatus;
+  dueDate?: string | null;
+  createdAt?: unknown;
+  createdByName?: string;
+  /** Resposta/progresso enviado pelo mentorado. */
+  response?: string;
+  respondedAt?: unknown;
 }

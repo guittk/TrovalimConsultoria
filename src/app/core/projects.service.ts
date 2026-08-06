@@ -63,8 +63,9 @@ export class ProjectsService {
 
   /**
    * Exclui o projeto por completo: arquivos (Storage + metadados), mensagens,
-   * notas internas e o doc do projeto. Usado quando a empresa é excluída e o
-   * admin opta por excluir (em vez de desvincular) um projeto vinculado.
+   * notas internas, cartões do Kanban interno e o doc do projeto. Usado
+   * quando a empresa é excluída e o admin opta por excluir (em vez de
+   * desvincular) um projeto vinculado.
    */
   async deleteProject(id: string): Promise<void> {
     const projectSnap = await getDoc(doc(this.db, 'projects', id));
@@ -79,10 +80,12 @@ export class ProjectsService {
     }
 
     const messagesSnap = await getDocs(collection(this.db, 'projects', id, 'messages'));
+    const kanbanSnap = await getDocs(collection(this.db, 'projects', id, 'kanbanCards'));
 
     await Promise.all([
       ...filesSnap.docs.map((d) => deleteDoc(d.ref)),
       ...messagesSnap.docs.map((d) => deleteDoc(d.ref)),
+      ...kanbanSnap.docs.map((d) => deleteDoc(d.ref)),
       deleteDoc(doc(this.db, 'projects', id, 'internal', 'notes')).catch(() => undefined),
     ]);
 
@@ -160,6 +163,23 @@ export class ProjectsService {
       uploadedByName,
     });
     await this.bumpUsage(ownerId, file.size);
+  }
+
+  addFileLink(
+    projectId: string,
+    url: string,
+    name: string,
+    uploadedByRole: string,
+    uploadedByName: string,
+  ): Promise<unknown> {
+    return addDoc(collection(this.db, 'projects', projectId, 'files'), {
+      name,
+      downloadUrl: url,
+      kind: 'link',
+      uploadedAt: serverTimestamp(),
+      uploadedByRole,
+      uploadedByName,
+    });
   }
 
   async deleteFile(

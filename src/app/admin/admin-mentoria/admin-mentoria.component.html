@@ -1,0 +1,34 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Mentoria</h1>
+    <p class="page-subtitle">Acompanhamento individual dos mentorados</p>
+  </div>
+
+  @if (!mentorados().length) {
+    <div class="empty-state">
+      <div class="empty-state-emoji">🎓</div>
+      <div class="empty-state-text">Nenhum mentorado cadastrado ainda</div>
+      <div class="empty-state-sub">Crie uma conta com o papel "Mentorado" na aba <a routerLink="/admin/contas" class="link-btn">Contas</a>.</div>
+    </div>
+  } @else {
+    <div class="cards-grid">
+      @for (m of mentorados(); track m.uid) {
+        <a [routerLink]="['/admin/mentoria', m.uid]" class="proj-card">
+          <div class="proj-card-brand">
+            <div class="proj-card-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:.95rem">
+              {{ initials(m.name || m.email || '') }}
+            </div>
+            <div>
+              <div class="proj-card-company">Mentorado</div>
+              <div class="proj-card-name">{{ m.name || m.email }}</div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

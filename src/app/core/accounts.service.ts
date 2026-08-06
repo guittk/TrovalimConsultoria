@@ -18,7 +18,7 @@ import { environment } from '../../environments/environment';
 import { FIRESTORE, FIREBASE_FUNCTIONS } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
 import { Role, UserAccount } from './models';
-import { isStaffRole } from './auth.service';
+import { isMentoradoRole, isStaffRole } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class AccountsService {
@@ -38,11 +38,17 @@ export class AccountsService {
   }
 
   listClients$(): Observable<UserAccount[]> {
-    return this.listAll$().pipe(map((users) => users.filter((u) => !isStaffRole(u.role))));
+    return this.listAll$().pipe(
+      map((users) => users.filter((u) => !isStaffRole(u.role) && !isMentoradoRole(u.role))),
+    );
   }
 
   listStaff$(): Observable<UserAccount[]> {
     return this.listAll$().pipe(map((users) => users.filter((u) => isStaffRole(u.role))));
+  }
+
+  listMentorados$(): Observable<UserAccount[]> {
+    return this.listAll$().pipe(map((users) => users.filter((u) => isMentoradoRole(u.role))));
   }
 
   /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */

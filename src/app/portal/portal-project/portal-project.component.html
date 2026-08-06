@@ -90,13 +90,13 @@
                 <div style="border:1px solid var(--border);margin-bottom:1rem">
                   @for (f of files; track f.id) {
                     <div class="file-item">
-                      <app-file-icon [name]="f.name" />
+                      <app-file-icon [name]="f.name" [link]="f.kind === 'link'" />
                       <div class="file-info">
                         <div class="file-name">{{ f.name }}</div>
-                        <div class="file-meta">{{ f.sizeKb ? f.sizeKb + ' KB · ' : '' }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || (f.uploadedByRole === 'admin' ? 'Consultoria' : '—') }}</div>
+                        <div class="file-meta">{{ f.kind === 'link' ? 'Link externo · ' : (f.sizeKb ? f.sizeKb + ' KB · ' : '') }}{{ toDate(f.uploadedAt) | date:'dd/MM/yyyy, HH:mm' }} · {{ f.uploadedByName || (f.uploadedByRole === 'admin' ? 'Consultoria' : '—') }}</div>
                       </div>
                       <div class="file-actions">
-                        <a [href]="f.downloadUrl" target="_blank" class="btn btn-outline btn-sm">Baixar</a>
+                        <a [href]="f.downloadUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm">{{ f.kind === 'link' ? 'Abrir' : 'Baixar' }}</a>
                         @if (f.uploadedByRole === 'client') {
                           <button class="btn btn-danger-ghost btn-sm" (click)="deleteFile(f)">Excluir</button>
                         }

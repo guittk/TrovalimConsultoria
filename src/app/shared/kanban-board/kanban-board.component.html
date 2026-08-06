@@ -1,0 +1,48 @@
+<div class="kanban-board">
+  @for (col of columns; track col.key) {
+    <div class="kanban-col" [class.dragover]="dragOverColumn() === col.key"
+      (dragover)="onColumnDragOver($event, col.key)"
+      (dragleave)="dragOverColumn.set(null)"
+      (drop)="onColumnDrop($event, col.key)">
+      <div class="kanban-col-title">{{ col.label }} <span style="color:var(--muted);font-weight:400">({{ cardsFor(col.key).length }})</span></div>
+
+      @for (card of cardsFor(col.key); track card.id) {
+        <div class="kanban-card" draggable="true"
+          [class.dragging]="draggingCardId() === card.id"
+          (dragstart)="onDragStart(card)"
+          (dragend)="onDragEnd()">
+          @if (editingCardId() === card.id) {
+            <input type="text" class="form-input" style="margin-bottom:.5rem" [ngModel]="editTitle()" (ngModelChange)="editTitle.set($event)">
+            <textarea class="form-textarea" rows="2" placeholder="Descrição (opcional)" [ngModel]="editDescription()" (ngModelChange)="editDescription.set($event)"></textarea>
+            <div style="display:flex;gap:.4rem;margin-top:.5rem">
+              <button class="btn btn-primary btn-sm" (click)="saveEdit(card)">Salvar</button>
+              <button class="btn btn-outline btn-sm" (click)="cancelEdit()">Cancelar</button>
+            </div>
+          } @else {
+            <div style="display:flex;justify-content:space-between;gap:.5rem">
+              <div class="kanban-card-title" (click)="startEdit(card)">{{ card.title }}</div>
+              <button class="btn-icon danger" title="Excluir" (click)="deleteCard(card)">✕</button>
+            </div>
+            @if (card.description) { <div class="kanban-card-desc">{{ card.description }}</div> }
+            <div class="kanban-card-footer">
+              <button class="btn-icon" title="Mover para coluna anterior" [disabled]="!canMove(card.columnKey, -1)" (click)="moveCard(card, -1)">←</button>
+              <button class="btn-icon" title="Mover para próxima coluna" [disabled]="!canMove(card.columnKey, 1)" (click)="moveCard(card, 1)">→</button>
+            </div>
+          }
+        </div>
+      }
+
+      @if (addingColumn() === col.key) {
+        <div class="kanban-card">
+          <input type="text" class="form-input" placeholder="Título do cartão" [ngModel]="newCardTitle()" (ngModelChange)="newCardTitle.set($event)" (keydown.enter)="submitAdd(col.key)">
+          <div style="display:flex;gap:.4rem;margin-top:.5rem">
+            <button class="btn btn-primary btn-sm" (click)="submitAdd(col.key)">Adicionar</button>
+            <button class="btn btn-outline btn-sm" (click)="cancelAdd()">Cancelar</button>
+          </div>
+        </div>
+      } @else {
+        <button class="btn btn-outline btn-sm" style="width:100%" (click)="startAdd(col.key)">+ Adicionar Cartão</button>
+      }
+    </div>
+  }
+</div>

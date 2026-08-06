@@ -1,5 +1,25 @@
 {
   "projects": {
-    "default": "ellen-cavalcanti"
-  }
+    "default": "geovana-trovalim-prod",
+    "prod": "geovana-trovalim-prod",
+    "dev": "geovana-trovalim-dev",
+    "legacy": "ellen-cavalcanti"
+  },
+  "targets": {
+    "geovana-trovalim-prod": {
+      "hosting": {
+        "prod": [
+          "geovana-trovalim-prod"
+        ]
+      }
+    },
+    "geovana-trovalim-dev": {
+      "hosting": {
+        "dev": [
+          "geovana-trovalim-dev"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

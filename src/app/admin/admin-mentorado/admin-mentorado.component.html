@@ -1,0 +1,98 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="breadcrumb">
+  <a routerLink="/admin/mentoria">Mentoria</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>{{ mentorado()?.name || mentorado()?.email || '' }}</span>
+</div>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">{{ mentorado()?.name || mentorado()?.email || 'Mentorado' }}</h1>
+    <p class="page-subtitle">{{ mentorado()?.email }}</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-bar"></span>Atividades</div>
+
+    @if (!formOpen()) {
+      <button class="btn btn-primary btn-sm" style="margin-bottom:1.25rem" (click)="openCreate()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova Atividade
+      </button>
+    }
+
+    @if (formOpen()) {
+      <div class="card" style="padding:1rem;margin-bottom:1.25rem;background:var(--cream)">
+        @if (formErr()) { <div class="alert alert-error show">{{ formErr() }}</div> }
+
+        <div class="form-group">
+          <label class="form-label">Título</label>
+          <input type="text" class="form-input" placeholder="Ex: Definir metas do trimestre" [ngModel]="title()" (ngModelChange)="title.set($event)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição</label>
+          <textarea class="form-textarea" rows="4" placeholder="Detalhe a atividade…" [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prazo (opcional)</label>
+          <input type="date" class="form-input" style="max-width:220px" [ngModel]="dueDate()" (ngModelChange)="dueDate.set($event)">
+        </div>
+
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-primary btn-sm" [disabled]="saving()" (click)="save()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+          <button class="btn btn-outline btn-sm" (click)="closeForm()">Cancelar</button>
+        </div>
+      </div>
+    }
+
+    @if (!activities().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nenhuma atividade enviada ainda.</div></div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        @for (a of activities(); track a.id) {
+          <div class="card" style="padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+              <div>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <span class="badge"
+                    [style.background]="a.status === 'concluido' ? '#DCFCE7' : a.status === 'enviado' ? '#FEF3C7' : '#F3F4F6'"
+                    [style.color]="a.status === 'concluido' ? '#166534' : a.status === 'enviado' ? '#92400E' : '#374151'">
+                    {{ a.status === 'concluido' ? 'Concluído' : a.status === 'enviado' ? 'Enviado pelo mentorado' : 'Pendente' }}
+                  </span>
+                  <div style="font-weight:600">{{ a.title }}</div>
+                </div>
+                @if (a.dueDate) { <div style="font-size:.75rem;color:var(--muted);margin-top:.35rem">Prazo: {{ a.dueDate | date:'dd/MM/yyyy' }}</div> }
+              </div>
+              <div style="display:flex;gap:.5rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" (click)="openEdit(a)">Editar</button>
+                <button class="btn btn-danger-ghost btn-sm" (click)="deleteActivity(a)">Excluir</button>
+              </div>
+            </div>
+
+            @if (a.description) { <div style="font-size:.85rem;white-space:pre-wrap;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">{{ a.description }}</div> }
+
+            @if (a.response) {
+              <div style="font-size:.85rem;white-space:pre-wrap;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">
+                <div style="font-weight:600;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem">Resposta do mentorado</div>
+                {{ a.response }}
+              </div>
+            }
+
+            <div style="display:flex;gap:.5rem;margin-top:.85rem">
+              @if (a.status !== 'concluido') {
+                <button class="btn btn-outline btn-sm" (click)="setStatus(a, 'concluido')">Marcar como concluído</button>
+              } @else {
+                <button class="btn btn-outline btn-sm" (click)="setStatus(a, 'pendente')">Reabrir</button>
+              }
+            </div>
+
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.75rem">{{ toDate(a.createdAt) | date:'dd/MM/yyyy' }} · {{ a.createdByName || '—' }}</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

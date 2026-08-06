@@ -1,0 +1,94 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="treinamentos" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Treinamentos</h1>
+    <p class="page-subtitle">Guias e vídeos curtos para a equipe aprender a usar a plataforma</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-bar"></span>Materiais</div>
+
+    @if (!formOpen()) {
+      <button class="btn btn-primary btn-sm" style="margin-bottom:1.25rem" (click)="openCreate()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Material
+      </button>
+    }
+
+    @if (formOpen()) {
+      <div class="card" style="padding:1rem;margin-bottom:1.25rem;background:var(--cream, #FAF8F5)">
+        @if (formErr()) { <div class="alert alert-error show">{{ formErr() }}</div> }
+
+        <div class="form-group">
+          <label class="form-label">Título</label>
+          <input type="text" class="form-input" placeholder="Ex: Como cadastrar um novo projeto" [ngModel]="title()" (ngModelChange)="title.set($event)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descrição (opcional)</label>
+          <input type="text" class="form-input" placeholder="Resumo curto" [ngModel]="description()" (ngModelChange)="description.set($event)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" style="max-width:220px" [ngModel]="type()" (ngModelChange)="type.set($event)">
+            <option value="text">Guia (texto)</option>
+            <option value="video">Vídeo</option>
+          </select>
+        </div>
+
+        @if (type() === 'video') {
+          <div class="form-group">
+            <label class="form-label">URL do Vídeo</label>
+            <input type="text" class="form-input" placeholder="https://…" [ngModel]="videoUrl()" (ngModelChange)="videoUrl.set($event)">
+          </div>
+        } @else {
+          <div class="form-group">
+            <label class="form-label">Conteúdo do Guia</label>
+            <textarea class="form-textarea" rows="6" placeholder="Escreva o passo a passo…" [ngModel]="content()" (ngModelChange)="content.set($event)"></textarea>
+          </div>
+        }
+
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-primary btn-sm" [disabled]="saving()" (click)="save()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+          <button class="btn btn-outline btn-sm" (click)="closeForm()">Cancelar</button>
+        </div>
+      </div>
+    }
+
+    @if (!materials().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nenhum material cadastrado ainda.</div></div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        @for (m of materials(); track m.id) {
+          <div class="card" style="padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+              <div>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <span class="badge" [style.background]="m.type === 'video' ? '#E0E7FF' : '#FEF3C7'" [style.color]="m.type === 'video' ? '#4338CA' : '#92400E'">{{ m.type === 'video' ? 'Vídeo' : 'Guia' }}</span>
+                  <div style="font-weight:600">{{ m.title }}</div>
+                </div>
+                @if (m.description) { <div style="font-size:.82rem;color:var(--muted);margin-top:.35rem">{{ m.description }}</div> }
+              </div>
+              <div style="display:flex;gap:.5rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" (click)="openEdit(m)">Editar</button>
+                <button class="btn btn-danger-ghost btn-sm" (click)="deleteMaterial(m)">Excluir</button>
+              </div>
+            </div>
+
+            @if (m.type === 'video' && m.videoUrl) {
+              <a [href]="m.videoUrl" target="_blank" rel="noopener" class="link-btn" style="display:inline-block;margin-top:.75rem">Assistir vídeo →</a>
+            } @else if (m.content) {
+              <div style="font-size:.85rem;white-space:pre-wrap;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">{{ m.content }}</div>
+            }
+
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.75rem">{{ toDate(m.createdAt) | date:'dd/MM/yyyy' }} · {{ m.createdByName || '—' }}</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

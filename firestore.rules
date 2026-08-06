@@ -31,6 +31,10 @@ service cloud.firestore {
       return isOwner() || isManager();
     }
 
+    function isMentorado() {
+      return isSignedIn() && myAccount().role == 'mentorado';
+    }
+
     // Managers podem ter a visão restrita a um subconjunto de projetos
     // (campo projectAccess na própria conta). Sem o campo, ou null, = todos.
     function managerCanAccessProject(projectId) {
@@ -109,6 +113,11 @@ service cloud.firestore {
       match /internal/{docId} {
         allow read, write: if canAccessProject(projectId);
       }
+
+      // Kanban interno do projeto: só a equipe (nunca o cliente dono do projeto).
+      match /kanbanCards/{cardId} {
+        allow read, write: if canAccessProject(projectId);
+      }
     }
 
     // Configurações da plataforma (ex: cor, limites de arquivo/armazenamento).
@@ -124,6 +133,28 @@ service cloud.firestore {
     match /settings/storageUsage {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
+    }
+
+    // Materiais de treinamento (guias/vídeos internos): só staff lê e escreve.
+    match /trainingMaterials/{id} {
+      allow read, write: if isStaff();
+    }
+
+    // Kanban geral (tarefas internas não vinculadas a um projeto): só staff.
+    match /kanbanGeneral/{id} {
+      allow read, write: if isStaff();
+    }
+
+    // Atividades de mentoria: staff cria/edita/exclui/vê todas; o mentorado
+    // só lê e responde as suas próprias — não pode criar, excluir, nem
+    // alterar título/descrição/prazo, só response e status.
+    match /mentoriaAtividades/{id} {
+      allow read: if isStaff() || (isMentorado() && resource.data.mentoradoUid == request.auth.uid);
+      allow create, delete: if isStaff();
+      allow update: if isStaff() || (
+        isMentorado() && resource.data.mentoradoUid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['response', 'status'])
+      );
     }
   }
 }

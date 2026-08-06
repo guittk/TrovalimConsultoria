@@ -1,0 +1,12 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="kanban" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Kanban</h1>
+    <p class="page-subtitle">Quadro geral de tarefas internas — não vinculadas a um projeto específico</p>
+  </div>
+
+  <app-kanban-board [projectId]="null" />
+</div>
