@@ -489,7 +489,7 @@
 }
 
 .contato-grid {
-  display: grid; grid-template-columns: 1fr; max-width: 640px; align-items: start;
+  display: grid; grid-template-columns: 1fr; max-width: 640px; margin: 0 auto; align-items: start;
 }
 
 /* ── FORMULÁRIO DE CONTATO ── */
@@ -618,7 +618,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .cards { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
-  .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .contato-grid { gap: 2.5rem; }
   .section { padding: 6rem 1.75rem; }
 }
 
@@ -638,7 +638,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
-  .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; max-width: 640px; margin: 0 auto; }
+  .contato-grid { gap: 2.5rem; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }
   .btn-gold, .btn-ghost { flex: 1 1 auto; text-align: center; }
 }
