@@ -489,7 +489,7 @@
 }
 
 .contato-grid {
-  display: grid; grid-template-columns: 1fr; max-width: 640px; margin: 0 auto; align-items: start;
+  display: grid; grid-template-columns: 1fr; margin: 0 auto; align-items: start;
 }
 
 /* ── FORMULÁRIO DE CONTATO ── */
