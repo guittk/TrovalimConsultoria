@@ -4,6 +4,24 @@
   color: var(--graphite);
   overflow-x: hidden;
   background: #fff;
+
+  /*
+    Sistema de animação. Um easing único de desaceleração longa
+    (ease-out-quint) em toda a página — é o que dá a sensação de peso e
+    controle, em vez de "site com animaçãozinha". Deslocamento curto de
+    propósito: 20px basta para dar vida sem parecer que o conteúdo pulou.
+  */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur: .8s;
+  --stagger: 90ms;
+}
+
+/* ── PROGRESSO DE LEITURA ── */
+.progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transform-origin: left; transform: scaleX(0);
+  z-index: 1001; pointer-events: none;
 }
 
 /* ── NAV ── */
@@ -25,11 +43,19 @@
 }
 .nav-links { display: flex; align-items: center; gap: 2.5rem; list-style: none; }
 .nav-links a {
+  position: relative;
   color: var(--gold-light); font-size: .73rem;
   letter-spacing: .18em; text-transform: uppercase; font-weight: 400;
-  transition: color .2s;
+  transition: color .25s;
 }
-.nav-links a:hover { color: var(--gold); }
+.nav-links a:hover, .nav-links a.on { color: var(--gold); }
+/* Sublinhado da seção ativa: orientação de leitura, não enfeite. */
+.nav-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 1px;
+  background: var(--gold); transform: scaleX(0);
+  transition: transform .45s var(--ease);
+}
+.nav-links a.on::after { transform: scaleX(1); }
 .nav-cta {
   background: transparent; border: 1px solid var(--gold);
   color: var(--gold); font-family: var(--sans);
@@ -46,7 +72,6 @@
   inset: 0;
   background: var(--wine-dark);
   z-index: 2000;
-
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -58,16 +83,13 @@
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
-
   z-index: 2001;
-
   color: var(--gold);
   font-size: 1.4rem;
   cursor: pointer;
   background: none;
   border: none;
   font-family: var(--sans);
-
   display: none;
 }
 .mob-nav.open .mob-close { display: block; }
@@ -86,9 +108,19 @@
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(201,169,110,.3), transparent);
 }
+
+/*
+  Cascata de entrada do hero (~1.7s no total): logo → eyebrow (com as
+  linhas laterais desenhando para fora) → título → régua → losango →
+  tagline → botões. Efeito de "abertura de cortina".
+*/
+.hero-logo {
+  width: 200px; height: 200px; object-fit: cover; border-radius: 50%;
+  margin: 0 auto 2.2rem; display: block; position: relative; z-index: 1;
+}
 .hero-brand {
   display: flex; flex-direction: column; align-items: center;
-  opacity: 0; animation: fadeUp .9s ease .4s forwards;
+  position: relative; z-index: 1;
 }
 .hero-eyebrow {
   display: flex; align-items: center; gap: 1.1rem;
@@ -98,10 +130,11 @@
 .hero-eyebrow-line {
   width: 38px; height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold));
-  opacity: .7;
+  opacity: .7; transform-origin: right;
 }
 .hero-eyebrow-line:last-child {
   background: linear-gradient(90deg, var(--gold), transparent);
+  transform-origin: left;
 }
 .hero-trovalim {
   font-family: var(--serif); font-size: clamp(3.6rem,10vw,7.5rem);
@@ -121,30 +154,48 @@
 }
 .hero-btns {
   display: flex; gap: 1.25rem; margin-top: 3.5rem;
-  flex-wrap: wrap; justify-content: center;
-  opacity: 0; animation: fadeUp .9s ease 1.1s forwards;
+  flex-wrap: wrap; justify-content: center; position: relative; z-index: 1;
 }
+
+/*
+  Cascata do hero — também atrás do portão .anim-ready. O hero é a primeira
+  coisa que o visitante vê: se ele depender de animação para existir e a
+  animação não rodar, o site parece quebrado logo de cara. Assim, o estado
+  "escondido" só é aplicado quando o JS confirmou que vai animar.
+*/
+:host(.anim-ready) .hero-logo { opacity: 0; animation: heroLogo 1.1s var(--ease) .15s forwards; }
+:host(.anim-ready) .hero-eyebrow { opacity: 0; animation: fadeUp var(--dur) var(--ease) .55s forwards; }
+:host(.anim-ready) .hero-eyebrow-line { transform: scaleX(0); animation: drawX .9s var(--ease) .8s forwards; }
+:host(.anim-ready) .hero-trovalim { opacity: 0; animation: fadeUp .95s var(--ease) .75s forwards; }
+:host(.anim-ready) .hero-rule { transform: scaleX(0); animation: drawX 1.2s var(--ease) 1s forwards; }
+:host(.anim-ready) .hero-diamond { opacity: 0; animation: diamondIn .8s var(--ease) 1.25s forwards; }
+:host(.anim-ready) .hero-tagline { opacity: 0; animation: taglineIn var(--dur) var(--ease) 1.4s forwards; }
+:host(.anim-ready) .hero-btns { opacity: 0; animation: fadeUp .9s var(--ease) 1.6s forwards; }
+:host(.anim-ready) .scroll-hint { opacity: 0; animation: fadeIn 1s ease 2.2s forwards; }
 .btn-gold {
   background: var(--gold); color: var(--wine);
   font-family: var(--sans); font-size: .72rem; font-weight: 600;
   letter-spacing: .18em; text-transform: uppercase;
   padding: .95rem 2.6rem; border: none; cursor: pointer; display: inline-block;
-  transition: all .3s;
+  transition: background .3s, transform .3s var(--ease), box-shadow .3s;
 }
-.btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); }
+.btn-gold:hover {
+  background: var(--gold-light); transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(201,169,110,.28);
+}
 .btn-ghost {
   background: transparent; color: var(--gold);
   font-family: var(--sans); font-size: .72rem; font-weight: 500;
   letter-spacing: .18em; text-transform: uppercase;
   padding: .95rem 2.6rem; border: 1px solid var(--gold);
-  cursor: pointer; display: inline-block; transition: all .3s;
+  cursor: pointer; display: inline-block;
+  transition: background .3s, transform .3s var(--ease);
 }
-.btn-ghost:hover { background: rgba(201,169,110,.1); transform: translateY(-2px); }
+.btn-ghost:hover { background: rgba(201,169,110,.1); transform: translateY(-3px); }
 .scroll-hint {
   position: absolute; bottom: 2.2rem; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: .5rem;
   color: rgba(201,169,110,.5);
-  opacity: 0; animation: fadeIn 1s ease 2s forwards;
 }
 .scroll-hint span { font-size: .6rem; letter-spacing: .25em; text-transform: uppercase; }
 .scroll-bar {
@@ -166,6 +217,27 @@
 }
 .gold-bar {
   width: 48px; height: 1px; background: var(--gold); margin: 1.75rem 0;
+}
+
+/* ── FAIXA DE CREDIBILIDADE ── */
+.stats-strip {
+  background: var(--wine-dark); padding: 3.5rem 2rem;
+  border-top: 1px solid rgba(201,169,110,.15);
+  border-bottom: 1px solid rgba(201,169,110,.15);
+}
+.stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2.5rem; text-align: center;
+}
+.stat-n {
+  font-family: var(--serif); font-size: clamp(2.2rem,4.5vw,3.1rem);
+  color: var(--gold); line-height: 1; font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.stat-sfx { font-size: .55em; margin-left: .1em; opacity: .75; }
+.stat-l {
+  margin-top: .9rem; font-size: .68rem; letter-spacing: .2em;
+  text-transform: uppercase; color: rgba(232,213,163,.65); line-height: 1.6;
 }
 
 /* ── SOBRE ── */
@@ -194,9 +266,7 @@
 .sobre-p {
   color: var(--muted); line-height: 1.95; font-size: .93rem; margin-bottom: 1.2rem;
 }
-.sobre-list {
-  list-style: none; margin-top: 1.4rem;
-}
+.sobre-list { list-style: none; margin-top: 1.4rem; }
 .sobre-list li {
   font-size: .85rem; color: var(--muted); padding: .5rem 0;
   border-bottom: 1px solid rgba(0,0,0,.06);
@@ -204,6 +274,20 @@
 }
 .sobre-list li::before {
   content: ''; width: 16px; height: 1px; background: var(--gold); flex-shrink: 0;
+}
+.creds {
+  margin-top: 2.2rem; padding-top: 1.6rem;
+  border-top: 1px solid rgba(201,169,110,.35);
+}
+.creds-lbl {
+  font-size: .64rem; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: .9rem;
+}
+.creds-list { list-style: none; display: flex; flex-wrap: wrap; gap: .6rem; }
+.creds-list li {
+  font-size: .76rem; color: var(--muted);
+  border: 1px solid rgba(201,169,110,.4);
+  padding: .45rem 1rem; background: rgba(201,169,110,.06);
 }
 
 /* ── EMPRESAS ── */
@@ -213,30 +297,66 @@
 .empresas .gold-bar { opacity: .45; }
 .emp-lead {
   color: var(--gold-light); font-size: .97rem; line-height: 1.9;
-  max-width: 560px; margin-bottom: 4rem;
+  max-width: 620px; margin-bottom: 4.5rem;
   font-family: var(--serif); font-style: italic; opacity: .85;
 }
-.steps {
-  display: grid; grid-template-columns: repeat(4,1fr);
-  gap: 1px; background: rgba(201,169,110,.18); margin-bottom: 4rem;
+
+/* Jornada 01→05: linha vertical desenhada + marcadores em cascata. */
+.journey { position: relative; padding-left: 5rem; }
+.journey-line {
+  position: absolute; left: 23px; top: 10px; bottom: 10px; width: 1px;
+  background: linear-gradient(to bottom, var(--gold), rgba(201,169,110,.15));
+  transform-origin: top;
+  transition: transform 1.7s var(--ease);
 }
-.step {
-  background: var(--wine); padding: 2.2rem 1.4rem; text-align: center;
-  transition: background .3s;
+:host(.anim-ready) .journey-line { transform: scaleY(0); }
+:host(.anim-ready) .journey.vis .journey-line { transform: scaleY(1); }
+.jrn {
+  position: relative; padding-bottom: 3.2rem;
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition-delay: calc(var(--i, 0) * 150ms + 250ms);
 }
-.step:hover { background: rgba(201,169,110,.07); }
-.step-n {
-  font-size: .62rem; color: var(--gold); letter-spacing: .3em;
-  margin-bottom: 1.1rem; opacity: .6;
+:host(.anim-ready) .jrn { opacity: 0; transform: translateY(22px); }
+:host(.anim-ready) .journey.vis .jrn { opacity: 1; transform: none; }
+.jrn:last-child { padding-bottom: 0; }
+.jrn-marker {
+  position: absolute; left: -5rem; top: -2px;
+  width: 47px; height: 47px; border-radius: 50%;
+  background: var(--wine); border: 1px solid rgba(201,169,110,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: .82rem; color: var(--gold);
+  letter-spacing: .08em; transition: border-color .4s, background .4s;
 }
-.step-t {
-  font-family: var(--serif); font-size: .98rem;
-  color: var(--gold); font-weight: 500; margin-bottom: .7rem;
+.jrn:hover .jrn-marker { border-color: var(--gold); background: rgba(201,169,110,.1); }
+.jrn-verb {
+  font-size: .6rem; letter-spacing: .34em; text-transform: uppercase;
+  color: rgba(201,169,110,.55); margin-bottom: .55rem;
 }
-.step-d { font-size: .78rem; color: var(--gold-light); opacity: .65; line-height: 1.7; }
-.diffs {
-  display: grid; grid-template-columns: repeat(3,1fr); gap: 2.5rem;
+.jrn-t {
+  font-family: var(--serif); font-size: 1.3rem; font-weight: 500;
+  color: var(--gold); margin-bottom: .85rem; line-height: 1.35;
 }
+.jrn-d {
+  color: rgba(232,213,163,.72); font-size: .88rem; line-height: 1.95;
+  max-width: 660px;
+}
+.jrn-list { list-style: none; margin-top: 1.3rem; max-width: 620px; }
+.jrn-list li {
+  font-size: .8rem; color: rgba(232,213,163,.6); padding: .5rem 0;
+  border-bottom: 1px solid rgba(201,169,110,.13);
+  display: flex; align-items: baseline; gap: .75rem; line-height: 1.65;
+}
+.jrn-list li::before {
+  content: ''; width: 14px; height: 1px; background: var(--gold);
+  flex-shrink: 0; transform: translateY(-4px); opacity: .7;
+}
+.journey-note {
+  margin-top: 2.5rem; padding-left: 5rem;
+  font-size: .78rem; color: rgba(232,213,163,.5); line-height: 1.8;
+  font-style: italic;
+}
+
+.diffs { display: grid; grid-template-columns: repeat(3,1fr); gap: 2.5rem; }
 .diff { border-top: 1px solid rgba(201,169,110,.25); padding-top: 1.5rem; }
 .diff-t {
   color: var(--gold); font-family: var(--serif);
@@ -257,11 +377,12 @@
 }
 .card {
   background: var(--cream); padding: 3rem 2.5rem;
-  position: relative; overflow: hidden; transition: background .35s;
+  position: relative; overflow: hidden;
+  transition: background .35s, transform .4s var(--ease);
 }
 .card::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-  background: var(--wine); transform: scaleX(0); transition: transform .4s ease;
+  background: var(--wine); transform: scaleX(0); transition: transform .45s var(--ease);
 }
 .card:hover { background: #EFE9DF; }
 .card:hover::after { transform: scaleX(1); }
@@ -269,7 +390,9 @@
   width: 46px; height: 46px; border: 1px solid rgba(201,169,110,.5);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 1.8rem; color: var(--gold);
+  transition: border-color .35s, background .35s;
 }
+.card:hover .card-icon { border-color: var(--gold); background: rgba(201,169,110,.1); }
 .card-t {
   font-family: var(--serif); font-size: 1.25rem;
   color: var(--wine); font-weight: 500; margin-bottom: .9rem;
@@ -297,9 +420,9 @@
 .testi {
   border: 1px solid rgba(201,169,110,.18);
   padding: 2.5rem; position: relative;
-  transition: border-color .3s;
+  transition: border-color .35s, transform .4s var(--ease);
 }
-.testi:hover { border-color: rgba(201,169,110,.4); }
+.testi:hover { border-color: rgba(201,169,110,.4); transform: translateY(-4px); }
 .testi::before {
   content: '\201C'; font-family: var(--serif); font-size: 5rem;
   color: var(--gold); opacity: .15; position: absolute;
@@ -321,6 +444,43 @@
 .testi-name { color: var(--gold); font-size: .83rem; font-weight: 500; }
 .testi-role { color: rgba(201,169,110,.45); font-size: .72rem; margin-top: .2rem; }
 
+/* ── FAQ ── */
+.faq-sec { background: var(--cream-warm); }
+.faq-sec .sec-title { color: var(--graphite); }
+.faq-list { margin-top: 3rem; border-top: 1px solid rgba(201,169,110,.35); }
+.faq-item { border-bottom: 1px solid rgba(201,169,110,.35); }
+.faq-q {
+  width: 100%; background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  padding: 1.5rem 0; text-align: left;
+  font-family: var(--serif); font-size: 1.02rem; color: var(--wine);
+  transition: color .3s;
+}
+.faq-q:hover { color: var(--wine-mid); }
+/* Ícone +/− feito de dois traços: o vertical some ao abrir. */
+.faq-ico {
+  position: relative; width: 14px; height: 14px; flex-shrink: 0;
+}
+.faq-ico::before, .faq-ico::after {
+  content: ''; position: absolute; background: var(--gold);
+  transition: transform .4s var(--ease), opacity .3s;
+}
+.faq-ico::before { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
+.faq-ico::after { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+.faq-item.open .faq-ico::after { transform: rotate(90deg); opacity: 0; }
+/* grid-template-rows 0fr→1fr anima altura sem precisar de max-height chutado. */
+.faq-a {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .5s var(--ease);
+}
+.faq-item.open .faq-a { grid-template-rows: 1fr; }
+.faq-a > p {
+  overflow: hidden;
+  font-size: .87rem; color: var(--muted); line-height: 1.95;
+  max-width: 760px;
+}
+.faq-item.open .faq-a > p { padding-bottom: 1.6rem; }
+
 /* ── CONTATO ── */
 .contato { background: var(--cream); }
 .contato .sec-title { color: var(--graphite); }
@@ -339,9 +499,7 @@
   text-align: center; display: flex; flex-direction: column;
   align-items: center; gap: .9rem;
   transition: background .35s; cursor: pointer;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+  width: 100%; min-width: 0; box-sizing: border-box;
 }
 .cc:hover { background: var(--wine); }
 .cc:hover .cc-lbl, .cc:hover .cc-val { color: var(--gold-light); }
@@ -358,9 +516,7 @@
 .cc-val { font-size: .83rem; color: var(--graphite); transition: color .35s; }
 
 /* ── FOOTER ── */
-footer {
-  background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
-}
+footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center; }
 .ft-logo {
   font-family: var(--serif); font-size: 1.05rem;
   letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: .3rem;
@@ -384,32 +540,66 @@ footer {
 }
 .ft-portal:hover { color: var(--gold); }
 
-/* ── WA FLOAT ── */
-.wa {
-  position: fixed; bottom: 2rem; right: 2rem; width: 54px; height: 54px;
-  background: #25D366; border-radius: 50%; display: flex; align-items: center;
-  justify-content: center; color: #fff; z-index: 998;
-  box-shadow: 0 4px 20px rgba(37,211,102,.4); transition: transform .3s;
-}
-.wa:hover { transform: scale(1.1); }
-
-/* ── ANIMATIONS ── */
+/* ── ANIMAÇÕES ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(22px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drawX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes heroLogo {
+  from { opacity: 0; transform: scale(.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes diamondIn { from { opacity: 0; } to { opacity: .75; } }
+@keyframes taglineIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: .8; transform: translateY(0); }
+}
 @keyframes scrollPulse {
   0%,100% { opacity: .25; transform: scaleY(.8); }
   50% { opacity: .8; transform: scaleY(1); }
 }
-.reveal {
-  opacity: 0; transform: translateY(28px);
-  transition: opacity .75s ease, transform .75s ease;
-}
-.reveal.vis { opacity: 1; transform: none; }
 
-/* ── RESPONSIVE ── */
+/*
+  ── PORTÃO DE ANIMAÇÃO (.anim-ready) ──
+  Tudo que depende do IntersectionObserver só é escondido quando o
+  componente já montou os observers e aplicou .anim-ready no host. Sem JS
+  (ou se o script quebrar antes disso), nenhuma regra de ocultação se
+  aplica e a página aparece inteira — sem animação, mas legível. Sem esse
+  portão, uma falha de JS deixaria a landing page em branco.
+*/
+.reveal {
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+:host(.anim-ready) .reveal { opacity: 0; transform: translateY(24px); }
+:host(.anim-ready) .reveal.vis { opacity: 1; transform: none; }
+
+/*
+  Stagger: o índice --i vem do TS (aplicado aos filhos diretos de .stagger).
+  Cada irmão entra 90ms depois do anterior — é o que faz o conteúdo parecer
+  composto em vez de despejado de uma vez.
+*/
+.stagger > * {
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition-delay: calc(var(--i, 0) * var(--stagger));
+}
+:host(.anim-ready) .stagger > * { opacity: 0; transform: translateY(20px); }
+:host(.anim-ready) .stagger.vis > *,
+:host(.anim-ready) .reveal.vis .stagger > * { opacity: 1; transform: none; }
+
+/* Título revelado por máscara (clip-path sobe): detalhe editorial. */
+.sec-title.mask {
+  transition: clip-path .95s var(--ease) .1s, transform .95s var(--ease) .1s;
+}
+:host(.anim-ready) .sec-title.mask {
+  clip-path: inset(0 0 105% 0); transform: translateY(10px);
+}
+:host(.anim-ready) .reveal.vis .sec-title.mask {
+  clip-path: inset(0 0 -10% 0); transform: none;
+}
+
+/* ── RESPONSIVO ── */
 
 /* Notebooks pequenos / telas médias em paisagem */
 @media (max-width: 1100px) {
@@ -418,14 +608,12 @@ footer {
   .nav-links { gap: 1.6rem; }
 }
 
-
 /* Tablets em paisagem (largura grande, mas ainda assim tablet) */
 @media (max-width: 960px) {
   .nav { padding: 1.1rem 1.75rem; }
   .nav.scrolled { padding: .9rem 1.75rem; }
   .nav-links, .nav-cta { display: none; }
   .hamburger { display: flex; }
-  .steps { grid-template-columns: 1fr 1fr; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .cards { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -437,10 +625,7 @@ footer {
   ── DISPOSITIVOS VERTICAIS (RETRATO) ──
   Tablets em pé (iPad, Galaxy Tab, Surface) têm largura entre 600px e 1024px,
   ultrapassando o breakpoint de 960px usado para paisagem. Sem isto, eles
-  herdavam o layout de desktop (menu completo, grids de 3 a 5 colunas) e
-  ficavam visualmente espremidos. Esta regra aplica o tratamento de
-  tablet a QUALQUER aparelho em pé até 1024px de largura, independente
-  de já cair ou não nos breakpoints de largura acima.
+  herdavam o layout de desktop e ficavam visualmente espremidos.
 */
 @media (orientation: portrait) and (max-width: 1024px) {
   .nav { padding: 1.1rem 1.5rem; }
@@ -450,7 +635,6 @@ footer {
   .section { padding: 5.5rem 2rem; }
   .sobre-grid { grid-template-columns: 1fr; gap: 3rem; }
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
-  .steps { grid-template-columns: repeat(2,1fr); }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
   .contact-cards { grid-template-columns: repeat(2,1fr); max-width: 640px; margin: 0 auto 5rem; }
@@ -462,9 +646,14 @@ footer {
 @media (max-width: 768px) {
   .nav-logo { font-size: .92rem; letter-spacing: .15em; }
   .hero { padding: 7.5rem 1.75rem 4.5rem; }
+  .hero-logo { width: 150px; height: 150px; margin-bottom: 1.8rem; }
   .sec-title { line-height: 1.25; }
   .hero-btns { width: 100%; max-width: 360px; margin: 3rem auto 0; }
   .btn-gold, .btn-ghost { flex: 1 1 auto; text-align: center; }
+  .journey { padding-left: 3.5rem; }
+  .journey-line { left: 17px; }
+  .jrn-marker { left: -3.5rem; width: 35px; height: 35px; font-size: .72rem; }
+  .journey-note { padding-left: 3.5rem; }
 }
 
 /* Celulares (retrato é o padrão neste range) */
@@ -472,15 +661,18 @@ footer {
   .section { padding: 5rem 1.5rem; }
   .container { max-width: 100%; }
   .hero { padding: 7rem 1.25rem 4rem; min-height: 100svh; }
+  .hero-logo { width: 130px; height: 130px; }
   .hero-btns { flex-direction: column; gap: .8rem; width: 100%; max-width: none; }
   .btn-gold, .btn-ghost { width: 100%; padding: 1rem 1.5rem; }
-  .steps { grid-template-columns: 1fr; }
-  .step { padding: 1.8rem 1.2rem; }
+  .stats-strip { padding: 2.75rem 1.5rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
   .contact-cards { grid-template-columns: 1fr 1fr; max-width: none; margin-bottom: 4rem; }
   .cc { padding: 1.8rem 1.2rem; }
   .testi { padding: 2rem 1.5rem; }
-  .wa { width: 48px; height: 48px; bottom: 1.25rem; right: 1.25rem; }
   .mob-nav a { font-size: 1.35rem; }
+  .jrn-t { font-size: 1.15rem; }
+  .jrn-d { font-size: .85rem; }
+  .faq-q { font-size: .94rem; }
 }
 
 /* Celulares pequenos */
@@ -488,11 +680,16 @@ footer {
   .nav-logo { font-size: .8rem; letter-spacing: .1em; }
   .nav-logo img { width: 30px !important; height: 30px !important; margin-right: 6px !important; }
   .contact-cards { grid-template-columns: 1fr; }
+  .journey { padding-left: 2.9rem; }
+  .journey-line { left: 14px; }
+  .jrn-marker { left: -2.9rem; width: 29px; height: 29px; font-size: .66rem; }
+  .journey-note { padding-left: 2.9rem; }
 }
 
 /* Celular em paisagem: evita hero gigante cortando conteúdo */
 @media (max-height: 480px) and (orientation: landscape) {
   .hero { min-height: auto; padding: 8rem 1.5rem 3rem; }
+  .hero-logo { width: 110px; height: 110px; margin-bottom: 1.2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -500,4 +697,12 @@ footer {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
   }
+  /* Sem animação, o conteúdo precisa nascer visível — não preso no estado inicial. */
+  .reveal, .stagger > *, .jrn { opacity: 1 !important; transform: none !important; }
+  .sec-title.mask { clip-path: none !important; }
+  .hero-logo, .hero-eyebrow, .hero-trovalim, .hero-btns, .scroll-hint { opacity: 1 !important; }
+  .hero-tagline { opacity: .8 !important; }
+  .hero-diamond { opacity: .75 !important; }
+  .hero-eyebrow-line, .hero-rule { transform: none !important; }
+  .journey-line { transform: scaleY(1) !important; }
 }
