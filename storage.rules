@@ -61,5 +61,12 @@ service firebase.storage {
       allow read: if isStaff() || (isSignedIn() && (request.auth.uid == clientId || myCompanyId() == clientId));
       allow write, delete: if isStaff();
     }
+
+    // Foto de perfil de qualquer conta, editada na tela Contas. Só staff
+    // define a foto de outra conta; a própria pessoa também pode ler a sua.
+    match /accounts/{uid}/{allPaths=**} {
+      allow read: if isStaff() || (isSignedIn() && request.auth.uid == uid);
+      allow write, delete: if isStaff();
+    }
   }
 }
