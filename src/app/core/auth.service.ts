@@ -80,7 +80,8 @@ export class AuthService {
   async resolveUserData(user: User): Promise<UserAccount | null> {
     try {
       return await retryPromiseOnPermissionDenied(() => this.resolveUserDataOnce(user));
-    } catch {
+    } catch (e) {
+      console.error('[auth] resolveUserData desistiu após todas as tentativas — usuário ficará sem papel reconhecido.', e);
       return null;
     }
   }
@@ -89,11 +90,19 @@ export class AuthService {
     const byUid = await getDoc(doc(this.db, 'users', user.uid));
     if (byUid.exists()) return { uid: byUid.id, ...(byUid.data() as Omit<UserAccount, 'uid'>) };
 
+    // Documento não existe com o UID de auth. Se isso persistir (não for só
+    // durante um cadastro em andamento), o ID do doc em /users está
+    // desalinhado do UID do Firebase Authentication — mesmo sintoma que
+    // já causou "Missing or insufficient permissions" generalizado antes,
+    // porque as regras do Firestore dependem de get(/users/{auth.uid}).
+    console.warn(`[auth] Nenhum doc em /users/${user.uid} — tentando fallback por e-mail (${user.email}).`);
+
     const byEmailQuery = await getDocs(
       query(collection(this.db, 'users'), where('email', '==', user.email), limit(1)),
     );
     if (!byEmailQuery.empty) {
       const d = byEmailQuery.docs[0];
+      console.warn(`[auth] Encontrado via e-mail em /users/${d.id} — ID do documento diferente do UID de auth (${user.uid}). Isso deixa a maioria das leituras negadas (regras dependem do UID). Corrija recriando o doc com o ID = UID de auth.`);
       return { uid: d.id, ...(d.data() as Omit<UserAccount, 'uid'>) };
     }
 
