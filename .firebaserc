@@ -2,8 +2,7 @@
   "projects": {
     "default": "geovana-trovalim-prod",
     "prod": "geovana-trovalim-prod",
-    "dev": "geovana-trovalim-dev",
-    "legacy": "ellen-cavalcanti"
+    "dev": "geovana-trovalim-dev"
   },
   "targets": {
     "geovana-trovalim-prod": {
