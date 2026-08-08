@@ -1,9 +1,7 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-
-const CONTACT_EMAIL = 'consultoria@trovalim.com.br';
-const CONTACT_WHATSAPP = '5515981007866';
+import { ContactSubmissionsService } from '../core/contact-submissions.service';
 
 const SUBJECT_OPTIONS = [
   { value: 'empresa', label: 'Sou empresa — recrutamento e consultoria de RH' },
@@ -156,13 +154,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   ];
 
   /*
-    Formulário de contato. Sem backend próprio pra envio de e-mail (exigiria
-    credenciais de SMTP/API que não temos), o formulário monta a mensagem a
-    partir dos campos e entrega pelo canal escolhido: "mailto:" pré-preenchido
-    (abre o cliente de e-mail do visitante) ou WhatsApp (abre o wa.me com o
-    texto pronto) — em ambos os casos é o VISITANTE quem efetivamente envia,
-    só que sem precisar redigir nada.
+    Formulário de contato. O envio salva a mensagem direto no Firestore
+    (coleção contactSubmissions) — ainda não existe uma tela na plataforma
+    pra consumir esses envios, mas os dados já ficam guardados pra quando
+    ela existir.
   */
+  private readonly contactSubmissions = inject(ContactSubmissionsService);
+
   readonly subjectOptions = SUBJECT_OPTIONS;
   readonly contactName = signal('');
   readonly contactEmail = signal('');
@@ -170,7 +168,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   readonly contactSubject = signal<string>('empresa');
   readonly contactMessage = signal('');
   readonly contactTried = signal(false);
-  readonly contactSentVia = signal<'email' | 'whatsapp' | null>(null);
+  readonly contactSending = signal(false);
+  readonly contactSent = signal(false);
 
   private readonly emailValid = computed(() => {
     const v = this.contactEmail().trim();
@@ -188,36 +187,29 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     return !e.name && !e.message && !e.email;
   });
 
-  private buildContactBody(): string {
-    const subjectLabel = this.subjectOptions.find((o) => o.value === this.contactSubject())?.label ?? '';
-    const lines = [
-      `Nome: ${this.contactName().trim()}`,
-      this.contactEmail().trim() ? `E-mail: ${this.contactEmail().trim()}` : null,
-      this.contactPhone().trim() ? `Telefone: ${this.contactPhone().trim()}` : null,
-      `Assunto: ${subjectLabel}`,
-      '',
-      this.contactMessage().trim(),
-    ].filter((l): l is string => l !== null);
-    return lines.join('\n');
-  }
-
-  sendContactByEmail(): void {
+  async sendContact(): Promise<void> {
     this.contactTried.set(true);
-    if (!this.contactFormValid()) return;
+    if (!this.contactFormValid() || this.contactSending()) return;
 
-    const subject = encodeURIComponent(`Contato pelo site — ${this.contactName().trim()}`);
-    const body = encodeURIComponent(this.buildContactBody());
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-    this.contactSentVia.set('email');
-  }
-
-  sendContactByWhatsapp(): void {
-    this.contactTried.set(true);
-    if (!this.contactFormValid()) return;
-
-    const text = encodeURIComponent(this.buildContactBody());
-    window.open(`https://wa.me/${CONTACT_WHATSAPP}?text=${text}`, '_blank');
-    this.contactSentVia.set('whatsapp');
+    this.contactSending.set(true);
+    try {
+      await this.contactSubmissions.create({
+        name: this.contactName().trim(),
+        email: this.contactEmail().trim() || undefined,
+        phone: this.contactPhone().trim() || undefined,
+        subject: this.contactSubject(),
+        message: this.contactMessage().trim(),
+      });
+      this.contactSent.set(true);
+      this.contactTried.set(false);
+      this.contactName.set('');
+      this.contactEmail.set('');
+      this.contactPhone.set('');
+      this.contactSubject.set('empresa');
+      this.contactMessage.set('');
+    } finally {
+      this.contactSending.set(false);
+    }
   }
 
   private revealObserver?: IntersectionObserver;

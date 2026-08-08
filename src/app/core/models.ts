@@ -182,3 +182,14 @@ export interface MentorshipActivity {
   response?: string;
   respondedAt?: unknown;
 }
+
+/** Envio do formulário de contato do site público (ainda sem tela na plataforma). */
+export interface ContactSubmission {
+  id?: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  createdAt?: unknown;
+}

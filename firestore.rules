@@ -145,6 +145,14 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // Envios do formulário de contato do site público: qualquer visitante
+    // (sem login) pode criar; leitura só para a equipe (ainda sem tela na
+    // plataforma para consumir isso, mas os dados já ficam guardados).
+    match /contactSubmissions/{id} {
+      allow create: if true;
+      allow read: if isStaff();
+    }
+
     // Atividades de mentoria: staff cria/edita/exclui/vê todas; o mentorado
     // só lê e responde as suas próprias — não pode criar, excluir, nem
     // alterar título/descrição/prazo, só response e status.
