@@ -135,3 +135,14 @@ export interface ProjectFile {
   /** 'link' = URL externa cadastrada (ex: pasta no SharePoint), sem upload. Ausente/'upload' = arquivo real no Storage. */
   kind?: 'upload' | 'link';
 }
+
+/** Envio do formulário de contato do site público (ainda sem tela na plataforma). */
+export interface ContactSubmission {
+  id?: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  createdAt?: unknown;
+}
