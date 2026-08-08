@@ -327,7 +327,16 @@
   font-family: var(--serif); font-size: .82rem; color: var(--gold);
   letter-spacing: .08em; transition: border-color .4s, background .4s;
 }
-.jrn:hover .jrn-marker { border-color: var(--gold); background: rgba(201,169,110,.1); }
+/*
+  O hover mistura o dourado ao vinho em vez de trocar por um background
+  transparente — um background: rgba(...) sozinho substitui a cor sólida
+  de base e deixa a linha da jornada (que passa atrás do círculo) visível
+  por transparência.
+*/
+.jrn:hover .jrn-marker {
+  border-color: var(--gold);
+  background: linear-gradient(rgba(201,169,110,.16), rgba(201,169,110,.16)), var(--wine);
+}
 .jrn-verb {
   font-size: .6rem; letter-spacing: .34em; text-transform: uppercase;
   color: rgba(201,169,110,.55); margin-bottom: .55rem;
@@ -488,9 +497,38 @@
   color: var(--muted); font-family: var(--serif); font-style: italic;
   font-size: 1.05rem; max-width: 460px; line-height: 1.85; margin-bottom: 3.5rem;
 }
+
+.contato-grid {
+  display: grid; grid-template-columns: 1.5fr 1fr; gap: 3.5rem; align-items: start;
+}
+
+/* ── FORMULÁRIO DE CONTATO ── */
+.cf { display: flex; flex-direction: column; gap: 1.4rem; }
+.cf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+.cf-group { display: flex; flex-direction: column; gap: .5rem; }
+.cf-label {
+  font-size: .66rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted);
+}
+.cf-optional { text-transform: none; letter-spacing: 0; opacity: .7; }
+.cf-input {
+  font-family: var(--sans); font-size: .88rem; color: var(--graphite);
+  background: var(--cream); border: none; border-bottom: 1px solid rgba(61,11,18,.2);
+  padding: .65rem .1rem; transition: border-color .3s; width: 100%;
+}
+.cf-input:focus { outline: none; border-color: var(--wine); }
+.cf-select { cursor: pointer; }
+.cf-textarea { resize: vertical; min-height: 6rem; line-height: 1.6; }
+.cf-err { font-size: .74rem; color: var(--wine-mid); }
+.cf-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .5rem; }
+.cf-sent {
+  font-size: .82rem; color: var(--wine); background: rgba(201,169,110,.12);
+  border: 1px solid rgba(201,169,110,.35); padding: .85rem 1.1rem; margin-top: .25rem;
+}
+
 .contact-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 2px;
   background: var(--cream-warm);
 }
@@ -617,6 +655,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .cards { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+  .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; }
   .contact-cards { grid-template-columns: repeat(2,1fr); }
   .section { padding: 6rem 1.75rem; }
 }
@@ -637,7 +676,8 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
-  .contact-cards { grid-template-columns: repeat(2,1fr); max-width: 640px; margin: 0 auto 5rem; }
+  .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; max-width: 640px; margin: 0 auto; }
+  .contact-cards { grid-template-columns: repeat(2,1fr); margin-bottom: 0; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }
   .btn-gold, .btn-ghost { flex: 1 1 auto; text-align: center; }
 }
@@ -654,6 +694,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .journey-line { left: 17px; }
   .jrn-marker { left: -3.5rem; width: 35px; height: 35px; font-size: .72rem; }
   .journey-note { padding-left: 3.5rem; }
+  .cf-row { grid-template-columns: 1fr; gap: 1.1rem; }
 }
 
 /* Celulares (retrato é o padrão neste range) */
@@ -666,13 +707,15 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .btn-gold, .btn-ghost { width: 100%; padding: 1rem 1.5rem; }
   .stats-strip { padding: 2.75rem 1.5rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
-  .contact-cards { grid-template-columns: 1fr 1fr; max-width: none; margin-bottom: 4rem; }
+  .contact-cards { grid-template-columns: 1fr 1fr; max-width: none; }
   .cc { padding: 1.8rem 1.2rem; }
   .testi { padding: 2rem 1.5rem; }
   .mob-nav a { font-size: 1.35rem; }
   .jrn-t { font-size: 1.15rem; }
   .jrn-d { font-size: .85rem; }
   .faq-q { font-size: .94rem; }
+  .cf-actions { flex-direction: column; }
+  .cf-actions .btn-gold, .cf-actions .btn-ghost { width: 100%; text-align: center; }
 }
 
 /* Celulares pequenos */

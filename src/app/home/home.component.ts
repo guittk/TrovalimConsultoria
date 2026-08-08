@@ -1,5 +1,15 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+
+const CONTACT_EMAIL = 'consultoria@trovalim.com.br';
+const CONTACT_WHATSAPP = '5515981007866';
+
+const SUBJECT_OPTIONS = [
+  { value: 'empresa', label: 'Sou empresa — recrutamento e consultoria de RH' },
+  { value: 'carreira', label: 'Sou profissional — currículo, LinkedIn ou carreira' },
+  { value: 'outro', label: 'Outro assunto' },
+] as const;
 
 /** Número da faixa de credibilidade (logo abaixo do hero). */
 interface Stat {
@@ -31,7 +41,7 @@ const SECTION_IDS = ['home', 'sobre', 'empresas', 'profissionais', 'depoimentos'
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -144,6 +154,71 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       a: 'Pelo WhatsApp ou e-mail, com uma escuta inicial sobre o seu contexto. Antes de qualquer proposta técnica, o primeiro passo é entender o desafio real — só depois desenhamos o caminho.',
     },
   ];
+
+  /*
+    Formulário de contato. Sem backend próprio pra envio de e-mail (exigiria
+    credenciais de SMTP/API que não temos), o formulário monta a mensagem a
+    partir dos campos e entrega pelo canal escolhido: "mailto:" pré-preenchido
+    (abre o cliente de e-mail do visitante) ou WhatsApp (abre o wa.me com o
+    texto pronto) — em ambos os casos é o VISITANTE quem efetivamente envia,
+    só que sem precisar redigir nada.
+  */
+  readonly subjectOptions = SUBJECT_OPTIONS;
+  readonly contactName = signal('');
+  readonly contactEmail = signal('');
+  readonly contactPhone = signal('');
+  readonly contactSubject = signal<string>('empresa');
+  readonly contactMessage = signal('');
+  readonly contactTried = signal(false);
+  readonly contactSentVia = signal<'email' | 'whatsapp' | null>(null);
+
+  private readonly emailValid = computed(() => {
+    const v = this.contactEmail().trim();
+    return v.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  });
+
+  readonly contactErrors = computed(() => ({
+    name: this.contactName().trim().length < 2,
+    message: this.contactMessage().trim().length < 10,
+    email: !this.emailValid(),
+  }));
+
+  readonly contactFormValid = computed(() => {
+    const e = this.contactErrors();
+    return !e.name && !e.message && !e.email;
+  });
+
+  private buildContactBody(): string {
+    const subjectLabel = this.subjectOptions.find((o) => o.value === this.contactSubject())?.label ?? '';
+    const lines = [
+      `Nome: ${this.contactName().trim()}`,
+      this.contactEmail().trim() ? `E-mail: ${this.contactEmail().trim()}` : null,
+      this.contactPhone().trim() ? `Telefone: ${this.contactPhone().trim()}` : null,
+      `Assunto: ${subjectLabel}`,
+      '',
+      this.contactMessage().trim(),
+    ].filter((l): l is string => l !== null);
+    return lines.join('\n');
+  }
+
+  sendContactByEmail(): void {
+    this.contactTried.set(true);
+    if (!this.contactFormValid()) return;
+
+    const subject = encodeURIComponent(`Contato pelo site — ${this.contactName().trim()}`);
+    const body = encodeURIComponent(this.buildContactBody());
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+    this.contactSentVia.set('email');
+  }
+
+  sendContactByWhatsapp(): void {
+    this.contactTried.set(true);
+    if (!this.contactFormValid()) return;
+
+    const text = encodeURIComponent(this.buildContactBody());
+    window.open(`https://wa.me/${CONTACT_WHATSAPP}?text=${text}`, '_blank');
+    this.contactSentVia.set('whatsapp');
+  }
 
   private revealObserver?: IntersectionObserver;
   private sectionObserver?: IntersectionObserver;
