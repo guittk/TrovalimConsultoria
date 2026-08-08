@@ -489,7 +489,7 @@
 }
 
 .contato-grid {
-  display: grid; grid-template-columns: 1.5fr 1fr; gap: 3.5rem; align-items: start;
+  display: grid; grid-template-columns: 1fr; max-width: 640px; align-items: start;
 }
 
 /* ── FORMULÁRIO DE CONTATO ── */
@@ -515,33 +515,6 @@
   font-size: .82rem; color: var(--wine); background: rgba(201,169,110,.12);
   border: 1px solid rgba(201,169,110,.35); padding: .85rem 1.1rem; margin-top: .25rem;
 }
-
-.contact-cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2px;
-  background: var(--cream-warm);
-}
-.cc {
-  background: var(--cream); padding: 2.5rem 1.8rem;
-  text-align: center; display: flex; flex-direction: column;
-  align-items: center; gap: .9rem;
-  transition: background .35s; cursor: pointer;
-  width: 100%; min-width: 0; box-sizing: border-box;
-}
-.cc:hover { background: var(--wine); }
-.cc:hover .cc-lbl, .cc:hover .cc-val { color: var(--gold-light); }
-.cc:hover .cc-ico { border-color: var(--gold); color: var(--gold); background: transparent; }
-.cc-ico {
-  width: 50px; height: 50px; border: 1px solid var(--cream-warm);
-  background: var(--cream-warm); display: flex; align-items: center;
-  justify-content: center; color: var(--wine); transition: all .35s;
-}
-.cc-lbl {
-  font-size: .63rem; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--muted); transition: color .35s;
-}
-.cc-val { font-size: .83rem; color: var(--graphite); transition: color .35s; }
 
 /* ── FOOTER ── */
 footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center; }
@@ -646,7 +619,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .cards { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
   .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; }
-  .contact-cards { grid-template-columns: repeat(2,1fr); }
   .section { padding: 6rem 1.75rem; }
 }
 
@@ -667,7 +639,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
   .contato-grid { grid-template-columns: 1fr; gap: 2.5rem; max-width: 640px; margin: 0 auto; }
-  .contact-cards { grid-template-columns: repeat(2,1fr); margin-bottom: 0; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }
   .btn-gold, .btn-ghost { flex: 1 1 auto; text-align: center; }
 }
@@ -697,8 +668,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .btn-gold, .btn-ghost { width: 100%; padding: 1rem 1.5rem; }
   .stats-strip { padding: 2.75rem 1.5rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
-  .contact-cards { grid-template-columns: 1fr 1fr; max-width: none; }
-  .cc { padding: 1.8rem 1.2rem; }
   .testi { padding: 2rem 1.5rem; }
   .mob-nav a { font-size: 1.35rem; }
   .jrn-t { font-size: 1.15rem; }
@@ -712,7 +681,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
 @media (max-width: 380px) {
   .nav-logo { font-size: .8rem; letter-spacing: .1em; }
   .nav-logo img { width: 30px !important; height: 30px !important; margin-right: 6px !important; }
-  .contact-cards { grid-template-columns: 1fr; }
   .journey { padding-left: 2.9rem; }
   .journey-line { left: 14px; }
   .jrn-marker { left: -2.9rem; width: 29px; height: 29px; font-size: .66rem; }
