@@ -15,6 +15,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
   { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
@@ -25,6 +26,7 @@ const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
 const HIDEABLE_TABS: { key: string; label: string }[] = [
   { key: 'clientes', label: 'Empresas' },
   { key: 'contas', label: 'Contas' },
+  { key: 'kanban', label: 'Kanban' },
   { key: 'contatos', label: 'Contatos' },
   { key: 'config', label: 'Configurações' },
 ];

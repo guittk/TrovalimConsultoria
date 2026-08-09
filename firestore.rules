@@ -151,5 +151,11 @@ service cloud.firestore {
       allow create: if true;
       allow read, delete: if isStaff();
     }
+
+    // Tarefas internas do quadro Kanban: só a equipe (owner/manager) vê ou
+    // mexe — nunca a empresa-cliente, mesmo que a tarefa cite um projeto dela.
+    match /tasks/{taskId} {
+      allow read, write: if isStaff();
+    }
   }
 }

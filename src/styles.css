@@ -1020,6 +1020,184 @@ img { max-width: 100%; display: block; }
   align-items: start;
 }
 
+/* ── KANBAN ── */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.kanban-col {
+  background: rgba(0,0,0,.025);
+  border: 1px solid var(--border);
+  padding: .9rem;
+  transition: background .2s, box-shadow .2s;
+}
+.kanban-col-over { background: rgba(201,169,110,.1); box-shadow: inset 0 0 0 2px var(--gold); }
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .1rem .2rem .8rem;
+}
+.kanban-col-title {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--graphite);
+  letter-spacing: .02em;
+}
+.kanban-col-count { color: var(--muted); font-weight: 400; }
+.kanban-col-add {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: color .2s;
+}
+.kanban-col-add:hover { color: var(--wine); }
+.kanban-cards { display: flex; flex-direction: column; gap: .65rem; }
+.kanban-col-empty { text-align: center; padding: 1.25rem 0; font-size: .75rem; color: var(--muted); opacity: .7; }
+.kanban-drop-indicator { height: 3px; background: var(--gold); border-radius: 2px; }
+
+.kanban-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: .85rem .95rem;
+  cursor: grab;
+  transition: box-shadow .2s, transform .2s, opacity .2s;
+}
+.kanban-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.1); transform: translateY(-1px); }
+.kanban-card-dragging { opacity: .4; }
+.kanban-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.kanban-card-title { font-size: .86rem; font-weight: 500; color: var(--graphite); line-height: 1.35; }
+.kanban-priority-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: .3rem; flex-shrink: 0; }
+.kanban-card-project {
+  font-size: .65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--wine);
+  opacity: .75;
+  margin-top: .4rem;
+}
+.kanban-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
+.kanban-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: rgba(201,169,110,.14);
+  color: var(--wine);
+  font-size: .65rem;
+  font-weight: 600;
+  padding: .18rem .55rem;
+  border-radius: 999px;
+}
+.kanban-tag-removable button { border: none; background: none; color: inherit; cursor: pointer; font-size: .65rem; line-height: 1; opacity: .7; }
+.kanban-tag-removable button:hover { opacity: 1; }
+.kanban-checklist-summary { margin-top: .55rem; }
+.kanban-checklist-toggle, .kanban-checklist-add-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0;
+  margin-top: .55rem;
+}
+.kanban-checklist-toggle:hover, .kanban-checklist-add-link:hover { color: var(--graphite); }
+.kanban-checklist-bar { height: 4px; background: rgba(0,0,0,.08); border-radius: 999px; overflow: hidden; margin-top: .3rem; }
+.kanban-checklist-bar-fill { height: 100%; background: var(--gold); border-radius: 999px; transition: width .3s; }
+.kanban-checklist-list { display: flex; flex-direction: column; gap: .2rem; margin-top: .45rem; }
+.kanban-checklist-item { display: flex; align-items: center; gap: .5rem; padding: .2rem .1rem; }
+.kanban-checklist-check {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0,0,0,.2);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .6rem;
+  line-height: 1;
+  padding: 0;
+  color: #fff;
+}
+.kanban-checklist-check.done { background: var(--gold); border-color: var(--gold); color: var(--wine); }
+.kanban-checklist-text { flex: 1; min-width: 0; font-size: .78rem; color: var(--graphite); cursor: pointer; }
+.kanban-checklist-text.done { color: var(--muted); text-decoration: line-through; }
+.kanban-checklist-remove { border: none; background: none; color: var(--muted); cursor: pointer; font-size: .68rem; opacity: 0; transition: opacity .15s; flex-shrink: 0; }
+.kanban-checklist-item:hover .kanban-checklist-remove { opacity: 1; }
+.kanban-checklist-input-row { display: flex; gap: .4rem; margin-top: .4rem; }
+.kanban-checklist-input-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: .76rem;
+  padding: .35rem .5rem;
+  outline: none;
+}
+.kanban-checklist-input-row input:focus { border-color: var(--gold); }
+.kanban-checklist-input-row button { border: none; background: none; color: var(--wine); cursor: pointer; font-size: .95rem; padding: 0 .3rem; }
+
+.kanban-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--border);
+}
+.kanban-assignees { display: flex; gap: .25rem; }
+.kanban-avatar {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: rgba(201,169,110,.22);
+  color: var(--wine);
+  font-size: .58rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kanban-due { font-size: .68rem; font-weight: 600; color: var(--muted); }
+.kanban-due.overdue { color: #DC2626; }
+
+.kanban-assignee-picker { display: flex; flex-wrap: wrap; gap: .5rem; }
+.kanban-assignee-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.kanban-assignee-btn.selected { background: var(--wine); color: var(--gold); }
+
+@media (max-width: 1024px) {
+  .kanban-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .kanban-board { grid-template-columns: 1fr; }
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }

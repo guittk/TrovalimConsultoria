@@ -156,3 +156,38 @@ export interface ContactSubmission {
   message: string;
   createdAt?: unknown;
 }
+
+export type TaskStatus = 'a-fazer' | 'em-andamento' | 'aguardando-cliente' | 'concluido';
+export type TaskPriority = 'baixa' | 'media' | 'alta' | 'urgente';
+
+export interface TaskChecklistItem {
+  id: string;
+  texto: string;
+  feito: boolean;
+}
+
+export interface TaskAttachment {
+  nome: string;
+  url: string;
+  tipo?: string;
+}
+
+/** Tarefa interna da equipe (quadro Kanban) — não é visível para a empresa-cliente. */
+export interface Task {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  /** Projeto vinculado, opcional — tarefas internas (ex: comercial, administrativo) não precisam de projeto. */
+  projectId?: string | null;
+  assigneeIds?: string[];
+  status: TaskStatus;
+  prioridade: TaskPriority;
+  /** Prazo no formato yyyy-mm-dd. */
+  dueDate?: string | null;
+  tags?: string[];
+  checklist?: TaskChecklistItem[];
+  anexos?: TaskAttachment[];
+  /** Posição dentro da coluna de status — controla a ordem de exibição/arraste. */
+  ordem?: number;
+  createdAt?: unknown;
+}

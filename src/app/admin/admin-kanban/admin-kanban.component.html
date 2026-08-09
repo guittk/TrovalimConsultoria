@@ -1,0 +1,272 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="kanban" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <h1 class="page-title">Kanban</h1>
+      <p class="page-subtitle">Quadro de tarefas da equipe — atualização em tempo real</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate(statuses[0].key)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova Tarefa
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="toolbar-search" placeholder="Buscar por título…"
+      [ngModel]="filterQuery()" (ngModelChange)="filterQuery.set($event)">
+    <select class="toolbar-select" [ngModel]="filterAssigneeId()" (ngModelChange)="filterAssigneeId.set($event)">
+      <option value="">Todos os responsáveis</option>
+      @for (u of staff(); track u.uid) { <option [value]="u.uid">{{ u.name || u.email }}</option> }
+    </select>
+    <select class="toolbar-select" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)">
+      <option value="">Todas as prioridades</option>
+      @for (p of priorities; track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+    </select>
+    @if (hasActiveFilters()) {
+      <button type="button" class="btn-icon" title="Limpar filtros" (click)="clearFilters()">✕</button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state"><div class="empty-state-text">Carregando quadro…</div></div>
+  } @else {
+    <div class="kanban-board">
+      @for (col of statuses; track col.key) {
+        <div
+          class="kanban-col"
+          [class.kanban-col-over]="dragOverCol() === col.key"
+          (dragover)="onColDragOver($event, col.key)"
+          (dragleave)="onColDragLeave()"
+          (drop)="onDrop($event, col.key)"
+        >
+          <div class="kanban-col-header">
+            <h3 class="kanban-col-title">{{ col.label }} <span class="kanban-col-count">({{ colTasks(col.key).length }})</span></h3>
+            <button type="button" class="kanban-col-add" title="Nova tarefa nesta coluna" (click)="openCreate(col.key)">+</button>
+          </div>
+
+          <div class="kanban-cards">
+            @for (task of colTasks(col.key); track task.id) {
+              @if (dragOverTaskId() === task.id && draggingId() !== task.id) {
+                <div class="kanban-drop-indicator"></div>
+              }
+              <article
+                class="kanban-card"
+                [class.kanban-card-dragging]="draggingId() === task.id"
+                draggable="true"
+                (dragstart)="onDragStart($event, task)"
+                (dragend)="onDragEnd()"
+                (dragover)="onCardDragOver($event, col.key, task)"
+                (drop)="onDropOnCard($event, col.key, task)"
+                (click)="openEdit(task)"
+              >
+                <div class="kanban-card-top">
+                  <p class="kanban-card-title">{{ task.titulo }}</p>
+                  <span class="kanban-priority-dot" [style.background]="priorityDot(task.prioridade)" [title]="priorityLabel(task.prioridade)"></span>
+                </div>
+
+                @if (projectName(task.projectId)) {
+                  <div class="kanban-card-project">{{ projectName(task.projectId) }}</div>
+                }
+
+                @if (task.tags?.length) {
+                  <div class="kanban-tags">
+                    @for (tag of task.tags; track tag) { <span class="kanban-tag">{{ tag }}</span> }
+                  </div>
+                }
+
+                @if (checklistProgress(task); as c) {
+                  <div class="kanban-checklist-summary">
+                    <button type="button" class="kanban-checklist-toggle" (click)="toggleExpanded(task.id, $event)">
+                      <span>{{ isExpanded(task.id) ? '▾' : '▸' }} ☑ {{ c.done }}/{{ c.total }}</span>
+                      <span>{{ c.percent }}%</span>
+                    </button>
+                    <div class="kanban-checklist-bar"><div class="kanban-checklist-bar-fill" [style.width.%]="c.percent"></div></div>
+                  </div>
+                } @else if (isExpanded(task.id)) {
+                  <button type="button" class="kanban-checklist-toggle" style="margin-top:.6rem" (click)="toggleExpanded(task.id, $event)">
+                    <span>▾ ☑ Checklist</span>
+                  </button>
+                } @else {
+                  <button type="button" class="kanban-checklist-add-link" (click)="toggleExpanded(task.id, $event)">+ Adicionar checklist</button>
+                }
+
+                @if (isExpanded(task.id)) {
+                  <ul class="kanban-checklist-list">
+                    @for (item of task.checklist ?? []; track item.id) {
+                      <li class="kanban-checklist-item">
+                        <button type="button" class="kanban-checklist-check" [class.done]="item.feito" (click)="toggleChecklistItem(task, item.id, $event)">
+                          @if (item.feito) { ✓ }
+                        </button>
+                        <span class="kanban-checklist-text" [class.done]="item.feito" (click)="toggleChecklistItem(task, item.id, $event)">{{ item.texto }}</span>
+                        <button type="button" class="kanban-checklist-remove" (click)="removeChecklistItemInline(task, item.id, $event)">✕</button>
+                      </li>
+                    }
+                  </ul>
+                  <div class="kanban-checklist-input-row" (click)="$event.stopPropagation()">
+                    <input type="text" placeholder="Novo item"
+                      [ngModel]="newChecklistText[task.id] ?? ''" (ngModelChange)="newChecklistText[task.id] = $event"
+                      (keydown.enter)="addChecklistItemInline(task, $event)">
+                    <button type="button" (click)="addChecklistItemInline(task, $event)">+</button>
+                  </div>
+                }
+
+                <div class="kanban-card-footer">
+                  @if (assigneeNames(task); as names) {
+                    @if (names.length) {
+                      <span class="kanban-assignees">
+                        @for (n of names.slice(0, 4); track n) {
+                          <span class="kanban-avatar" [title]="n">{{ initials(n) }}</span>
+                        }
+                      </span>
+                    }
+                  }
+                  @if (task.dueDate) {
+                    <span class="kanban-due" [class.overdue]="isOverdue(task)">{{ task.dueDate | date: 'dd/MM' }}</span>
+                  }
+                </div>
+              </article>
+            }
+
+            @if (!colTasks(col.key).length) {
+              <div class="kanban-col-empty">Nenhuma tarefa</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ── MODAL DE TAREFA ── -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:640px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">{{ editingTask() ? 'Editar Tarefa' : 'Nova Tarefa' }}</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Título</label>
+      <input type="text" class="form-input" placeholder="Ex: Enviar proposta revisada" [ngModel]="form().titulo" (ngModelChange)="updateForm('titulo', $event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-textarea" rows="3" placeholder="Detalhes desta tarefa…" [ngModel]="form().descricao" (ngModelChange)="updateForm('descricao', $event)"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Projeto</label>
+        <select class="form-select" [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
+          <option value="">Sem projeto (interno)</option>
+          @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prazo</label>
+        <input #dueDateInput type="date" class="form-input" [ngModel]="form().dueDate" (ngModelChange)="updateForm('dueDate', $event)" (click)="openDatePicker(dueDateInput)">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [ngModel]="form().status" (ngModelChange)="updateForm('status', $event)">
+          @for (s of statuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prioridade</label>
+        <select class="form-select" [ngModel]="form().prioridade" (ngModelChange)="updateForm('prioridade', $event)">
+          @for (p of priorities; track p.key) { <option [value]="p.key">{{ p.label }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Responsáveis</label>
+      <div class="kanban-assignee-picker">
+        @for (u of staff(); track u.uid) {
+          <button type="button" class="kanban-assignee-btn" [class.selected]="isAssigned(u.uid)" [title]="u.name || u.email" (click)="toggleAssignee(u.uid)">
+            {{ initials(u.name || u.email || '?') }}
+          </button>
+        }
+        @if (!staff().length) { <p class="form-help" style="margin:0">Nenhuma conta de equipe cadastrada.</p> }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="kanban-tags" style="margin-bottom:.6rem">
+        @for (tag of form().tags; track tag) {
+          <span class="kanban-tag kanban-tag-removable">{{ tag }} <button type="button" (click)="removeTag(tag)">✕</button></span>
+        }
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <input type="text" class="form-input" placeholder="Adicionar tag" [ngModel]="tagInput()" (ngModelChange)="tagInput.set($event)" (keydown.enter)="addTag()">
+        <button type="button" class="btn btn-outline btn-sm" (click)="addTag()">Adicionar</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <label class="form-label" style="margin:0">Checklist</label>
+        @if (form().checklist.length) { <span class="form-help" style="margin:0">{{ checklistDone() }}/{{ form().checklist.length }}</span> }
+      </div>
+      @if (form().checklist.length) {
+        <div class="kanban-checklist-bar" style="margin-bottom:.6rem"><div class="kanban-checklist-bar-fill" [style.width.%]="checklistPercent()"></div></div>
+      }
+      <ul class="kanban-checklist-list" style="margin-bottom:.6rem">
+        @for (item of form().checklist; track item.id) {
+          <li class="kanban-checklist-item">
+            <button type="button" class="kanban-checklist-check" [class.done]="item.feito" (click)="toggleFormChecklistItem(item.id)">
+              @if (item.feito) { ✓ }
+            </button>
+            <span class="kanban-checklist-text" [class.done]="item.feito" (click)="toggleFormChecklistItem(item.id)">{{ item.texto }}</span>
+            <button type="button" class="kanban-checklist-remove" (click)="removeFormChecklistItem(item.id)">✕</button>
+          </li>
+        }
+      </ul>
+      <div style="display:flex;gap:.5rem">
+        <input type="text" class="form-input" placeholder="Novo item" [ngModel]="checklistInput()" (ngModelChange)="checklistInput.set($event)" (keydown.enter)="addChecklistItem()">
+        <button type="button" class="btn btn-outline btn-sm" (click)="addChecklistItem()">Adicionar</button>
+      </div>
+    </div>
+
+    @if (editingTask()) {
+      <div class="form-group">
+        <label class="form-label">Anexos</label>
+        <div style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.6rem">
+          @for (a of form().anexos; track a.url) {
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <a [href]="a.url" target="_blank" rel="noopener" class="link-btn" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none;letter-spacing:0;font-weight:400;font-size:.82rem">{{ a.nome }}</a>
+              <button type="button" class="btn-icon danger" title="Remover anexo" (click)="removeAttachment(a.url)">✕</button>
+            </div>
+          }
+          @if (!form().anexos.length) { <p class="form-help" style="margin:0">Nenhum anexo ainda.</p> }
+        </div>
+        <label class="btn btn-outline btn-sm" style="display:inline-flex;cursor:pointer">
+          {{ uploadingAttachment() ? 'Enviando…' : 'Escolher arquivo' }}
+          <input type="file" style="display:none" (change)="handleUploadAttachment($event)">
+        </label>
+        @if (uploadErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.4rem">{{ uploadErr() }}</p> }
+      </div>
+    }
+
+    <div class="modal-footer" style="justify-content:space-between">
+      <div>
+        @if (editingTask()) {
+          <button class="btn btn-danger-ghost" [disabled]="deleting()" (click)="handleDelete()">{{ deleting() ? 'Excluindo…' : 'Excluir' }}</button>
+        }
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="handleSave()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

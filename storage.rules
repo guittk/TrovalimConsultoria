@@ -61,5 +61,10 @@ service firebase.storage {
       allow read: if isStaff() || (isSignedIn() && (request.auth.uid == clientId || myCompanyId() == clientId));
       allow write, delete: if isStaff();
     }
+
+    // Anexos de tarefas do quadro Kanban (interno da equipe).
+    match /tasks/{taskId}/{allPaths=**} {
+      allow read, write, delete: if isStaff();
+    }
   }
 }

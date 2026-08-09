@@ -47,6 +47,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
   },
   {
+    path: 'admin/kanban',
+    canActivate: [staffGuard, staffTabGuard('kanban')],
+    loadComponent: () => import('./admin/admin-kanban/admin-kanban.component').then((m) => m.AdminKanbanComponent),
+  },
+  {
     path: 'admin/contatos',
     canActivate: [staffGuard, staffTabGuard('contatos')],
     loadComponent: () => import('./admin/admin-contacts/admin-contacts.component').then((m) => m.AdminContactsComponent),
