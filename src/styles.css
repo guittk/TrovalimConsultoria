@@ -158,7 +158,7 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   padding: .5rem 0;
   box-shadow: 0 10px 24px rgba(0,0,0,.4);
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
   overflow-y: auto;
 }
 .pnav-mobile-link {
