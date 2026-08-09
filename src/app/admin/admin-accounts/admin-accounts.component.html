@@ -41,9 +41,9 @@
           }
           @for (u of sortedAccounts(); track u.uid) {
             <tr>
-              <td style="font-weight:500">{{ u.name || '—' }}</td>
-              <td style="color:var(--muted);font-size:.82rem">{{ u.email || '—' }}</td>
-              <td><app-role-badge [role]="u.role" /></td>
+              <td data-label="Nome" style="font-weight:500">{{ u.name || '—' }}</td>
+              <td data-label="E-mail" style="color:var(--muted);font-size:.82rem">{{ u.email || '—' }}</td>
+              <td data-label="Papel"><app-role-badge [role]="u.role" /></td>
               <td>
                 @if (isOwner()) {
                   <div style="display:flex;gap:1rem;justify-content:flex-end">

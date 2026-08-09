@@ -1040,6 +1040,33 @@ img { max-width: 100%; display: block; }
   .modal-backdrop { padding: 1rem; }
   .modal { padding: 1.75rem; }
 }
+/*
+  Tabelas (Projetos, Contas, Empresas, Uso por Empresa...) tinham só
+  overflow-x:auto — funcional, mas ainda scroll horizontal, que é
+  justamente o que devia sumir do mobile. Abaixo do breakpoint em que a
+  tabela precisaria desse scroll (min-width:680px), ela vira uma lista de
+  cards empilhados: cada <tr> é um bloco, cada <td> mostra um rótulo (via
+  data-label) em cima do valor.
+*/
+@media (max-width: 700px) {
+  .data-table-wrap { overflow-x: visible; }
+  .data-table { min-width: 0; }
+  .data-table thead { display: none; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table tr { padding: .9rem 1rem; border-bottom: 1px solid var(--border); }
+  .data-table tr:last-child { border-bottom: none; }
+  .data-table td { padding: .3rem 0; border-bottom: none; white-space: normal; }
+  .data-table td:empty { display: none; }
+  .data-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: .64rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .25rem;
+  }
+}
 @media (max-width: 600px) {
   .card { padding: 1.35rem; }
   .step-date-input { width: 110px; }

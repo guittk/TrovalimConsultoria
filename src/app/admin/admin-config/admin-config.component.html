@@ -58,7 +58,7 @@
         <tbody>
           @for (s of statusForm(); track s.key; let i = $index) {
             <tr>
-              <td>
+              <td data-label="Rótulo">
                 <input type="text" class="form-input" [ngModel]="s.label" (ngModelChange)="updateStatus(i, 'label', $event)" [disabled]="!isOwner()">
               </td>
               @if (isOwner()) {
@@ -137,9 +137,9 @@
           <tbody>
             @for (t of typeLimitsForm(); track t.key; let i = $index) {
               <tr>
-                <td><input type="text" class="form-input" [ngModel]="t.label" (ngModelChange)="updateTypeLimit(i, 'label', $event)" [disabled]="!isOwner()"></td>
-                <td><input type="text" class="form-input" [ngModel]="t.extensionsText" (ngModelChange)="updateTypeLimit(i, 'extensionsText', $event)" [disabled]="!isOwner()" placeholder="jpg, png, gif"></td>
-                <td><input type="number" class="form-input" min="1" [ngModel]="t.maxSizeMb" (ngModelChange)="updateTypeLimit(i, 'maxSizeMb', $event)" [disabled]="!isOwner()"></td>
+                <td data-label="Tipo"><input type="text" class="form-input" [ngModel]="t.label" (ngModelChange)="updateTypeLimit(i, 'label', $event)" [disabled]="!isOwner()"></td>
+                <td data-label="Extensões"><input type="text" class="form-input" [ngModel]="t.extensionsText" (ngModelChange)="updateTypeLimit(i, 'extensionsText', $event)" [disabled]="!isOwner()" placeholder="jpg, png, gif"></td>
+                <td data-label="Máx. (MB)"><input type="number" class="form-input" min="1" [ngModel]="t.maxSizeMb" (ngModelChange)="updateTypeLimit(i, 'maxSizeMb', $event)" [disabled]="!isOwner()"></td>
                 @if (isOwner()) {
                   <td><button class="btn btn-danger-ghost btn-sm" (click)="removeTypeLimit(i)">Excluir</button></td>
                 }
@@ -178,14 +178,14 @@
           }
           @for (c of clients(); track c.id) {
             <tr>
-              <td style="font-weight:500">{{ c.branding?.companyName || '—' }}</td>
-              <td>
+              <td data-label="Empresa" style="font-weight:500">{{ c.branding?.companyName || '—' }}</td>
+              <td data-label="Uso Atual">
                 <div class="progress-wrap" style="max-width:220px">
                   <div class="progress-bar"><div class="progress-fill" [style.width.%]="usagePct(c.storageUsageBytes || 0, c.storageLimitMb || defaultClientLimitMb())"></div></div>
                   <div class="progress-label">{{ formatBytes(c.storageUsageBytes || 0) }} de {{ formatMb(c.storageLimitMb || defaultClientLimitMb()) }}</div>
                 </div>
               </td>
-              <td>
+              <td data-label="Limite (MB)">
                 <input type="number" class="form-input" min="1" style="max-width:140px"
                   [ngModel]="clientLimitInput(c)" (ngModelChange)="setClientLimitInput(c.id, $event)"
                   [disabled]="!isOwner()" [placeholder]="'Padrão: ' + defaultClientLimitMb()">
