@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { loginGuard, portalGuard, staffGuard } from './core/guards';
+import { loginGuard, portalGuard, staffGuard, staffTabGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -33,27 +33,27 @@ export const routes: Routes = [
   },
   {
     path: 'admin/clientes',
-    canActivate: [staffGuard],
+    canActivate: [staffGuard, staffTabGuard('clientes')],
     loadComponent: () => import('./admin/admin-clients/admin-clients.component').then((m) => m.AdminClientsComponent),
   },
   {
     path: 'admin/clientes/:id',
-    canActivate: [staffGuard],
+    canActivate: [staffGuard, staffTabGuard('clientes')],
     loadComponent: () => import('./admin/admin-client/admin-client.component').then((m) => m.AdminClientComponent),
   },
   {
     path: 'admin/contas',
-    canActivate: [staffGuard],
+    canActivate: [staffGuard, staffTabGuard('contas')],
     loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
   },
   {
     path: 'admin/contatos',
-    canActivate: [staffGuard],
+    canActivate: [staffGuard, staffTabGuard('contatos')],
     loadComponent: () => import('./admin/admin-contacts/admin-contacts.component').then((m) => m.AdminContactsComponent),
   },
   {
     path: 'admin/config',
-    canActivate: [staffGuard],
+    canActivate: [staffGuard, staffTabGuard('config')],
     loadComponent: () => import('./admin/admin-config/admin-config.component').then((m) => m.AdminConfigComponent),
   },
   {

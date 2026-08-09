@@ -5,9 +5,9 @@
       <span class="pnav-logo-text">Trovalim</span>
     </a>
     <div class="pnav-sep"></div>
-    @if (tabs.length) {
+    @if (visibleTabs.length) {
       <div class="pnav-tabs">
-        @for (tab of tabs; track tab.key) {
+        @for (tab of visibleTabs; track tab.key) {
           <a [routerLink]="tab.path" class="pnav-tab" [class.active]="tab.key === activeSection">{{ tab.label }}</a>
         }
       </div>

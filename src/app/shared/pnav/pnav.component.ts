@@ -22,6 +22,8 @@ export class PnavComponent {
   @Input() logoLink = '/';
   /** Abas de navegação (Projetos/Clientes/Contas). Vazio = mostra sectionLabel no lugar. */
   @Input() tabs: PnavTab[] = [];
+  /** Chaves de abas escondidas para a conta atual (ver UserAccount.hiddenTabs). */
+  @Input() hiddenTabs: string[] = [];
   /** Chave da aba ativa (comparada com PnavTab.key). */
   @Input() activeSection = '';
   /** Rótulo estático exibido quando não há abas (ex: "Portal do Cliente"). */
@@ -29,6 +31,10 @@ export class PnavComponent {
   @Input() userName = '';
   /** Rota após sair (ex: '/' no portal, '/login' no admin). */
   @Input() logoutRedirect = '/login';
+
+  get visibleTabs(): PnavTab[] {
+    return this.hiddenTabs.length ? this.tabs.filter((t) => !this.hiddenTabs.includes(t.key)) : this.tabs;
+  }
 
   async logout(): Promise<void> {
     await this.auth.logout();

@@ -58,7 +58,13 @@ export class AccountsService {
 
   updateProfile(
     uid: string,
-    data: { name?: string; role?: Role; projectAccess?: string[] | null },
+    data: {
+      name?: string;
+      role?: Role;
+      projectAccess?: string[] | null;
+      companyAccess?: string[] | null;
+      hiddenTabs?: string[];
+    },
   ): Promise<void> {
     return updateDoc(doc(this.db, 'users', uid), data as DocumentData);
   }
@@ -96,12 +102,14 @@ export class AccountsService {
     password: string,
     role: Role,
     projectAccess: string[] | null = null,
+    companyAccess: string[] | null = null,
+    hiddenTabs: string[] = [],
   ): Promise<void> {
     const secondaryApp = initializeApp(environment.firebase, `Secondary-${Date.now()}`);
     try {
       const secondaryAuth = getAuth(secondaryApp);
       const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-      await setDoc(doc(this.db, 'users', cred.user.uid), { name, email, role, projectAccess });
+      await setDoc(doc(this.db, 'users', cred.user.uid), { name, email, role, projectAccess, companyAccess, hiddenTabs });
       await signOut(secondaryAuth);
     } finally {
       await deleteApp(secondaryApp);

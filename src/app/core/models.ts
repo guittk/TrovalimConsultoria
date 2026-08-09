@@ -18,6 +18,16 @@ export interface UserAccount {
   /** Somente para managers: projetos que a conta pode ver. null/ausente = todos. */
   projectAccess?: string[] | null;
   /**
+   * Somente para managers com projectAccess restrito: ids de /empresas
+   * derivados do ownerId dos projetos em projectAccess (calculado ao salvar
+   * a restrição, não editado diretamente). null/ausente = todas as empresas.
+   * Usado pelas regras do Firestore para esconder empresas/contas de
+   * clientes não ligados a nenhum projeto que o manager pode acessar.
+   */
+  companyAccess?: string[] | null;
+  /** Chaves das abas do admin (ex: 'config', 'contatos') escondidas para esta conta. Ignorado para owner. */
+  hiddenTabs?: string[];
+  /**
    * Somente para clientes: id do doc em /empresas ao qual esta conta está
    * vinculada como colaborador. Várias contas (e-mails) podem apontar para a
    * mesma empresa, permitindo múltiplos colaboradores por cliente — todas

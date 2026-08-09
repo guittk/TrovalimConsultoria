@@ -21,6 +21,14 @@ const ADMIN_TABS: PnavTab[] = [
 
 const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
 
+/** Abas que podem ser escondidas de um manager (Projetos fica sempre visível — é a página inicial do admin). */
+const HIDEABLE_TABS: { key: string; label: string }[] = [
+  { key: 'clientes', label: 'Empresas' },
+  { key: 'contas', label: 'Contas' },
+  { key: 'contatos', label: 'Contatos' },
+  { key: 'config', label: 'Configurações' },
+];
+
 @Component({
   selector: 'app-admin-accounts',
   standalone: true,
@@ -71,6 +79,8 @@ export class AdminAccountsComponent {
   readonly accRole = signal<Role>('client');
   readonly restrictProjects = signal(false);
   readonly selectedProjectIds = signal<Set<string>>(new Set());
+  readonly hideableTabs = HIDEABLE_TABS;
+  readonly hiddenTabs = signal<Set<string>>(new Set());
   readonly accJobTitle = signal('');
   readonly accPhotoPreview = signal<string | null>(null);
   private pendingPhotoFile: File | null = null;
@@ -102,6 +112,7 @@ export class AdminAccountsComponent {
     this.accRole.set('client');
     this.restrictProjects.set(false);
     this.selectedProjectIds.set(new Set());
+    this.hiddenTabs.set(new Set());
     this.accJobTitle.set('');
     this.accPhotoPreview.set(null);
     this.pendingPhotoFile = null;
@@ -119,6 +130,7 @@ export class AdminAccountsComponent {
     this.accRole.set(normRole(acc.role) === 'manager' ? 'manager' : 'client');
     this.restrictProjects.set(Array.isArray(acc.projectAccess));
     this.selectedProjectIds.set(new Set(acc.projectAccess || []));
+    this.hiddenTabs.set(new Set(acc.hiddenTabs || []));
     this.accJobTitle.set(acc.jobTitle || '');
     this.accPhotoPreview.set(acc.photoUrl || null);
     this.pendingPhotoFile = null;
@@ -161,6 +173,15 @@ export class AdminAccountsComponent {
     });
   }
 
+  toggleHiddenTab(key: string, checked: boolean): void {
+    this.hiddenTabs.update((set) => {
+      const copy = new Set(set);
+      if (checked) copy.add(key);
+      else copy.delete(key);
+      return copy;
+    });
+  }
+
   async save(): Promise<void> {
     const name = this.accName().trim();
     const email = this.accEmail().trim();
@@ -168,15 +189,26 @@ export class AdminAccountsComponent {
     if (!email) { this.modalErr.set('O e-mail é obrigatório.'); return; }
 
     this.saving.set(true);
-    const projectAccess =
-      this.accRole() === 'manager' && this.restrictProjects() ? [...this.selectedProjectIds()] : null;
+    const isRestrictedManager = this.accRole() === 'manager' && this.restrictProjects();
+    const projectAccess = isRestrictedManager ? [...this.selectedProjectIds()] : null;
+    const companyAccess = isRestrictedManager
+      ? [...new Set(
+          this.allProjects()
+            .filter((p) => this.selectedProjectIds().has(p.id))
+            .map((p) => p.ownerId)
+            .filter((id): id is string => !!id),
+        )]
+      : null;
+    const hiddenTabs = this.accRole() === 'manager' ? [...this.hiddenTabs()] : [];
     try {
       const editingUid = this.editingUid();
       if (editingUid) {
         // Editando a própria conta: não mexe em role/projectAccess (o
         // formulário nem oferece a opção "Owner", então salvar esses campos
         // aqui rebaixaria o próprio Owner por acidente).
-        const payload = this.editingIsSelf() ? { name } : { name, role: this.accRole(), projectAccess };
+        const payload = this.editingIsSelf()
+          ? { name }
+          : { name, role: this.accRole(), projectAccess, companyAccess, hiddenTabs };
         await this.accountsSvc.updateProfile(editingUid, payload);
 
         let photoUrl: string | null = this.photoRemoved ? null : this.editingAccount()?.photoUrl || null;
@@ -193,7 +225,15 @@ export class AdminAccountsComponent {
         if (this.accPassword().length < 6) {
           throw new Error('WEAK_PASSWORD');
         }
-        await this.accountsSvc.createAccount(name, email, this.accPassword(), this.accRole(), projectAccess);
+        await this.accountsSvc.createAccount(
+          name,
+          email,
+          this.accPassword(),
+          this.accRole(),
+          projectAccess,
+          companyAccess,
+          hiddenTabs,
+        );
       }
       this.modalOpen.set(false);
     } catch (e) {

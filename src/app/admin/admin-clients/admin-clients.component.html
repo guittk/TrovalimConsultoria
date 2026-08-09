@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">

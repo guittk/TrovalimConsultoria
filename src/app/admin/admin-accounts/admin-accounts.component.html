@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" activeSection="contas" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="contas" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -134,7 +134,7 @@
           <input type="checkbox" [checked]="restrictProjects()" tabindex="-1" style="accent-color:var(--gold);pointer-events:none">
           Restringir a projetos específicos
         </label>
-        <div class="form-help" style="margin-bottom:.6rem">Desmarcado = acesso a todos os projetos.</div>
+        <div class="form-help" style="margin-bottom:.6rem">Desmarcado = acesso a todos os projetos. Marcado = o gerente só vê os projetos selecionados, a empresa de cada um e as contas ligadas a essas empresas.</div>
 
         @if (restrictProjects()) {
           <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);padding:.5rem .75rem">
@@ -149,6 +149,19 @@
             }
           </div>
         }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Abas escondidas</label>
+        <div class="form-help" style="margin-bottom:.6rem">Abas marcadas ficam fora do menu do gerente e o acesso direto pela URL também é bloqueado.</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          @for (t of hideableTabs; track t.key) {
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer" (click)="$event.preventDefault(); toggleHiddenTab(t.key, !hiddenTabs().has(t.key))">
+              <input type="checkbox" [checked]="hiddenTabs().has(t.key)" tabindex="-1" style="accent-color:var(--gold);pointer-events:none">
+              <span>{{ t.label }}</span>
+            </label>
+          }
+        </div>
       </div>
     }
 
