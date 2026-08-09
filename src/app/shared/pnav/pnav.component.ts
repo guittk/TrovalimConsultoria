@@ -1,6 +1,7 @@
 import { Component, inject, Input, OnDestroy, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { lockBodyScroll, unlockBodyScroll } from '../body-scroll-lock';
 
 export interface PnavTab {
   key: string;
@@ -45,12 +46,12 @@ export class PnavComponent implements OnDestroy {
 
   openMobileMenu(): void {
     this.mobileMenuOpen.set(true);
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   }
 
   closeMobileMenu(): void {
     this.mobileMenuOpen.set(false);
-    document.body.style.overflow = '';
+    unlockBodyScroll();
   }
 
   async logout(): Promise<void> {
@@ -60,6 +61,6 @@ export class PnavComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.mobileMenuOpen()) document.body.style.overflow = '';
+    if (this.mobileMenuOpen()) unlockBodyScroll();
   }
 }

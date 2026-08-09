@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, computed
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ContactSubmissionsService } from '../core/contact-submissions.service';
+import { lockBodyScroll, unlockBodyScroll } from '../shared/body-scroll-lock';
 
 const SUBJECT_OPTIONS = [
   { value: 'empresa', label: 'Sou empresa — recrutamento e consultoria de RH' },
@@ -231,12 +232,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   */
   openNav() {
     this.mobileNavOpen.set(true);
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   }
 
   closeNav() {
     this.mobileNavOpen.set(false);
-    document.body.style.overflow = '';
+    unlockBodyScroll();
   }
 
   toggleNav() {
@@ -368,6 +369,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.statsObserver?.disconnect();
     if (this.countRaf) cancelAnimationFrame(this.countRaf);
     if (this.failsafeTimer) clearTimeout(this.failsafeTimer);
-    document.body.style.overflow = '';
+    if (this.mobileNavOpen()) unlockBodyScroll();
   }
 }
