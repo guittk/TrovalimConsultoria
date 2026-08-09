@@ -22,6 +22,11 @@
   padding: 3rem 2.5rem;
   position: relative;
 }
+
+@media (max-width: 420px) {
+  :host { padding: 1rem; }
+  .login-wrap { padding: 2.25rem 1.5rem; }
+}
 .login-wrap::after {
   content: '';
   position: absolute;
