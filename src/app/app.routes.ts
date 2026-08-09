@@ -47,6 +47,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
   },
   {
+    path: 'admin/contatos',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-contacts/admin-contacts.component').then((m) => m.AdminContactsComponent),
+  },
+  {
     path: 'admin/config',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-config/admin-config.component').then((m) => m.AdminConfigComponent),

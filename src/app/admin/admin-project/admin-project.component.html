@@ -127,7 +127,7 @@
 
           <div class="form-group" style="max-width:360px">
             <label class="form-label">Ordenação das Etapas</label>
-            <select class="form-select" [ngModel]="timelineMode()" (ngModelChange)="timelineMode.set($event)">
+            <select class="form-select" [ngModel]="timelineMode()" (ngModelChange)="setTimelineMode($event)">
               <option value="data">Por Data (cronológica)</option>
               <option value="ordem">Manual (ordem + peso)</option>
             </select>
@@ -250,7 +250,7 @@
           @if (!showLinkForm()) {
             <button class="btn btn-outline btn-sm" style="margin-top:.75rem" (click)="showLinkForm.set(true)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              Adicionar Link (ex: SharePoint)
+              Adicionar Link
             </button>
           } @else {
             <div class="card" style="padding:1rem;margin-top:.75rem;background:var(--cream, #FAF8F5)">

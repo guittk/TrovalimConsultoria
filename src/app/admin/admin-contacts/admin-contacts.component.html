@@ -1,0 +1,41 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" activeSection="contatos" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Contatos</h1>
+    <p class="page-subtitle">Mensagens recebidas pelo formulário de contato do site</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-bar"></span>Envios</div>
+
+    @if (!submissions().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nenhum contato recebido ainda.</div></div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        @for (s of submissions(); track s.id) {
+          <div class="card" style="padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+              <div>
+                <div style="font-weight:600">{{ s.name }}</div>
+                <div style="font-size:.82rem;color:var(--muted);margin-top:.35rem">{{ subjectLabel(s.subject) }}</div>
+              </div>
+              <button class="btn btn-danger-ghost btn-sm" (click)="deleteSubmission(s)">Excluir</button>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;font-size:.82rem;color:var(--muted)">
+              @if (s.email) { <a [href]="'mailto:' + s.email" class="link-btn">{{ s.email }}</a> }
+              @if (s.phone) { <a [href]="waLink(s.phone)" target="_blank" rel="noopener" class="link-btn">{{ s.phone }}</a> }
+            </div>
+
+            <div style="font-size:.85rem;white-space:pre-wrap;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">{{ s.message }}</div>
+
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.75rem">{{ toDate(s.createdAt) | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

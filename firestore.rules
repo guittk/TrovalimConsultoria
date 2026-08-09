@@ -131,7 +131,7 @@ service cloud.firestore {
     // plataforma para consumir isso, mas os dados já ficam guardados).
     match /contactSubmissions/{id} {
       allow create: if true;
-      allow read: if isStaff();
+      allow read, delete: if isStaff();
     }
   }
 }

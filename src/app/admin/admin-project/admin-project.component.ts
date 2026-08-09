@@ -26,6 +26,7 @@ const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
+  { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
   { key: 'config', label: 'Configurações', path: '/admin/config' },
 ];
 
@@ -297,8 +298,17 @@ export class AdminProjectComponent {
   }
 
   /* ── LINHA DO TEMPO ── */
+  setTimelineMode(mode: TimelineMode): void {
+    this.timelineMode.set(mode);
+    if (mode === 'ordem') {
+      this.stepsData.update((steps) => steps.map((s) => (s.weight ? s : { ...s, weight: 1 })));
+    }
+  }
   addStep(): void {
-    this.stepsData.update((steps) => [...steps, { name: '', date: '', done: false }]);
+    this.stepsData.update((steps) => [
+      ...steps,
+      { name: '', date: '', done: false, ...(this.timelineMode() === 'ordem' ? { weight: 1 } : {}) },
+    ]);
   }
   updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
     this.stepsData.update((steps) => steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
