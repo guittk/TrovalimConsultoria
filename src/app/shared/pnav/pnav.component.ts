@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
@@ -32,11 +32,22 @@ export class PnavComponent {
   /** Rota após sair (ex: '/' no portal, '/login' no admin). */
   @Input() logoutRedirect = '/login';
 
+  readonly mobileMenuOpen = signal(false);
+
   get visibleTabs(): PnavTab[] {
     return this.hiddenTabs.length ? this.tabs.filter((t) => !this.hiddenTabs.includes(t.key)) : this.tabs;
   }
 
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update((v) => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
   async logout(): Promise<void> {
+    this.closeMobileMenu();
     await this.auth.logout();
     await this.router.navigateByUrl(this.logoutRedirect);
   }

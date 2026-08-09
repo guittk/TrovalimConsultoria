@@ -87,6 +87,12 @@ img { max-width: 100%; display: block; }
 }
 .pnav-tab:hover { color: var(--gold-light); }
 .pnav-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+.pnav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
 .pnav-user {
   display: flex;
   align-items: center;
@@ -109,6 +115,62 @@ img { max-width: 100%; display: block; }
   transition: all .25s;
 }
 .btn-logout:hover { background: rgba(201,169,110,.12); border-color: var(--gold); }
+
+/* ── MOBILE MENU (nav de abas em telas estreitas) ── */
+.pnav-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.pnav-menu-btn span {
+  display: block;
+  width: 20px;
+  height: 1.5px;
+  background: var(--gold);
+  transition: transform .25s, opacity .25s;
+}
+.pnav-menu-btn.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.pnav-menu-btn.open span:nth-child(2) { opacity: 0; }
+.pnav-menu-btn.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+.pnav-mobile-backdrop {
+  position: fixed;
+  inset: 64px 0 0 0;
+  background: rgba(0,0,0,.45);
+  z-index: 150;
+}
+.pnav-mobile-menu {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  z-index: 151;
+  background: var(--wine-dark);
+  display: flex;
+  flex-direction: column;
+  padding: .5rem 0;
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+.pnav-mobile-link {
+  padding: 1rem 1.5rem;
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(232,213,163,.7);
+  border-bottom: 1px solid rgba(201,169,110,.12);
+}
+.pnav-mobile-link:last-child { border-bottom: none; }
+.pnav-mobile-link.active { color: var(--gold); font-weight: 600; }
 
 /* ── BREADCRUMB ── */
 .breadcrumb {
@@ -970,21 +1032,9 @@ img { max-width: 100%; display: block; }
   .pnav { padding: 0 1rem; gap: .5rem; }
   .pnav-left { min-width: 0; gap: .75rem; }
   .pnav-name, .pnav-sep, .pnav-section { display: none; }
-  /*
-    5 abas + logo não cabem numa tela estreita. Em vez de esconder abas ou
-    virar hambúrguer (mudança maior de UX), a lista de abas rola na
-    horizontal — o padrão mais comum em apps mobile pra nav com muitos itens.
-  */
-  .pnav-tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    gap: 1.25rem;
-    padding-right: .25rem;
-  }
-  .pnav-tabs::-webkit-scrollbar { display: none; }
-  .pnav-tab { flex-shrink: 0; }
-  .pnav-user { flex-shrink: 0; }
+  /* Abas escondidas atrás do botão de menu — nada de scroll horizontal no header. */
+  .pnav-tabs { display: none; }
+  .pnav-menu-btn { display: flex; }
   .tab { padding: .75rem 1rem; font-size: .68rem; }
   .breadcrumb { padding: .85rem 1.25rem; font-size: .73rem; }
   .modal-backdrop { padding: 1rem; }

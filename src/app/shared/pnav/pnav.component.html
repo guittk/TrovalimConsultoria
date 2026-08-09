@@ -15,8 +15,35 @@
       <span class="pnav-section">{{ sectionLabel }}</span>
     }
   </div>
-  <div class="pnav-user">
-    <span class="pnav-name">{{ userName }}</span>
-    <button class="btn-logout" (click)="logout()">Sair</button>
+  <div class="pnav-right">
+    <div class="pnav-user">
+      <span class="pnav-name">{{ userName }}</span>
+      <button class="btn-logout" (click)="logout()">Sair</button>
+    </div>
+    @if (visibleTabs.length) {
+      <button
+        class="pnav-menu-btn"
+        [class.open]="mobileMenuOpen()"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        aria-label="Abrir menu"
+      >
+        <span></span><span></span><span></span>
+      </button>
+    }
   </div>
 </nav>
+
+@if (mobileMenuOpen()) {
+  <div class="pnav-mobile-backdrop" (click)="closeMobileMenu()"></div>
+  <div class="pnav-mobile-menu">
+    @for (tab of visibleTabs; track tab.key) {
+      <a
+        [routerLink]="tab.path"
+        class="pnav-mobile-link"
+        [class.active]="tab.key === activeSection"
+        (click)="closeMobileMenu()"
+      >{{ tab.label }}</a>
+    }
+  </div>
+}
