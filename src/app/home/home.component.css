@@ -64,35 +64,53 @@
   display: inline-block; font-weight: 500;
 }
 .nav-cta:hover { background: var(--gold); color: var(--wine); }
-.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-.hamburger span { display: block; width: 24px; height: 1.5px; background: var(--gold); transition: all .3s; }
-.mob-nav {
+/*
+  Menu mobile no mesmo estilo do painel do header da plataforma
+  (PnavComponent): ícone que vira X, painel escuro colado embaixo do
+  header (não tela cheia), links empilhados com divisor, backdrop
+  escurecendo o resto da página. .nav é position:fixed, então serve de
+  bloco de posicionamento pro painel (top:100%) e pro backdrop.
+*/
+.hamburger {
   display: none;
-  position: fixed;
-  inset: 0;
-  background: var(--wine-dark);
-  z-index: 2000;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 2.5rem;
+  align-items: center;
+  gap: 5px;
+  width: 32px; height: 32px;
+  background: none; border: none;
+  cursor: pointer; padding: 0;
 }
-.mob-nav.open { display: flex; }
-.mob-nav a { color: var(--gold); font-family: var(--serif); font-size: 1.6rem; letter-spacing: .12em; }
-.mob-close {
+.hamburger span { display: block; width: 22px; height: 1.5px; background: var(--gold); transition: transform .3s, opacity .3s; }
+.hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+.mob-nav-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 999;
+}
+.mob-nav {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  z-index: 2001;
-  color: var(--gold);
-  font-size: 1.4rem;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-family: var(--sans);
-  display: none;
+  top: 100%; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--wine-dark);
+  display: flex;
+  flex-direction: column;
+  padding: .5rem 0;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45);
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
 }
-.mob-nav.open .mob-close { display: block; }
+.mob-nav a {
+  padding: 1.05rem 2rem;
+  color: rgba(232,213,163,.75);
+  font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;
+  border-bottom: 1px solid rgba(201,169,110,.12);
+}
+.mob-nav a:last-child { border-bottom: none; }
+.mob-nav a.on { color: var(--gold); font-weight: 600; }
+.mob-nav-portal { color: var(--gold) !important; }
 
 /* ── HERO ── */
 .hero {
@@ -669,7 +687,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .stats-strip { padding: 2.75rem 1.5rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
   .testi { padding: 2rem 1.5rem; }
-  .mob-nav a { font-size: 1.35rem; }
   .jrn-t { font-size: 1.15rem; }
   .jrn-d { font-size: .85rem; }
   .faq-q { font-size: .94rem; }

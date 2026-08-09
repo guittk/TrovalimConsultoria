@@ -233,6 +233,10 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.mobileNavOpen.set(false);
   }
 
+  toggleNav() {
+    this.mobileNavOpen.update((v) => !v);
+  }
+
   toggleFaq(i: number) {
     this.openFaq.update((cur) => (cur === i ? null : i));
   }

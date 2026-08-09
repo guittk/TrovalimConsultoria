@@ -12,22 +12,30 @@
     <li><a href="#contato" [class.on]="activeSection() === 'contato'">Vamos Conversar?</a></li>
   </ul>
   <a routerLink="/login" class="nav-cta">Portal</a>
-  <div class="hamburger" (click)="openNav()">
+  <button
+    class="hamburger"
+    [class.open]="mobileNavOpen()"
+    (click)="toggleNav()"
+    [attr.aria-expanded]="mobileNavOpen()"
+    aria-label="Abrir menu"
+  >
     <span></span>
     <span></span>
     <span></span>
-  </div>
-</nav>
+  </button>
 
-<div class="mob-nav" [class.open]="mobileNavOpen()">
-  <button class="mob-close" (click)="closeNav()">✕</button>
-  <a href="#sobre" (click)="closeNav()">Sobre</a>
-  <a href="#empresas" (click)="closeNav()">Para Empresas</a>
-  <a href="#profissionais" (click)="closeNav()">Para Você</a>
-  <a href="#depoimentos" (click)="closeNav()">Depoimentos</a>
-  <a href="#contato" (click)="closeNav()">Vamos Conversar?</a>
-  <a routerLink="/login" style="font-size:1rem;letter-spacing:.2em;opacity:.75">Portal do Cliente</a>
-</div>
+  @if (mobileNavOpen()) {
+    <div class="mob-nav-backdrop" (click)="closeNav()"></div>
+    <div class="mob-nav">
+      <a href="#sobre" [class.on]="activeSection() === 'sobre'" (click)="closeNav()">Sobre</a>
+      <a href="#empresas" [class.on]="activeSection() === 'empresas'" (click)="closeNav()">Para Empresas</a>
+      <a href="#profissionais" [class.on]="activeSection() === 'profissionais'" (click)="closeNav()">Para Você</a>
+      <a href="#depoimentos" [class.on]="activeSection() === 'depoimentos'" (click)="closeNav()">Depoimentos</a>
+      <a href="#contato" [class.on]="activeSection() === 'contato'" (click)="closeNav()">Vamos Conversar?</a>
+      <a routerLink="/login" class="mob-nav-portal" (click)="closeNav()">Portal do Cliente</a>
+    </div>
+  }
+</nav>
 
 <!-- HERO -->
 <section class="hero" id="home">
