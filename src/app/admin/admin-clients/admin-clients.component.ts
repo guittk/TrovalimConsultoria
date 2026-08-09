@@ -3,6 +3,7 @@ import { Component, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
@@ -73,9 +74,38 @@ export class AdminClientsComponent {
   readonly userData$ = this.auth.userData$;
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });
 
-  readonly empresas = toSignal(this.empresasSvc.listAll$(), { initialValue: [] });
-  readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
-  readonly accounts = toSignal(this.accountsSvc.listAll$(), { initialValue: [] as UserAccount[] });
+  /*
+   * Managers com projectAccess/companyAccess restrito: ver o comentário
+   * equivalente em admin-home.component.ts — list queries sem where não
+   * suportam de forma confiável uma regra que depende de get() de outro
+   * documento, então a query muda conforme a restrição da conta logada.
+   */
+  readonly empresas = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.companyAccess?.length ? this.empresasSvc.listByIds$(data.companyAccess) : this.empresasSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] },
+  );
+  readonly projects = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.projectAccess?.length ? this.projectsSvc.listByIds$(data.projectAccess) : this.projectsSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] },
+  );
+  readonly accounts = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.companyAccess?.length
+          ? this.accountsSvc.listByCompanyIds$(data.companyAccess)
+          : this.accountsSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] as UserAccount[] },
+  );
   readonly searchTerm = signal('');
 
   readonly filteredEmpresas = computed(() => {

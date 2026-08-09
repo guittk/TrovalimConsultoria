@@ -13,7 +13,7 @@ import {
 import { deleteApp, initializeApp } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
 import { Functions, httpsCallable } from 'firebase/functions';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FIRESTORE, FIREBASE_FUNCTIONS } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
@@ -29,6 +29,19 @@ export class AccountsService {
     return collectionData$<DocumentData>(collection(this.db, 'users')).pipe(
       map((docs) => docs.map((d) => ({ ...d, uid: d.id }) as UserAccount)),
     );
+  }
+
+  /**
+   * Contas client cujo companyId está em `companyIds`. Usado por managers
+   * com companyAccess restrito: um where('companyId','in',ids) explícito,
+   * em vez de listAll$() (coleção inteira filtrada só pela regra via get()
+   * de outro documento — não suportado de forma confiável em list queries).
+   */
+  listByCompanyIds$(companyIds: string[]): Observable<UserAccount[]> {
+    if (!companyIds.length) return of([]);
+    return collectionData$<DocumentData>(
+      query(collection(this.db, 'users'), where('companyId', 'in', companyIds)),
+    ).pipe(map((docs) => docs.map((d) => ({ ...d, uid: d.id }) as UserAccount)));
   }
 
   get$(uid: string): Observable<UserAccount | null> {

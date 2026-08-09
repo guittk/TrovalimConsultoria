@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
@@ -43,8 +44,31 @@ export class AdminHomeComponent {
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
 
-  readonly projects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
-  readonly allEmpresas = toSignal(this.empresasSvc.listAll$(), { initialValue: [] });
+  /*
+   * Managers com projectAccess/companyAccess restrito: uma query sem where
+   * na coleção inteira, filtrada só pela regra do Firestore via get() de
+   * outro documento (a própria conta), retorna permission-denied — não é
+   * suportado de forma confiável em list queries (confirmado no Rules
+   * Playground: get() avulso permite, list nega). Por isso a query muda
+   * conforme o projectAccess/companyAccess da conta logada, em vez de
+   * sempre pedir a coleção inteira e confiar que a regra vai filtrar.
+   */
+  readonly projects = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.projectAccess?.length ? this.projectsSvc.listByIds$(data.projectAccess) : this.projectsSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] },
+  );
+  readonly allEmpresas = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.companyAccess?.length ? this.empresasSvc.listByIds$(data.companyAccess) : this.empresasSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] },
+  );
   readonly empresasById = computed(() => new Map(this.allEmpresas().map((e) => [e.id, e])));
   readonly searchTerm = signal('');
   readonly statusFilter = signal('');
@@ -104,9 +128,13 @@ export class AdminHomeComponent {
     this.modalOpen.set(false);
   }
 
-  private loadClients(): void {
+  private async loadClients(): Promise<void> {
     this.clientsLoading.set(true);
-    this.empresasSvc.listAll$().subscribe({
+    const userData = await firstValueFrom(this.userData$);
+    const empresas$ = userData?.companyAccess?.length
+      ? this.empresasSvc.listByIds$(userData.companyAccess)
+      : this.empresasSvc.listAll$();
+    empresas$.subscribe({
       next: (list) => {
         this.clients.set([...list].sort((a, b) => this.companyLabel(a).localeCompare(this.companyLabel(b))));
         this.clientsLoading.set(false);

@@ -7,6 +7,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  documentId,
   getDoc,
   getDocs,
   increment,
@@ -24,7 +25,7 @@ import {
   ref,
   uploadBytes,
 } from 'firebase/storage';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { FIRESTORE, FIREBASE_STORAGE } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
 import { Project, ProjectFile, ProjectMessage, TimelineStep } from './models';
@@ -37,6 +38,24 @@ export class ProjectsService {
   listAll$(): Observable<Project[]> {
     return collectionData$<DocumentData>(
       query(collection(this.db, 'projects'), orderBy('createdAt', 'desc')),
+    ) as Observable<Project[]>;
+  }
+
+  /**
+   * Lista só os projetos cujo id está em `ids` (via where(documentId(),'in')).
+   * Usado por managers com projectAccess restrito: a regra do Firestore
+   * (managerCanAccessProject) confirma acesso a um get() avulso de um
+   * projeto permitido (validado no Rules Playground), mas uma query sem
+   * where na coleção inteira, filtrada só pela regra via get() de outro
+   * documento, retorna permission-denied — list queries não têm suporte
+   * confiável pra esse padrão. Filtrar explicitamente pelos ids aqui é o
+   * padrão recomendado pelo Firestore pra "usuário só pode ver estes
+   * documentos específicos".
+   */
+  listByIds$(ids: string[]): Observable<Project[]> {
+    if (!ids.length) return of([]);
+    return collectionData$<DocumentData>(
+      query(collection(this.db, 'projects'), where(documentId(), 'in', ids)),
     ) as Observable<Project[]>;
   }
 

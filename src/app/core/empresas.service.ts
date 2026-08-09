@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  documentId,
   getDocs,
   query,
   serverTimestamp,
@@ -12,7 +13,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { FIRESTORE } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
 import { Empresa } from './models';
@@ -27,6 +28,23 @@ export class EmpresasService {
     return collectionData$<DocumentData>(collection(this.db, 'empresas')).pipe(
       map((docs) => docs.map((d) => ({ ...d, id: d.id }) as Empresa)),
     );
+  }
+
+  /**
+   * Lista só as empresas cujo id está em `ids` (via where(documentId(),'in')).
+   * Usado por managers com companyAccess restrito: consultar a coleção
+   * inteira e deixar as regras do Firestore filtrarem por get() de outro
+   * documento (a própria conta) não é suportado de forma confiável em
+   * queries de coleção — funciona num get() avulso, mas falha com
+   * permission-denied numa query sem where. Filtrar explicitamente pelos
+   * ids aqui é o padrão recomendado pelo Firestore para "usuário só pode
+   * ver estes documentos específicos".
+   */
+  listByIds$(ids: string[]): Observable<Empresa[]> {
+    if (!ids.length) return of([]);
+    return collectionData$<DocumentData>(
+      query(collection(this.db, 'empresas'), where(documentId(), 'in', ids)),
+    ).pipe(map((docs) => docs.map((d) => ({ ...d, id: d.id }) as Empresa)));
   }
 
   get$(id: string): Observable<Empresa | null> {

@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { EmpresasService } from '../../core/empresas.service';
@@ -52,7 +53,15 @@ export class AdminClientComponent {
   readonly empresa = toSignal(this.empresasSvc.get$(this.cid), { initialValue: null });
   readonly projects = toSignal(this.projectsSvc.listForOwner$(this.cid), { initialValue: [] });
   readonly teamMembers = toSignal(this.accountsSvc.listTeamMembers$(this.cid), { initialValue: [] });
-  readonly allProjects = toSignal(this.projectsSvc.listAll$(), { initialValue: [] });
+  // Ver comentário equivalente em admin-home.component.ts sobre list queries + regras com get().
+  readonly allProjects = toSignal(
+    this.userData$.pipe(
+      switchMap((data) =>
+        data?.projectAccess?.length ? this.projectsSvc.listByIds$(data.projectAccess) : this.projectsSvc.listAll$(),
+      ),
+    ),
+    { initialValue: [] },
+  );
   readonly unlinkedProjects = computed(() => this.allProjects().filter((p) => !p.ownerId));
 
   /** Contas client já criadas em "Contas" mas ainda sem empresa — candidatas a colaborador. */
