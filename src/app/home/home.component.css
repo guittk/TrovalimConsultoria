@@ -93,13 +93,19 @@
 .mob-nav {
   position: absolute;
   top: 100%; left: 0; right: 0;
+  /*
+    100vh (em vez de bottom:0) porque o bloco de posicionamento aqui é o
+    próprio .nav (position:fixed), cuja altura é só a do conteúdo — bottom:0
+    ficaria colado a poucos px do topo. O leve excesso além do rodapé real
+    da tela (a própria altura do nav) fica invisível, fora da viewport.
+  */
+  height: 100vh;
   z-index: 1000;
   background: var(--wine-dark);
   display: flex;
   flex-direction: column;
   padding: .5rem 0;
   box-shadow: 0 12px 28px rgba(0,0,0,.45);
-  max-height: calc(100vh - 5rem);
   overflow-y: auto;
 }
 .mob-nav a {

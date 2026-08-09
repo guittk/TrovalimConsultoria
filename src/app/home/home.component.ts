@@ -225,16 +225,22 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.scrollProgress.set(max > 0 ? Math.min((window.scrollY / max) * 100, 100) : 0);
   }
 
+  /*
+    Trava o scroll da página atrás do menu mobile — sem isso, dava pra
+    arrastar o conteúdo por baixo do painel enquanto ele estava aberto.
+  */
   openNav() {
     this.mobileNavOpen.set(true);
+    document.body.style.overflow = 'hidden';
   }
 
   closeNav() {
     this.mobileNavOpen.set(false);
+    document.body.style.overflow = '';
   }
 
   toggleNav() {
-    this.mobileNavOpen.update((v) => !v);
+    this.mobileNavOpen() ? this.closeNav() : this.openNav();
   }
 
   toggleFaq(i: number) {
@@ -362,5 +368,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.statsObserver?.disconnect();
     if (this.countRaf) cancelAnimationFrame(this.countRaf);
     if (this.failsafeTimer) clearTimeout(this.failsafeTimer);
+    document.body.style.overflow = '';
   }
 }
