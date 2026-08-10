@@ -60,6 +60,26 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   readonly activeSection = signal('home');
   readonly openFaq = signal<number | null>(0);
 
+  /** Índices expandidos dos serviços B2B (seção Empresas) — só título fica visível por padrão. */
+  readonly openServices = signal<Set<number>>(new Set());
+  toggleService(i: number): void {
+    this.openServices.update((cur) => {
+      const next = new Set(cur);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  /** Mesmo padrão, para os serviços individuais (seção Para Você). */
+  readonly openPersonal = signal<Set<number>>(new Set());
+  togglePersonal(i: number): void {
+    this.openPersonal.update((cur) => {
+      const next = new Set(cur);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
   /**
    * Números da faixa de credibilidade. Proposital e necessariamente VAZIO:
    * são dados reais da consultoria (anos de atuação, empresas atendidas,

@@ -340,26 +340,51 @@
   transition: transform .45s var(--ease);
 }
 .svc:hover .svc-mark { transform: scaleX(1); }
+.svc-toggle {
+  width: 100%; background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
+  text-align: left; font-family: inherit;
+}
 .svc-t {
   font-family: var(--serif); font-size: 1.22rem; font-weight: 500;
-  color: var(--gold); line-height: 1.4; margin-bottom: .9rem;
+  color: var(--gold); line-height: 1.4; margin: 0; transition: color .25s;
 }
+.svc-toggle:hover .svc-t, .svc-toggle:focus-visible .svc-t { color: var(--gold-light); }
+.svc-toggle:focus-visible { outline: 1px dashed var(--gold); outline-offset: 6px; }
+/* Ícone +/− feito de dois traços: o vertical some ao abrir (mesmo padrão do FAQ). */
+.svc-toggle-ico { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: .5rem; }
+.svc-toggle-ico::before, .svc-toggle-ico::after {
+  content: ''; position: absolute; background: var(--gold);
+  transition: transform .4s var(--ease), opacity .3s;
+}
+.svc-toggle-ico::before { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
+.svc-toggle-ico::after { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+.svc.open .svc-toggle-ico::after { transform: rotate(90deg); opacity: 0; }
+/* grid-template-rows 0fr→1fr anima a altura sem precisar medir scrollHeight via JS. */
+.svc-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+.svc.open .svc-more { grid-template-rows: 1fr; }
+.svc-more > .svc-d { overflow: hidden; }
 .svc-d { color: rgba(232,213,163,.72); font-size: .86rem; line-height: 1.95; }
+.svc.open .svc-d { padding-top: .9rem; }
 
+/* ── DIFERENCIAIS ── */
+.diferenciais { background: var(--cream-warm); }
 .diffs { display: grid; grid-template-columns: repeat(3,1fr); gap: 2.5rem; }
-.diff { border-top: 1px solid rgba(201,169,110,.25); padding-top: 1.5rem; }
+.diff { border-top: 1px solid rgba(201,169,110,.3); padding-top: 1.5rem; }
 .diff-t {
-  color: var(--gold); font-family: var(--serif);
+  color: var(--wine); font-family: var(--serif);
   font-size: 1.05rem; font-weight: 500; margin-bottom: .7rem;
 }
-.diff-d { color: rgba(232,213,163,.65); font-size: .83rem; line-height: 1.85; }
+.diff-d { color: var(--muted); font-size: .83rem; line-height: 1.85; }
 
 /* ── PROFISSIONAIS ── */
-.profissionais { background: var(--cream); }
-.profissionais .sec-title { color: var(--graphite); }
+.profissionais { background: var(--wine); }
+.profissionais .eyebrow { color: rgba(232,213,163,.6); }
+.profissionais .sec-title { color: var(--gold); }
+.profissionais .gold-bar { opacity: .45; }
 .prof-lead {
-  color: var(--muted); font-size: .93rem; line-height: 1.9;
-  max-width: 540px; margin-bottom: 3.5rem;
+  color: var(--gold-light); font-size: .93rem; line-height: 1.9;
+  max-width: 540px; margin-bottom: 3.5rem; opacity: .85;
 }
 /*
   São 5 serviços, número ímpar que não fecha num grid de 2 ou 3 colunas.
@@ -392,11 +417,31 @@
   transition: border-color .35s, background .35s;
 }
 .pcard:hover .pcard-icon { border-color: var(--gold); background: rgba(201,169,110,.1); }
+.pcard-body { width: 100%; }
+.pcard-toggle {
+  width: 100%; background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
+  text-align: left; font-family: inherit;
+}
 .pcard-t {
   font-family: var(--serif); font-size: 1.2rem;
-  color: var(--wine); font-weight: 500; line-height: 1.4; margin-bottom: .85rem;
+  color: var(--wine); font-weight: 500; line-height: 1.4; margin: 0; transition: color .25s;
 }
+.pcard-toggle:hover .pcard-t, .pcard-toggle:focus-visible .pcard-t { color: var(--wine-mid); }
+.pcard-toggle:focus-visible { outline: 1px dashed var(--wine); outline-offset: 6px; }
+.pcard-toggle-ico { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: .5rem; }
+.pcard-toggle-ico::before, .pcard-toggle-ico::after {
+  content: ''; position: absolute; background: var(--gold);
+  transition: transform .4s var(--ease), opacity .3s;
+}
+.pcard-toggle-ico::before { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
+.pcard-toggle-ico::after { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+.pcard.open .pcard-toggle-ico::after { transform: rotate(90deg); opacity: 0; }
+.pcard-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+.pcard.open .pcard-more { grid-template-rows: 1fr; }
+.pcard-more > .pcard-d { overflow: hidden; }
 .pcard-d { font-size: .85rem; color: var(--muted); line-height: 1.9; }
+.pcard.open .pcard-d { padding-top: .85rem; }
 
 /* Destaque: linha inteira, ícone ao lado do texto e escala um pouco maior. */
 .pcard-feat {
@@ -410,54 +455,53 @@
 .pcard-feat .pcard-d { max-width: 780px; }
 
 /* ── DEPOIMENTOS ── */
-.depoimentos { background: var(--wine-dark); }
-.depoimentos .eyebrow { color: rgba(201,169,110,.5); }
-.depoimentos .sec-title { color: var(--gold); }
-.depoimentos .gold-bar { opacity: .4; }
+.depoimentos { background: var(--cream); }
 .testi-grid {
   display: grid; grid-template-columns: repeat(3,1fr);
   gap: 1.5rem; margin-top: 3.5rem;
 }
 .testi {
-  border: 1px solid rgba(201,169,110,.18);
+  border: 1px solid rgba(201,169,110,.28);
   padding: 2.5rem; position: relative;
   transition: border-color .35s, transform .4s var(--ease);
 }
-.testi:hover { border-color: rgba(201,169,110,.4); transform: translateY(-4px); }
+.testi:hover { border-color: rgba(201,169,110,.55); transform: translateY(-4px); }
 .testi::before {
   content: '\201C'; font-family: var(--serif); font-size: 5rem;
-  color: var(--gold); opacity: .15; position: absolute;
+  color: var(--gold); opacity: .25; position: absolute;
   top: .5rem; left: 1.5rem; line-height: 1;
 }
 .testi-txt {
-  color: var(--gold-light); font-style: italic;
+  color: var(--wine); font-style: italic;
   font-family: var(--serif); font-size: .92rem;
   line-height: 1.95; margin-bottom: 2rem; position: relative; z-index: 1;
 }
 .testi-author { display: flex; align-items: center; gap: 1rem; }
 .testi-av {
   width: 40px; height: 40px; border-radius: 50%;
-  background: rgba(201,169,110,.12); border: 1px solid rgba(201,169,110,.25);
+  background: rgba(201,169,110,.12); border: 1px solid rgba(201,169,110,.4);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--serif); color: var(--gold); font-size: .82rem;
+  font-family: var(--serif); color: var(--wine); font-size: .82rem;
   flex-shrink: 0;
 }
-.testi-name { color: var(--gold); font-size: .83rem; font-weight: 500; }
-.testi-role { color: rgba(201,169,110,.45); font-size: .72rem; margin-top: .2rem; }
+.testi-name { color: var(--wine); font-size: .83rem; font-weight: 500; }
+.testi-role { color: var(--muted); font-size: .72rem; margin-top: .2rem; }
 
 /* ── FAQ ── */
-.faq-sec { background: var(--cream-warm); }
-.faq-sec .sec-title { color: var(--graphite); }
-.faq-list { margin-top: 3rem; border-top: 1px solid rgba(201,169,110,.35); }
-.faq-item { border-bottom: 1px solid rgba(201,169,110,.35); }
+.faq-sec { background: var(--wine); }
+.faq-sec .eyebrow { color: rgba(232,213,163,.6); }
+.faq-sec .sec-title { color: var(--gold); }
+.faq-sec .gold-bar { opacity: .45; }
+.faq-list { margin-top: 3rem; border-top: 1px solid rgba(201,169,110,.25); }
+.faq-item { border-bottom: 1px solid rgba(201,169,110,.25); }
 .faq-q {
   width: 100%; background: none; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
   padding: 1.5rem 0; text-align: left;
-  font-family: var(--serif); font-size: 1.02rem; color: var(--wine);
+  font-family: var(--serif); font-size: 1.02rem; color: var(--gold);
   transition: color .3s;
 }
-.faq-q:hover { color: var(--wine-mid); }
+.faq-q:hover { color: var(--gold-light); }
 /* Ícone +/− feito de dois traços: o vertical some ao abrir. */
 .faq-ico {
   position: relative; width: 14px; height: 14px; flex-shrink: 0;
@@ -477,7 +521,7 @@
 .faq-item.open .faq-a { grid-template-rows: 1fr; }
 .faq-a > p {
   overflow: hidden;
-  font-size: .87rem; color: var(--muted); line-height: 1.95;
+  font-size: .87rem; color: rgba(232,213,163,.72); line-height: 1.95;
   max-width: 760px;
 }
 .faq-item.open .faq-a > p { padding-bottom: 1.6rem; }

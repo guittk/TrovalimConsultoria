@@ -90,10 +90,8 @@
       <p class="eyebrow">Sobre</p>
       <h2 class="sec-title mask">Quem é<br>Geovana Trovalim</h2>
       <div class="gold-bar"></div>
-      <p class="sobre-p">A Consultoria Trovalim atua na gestão estratégica de pessoas, unindo recrutamento por competência, desenvolvimento de liderança e retenção de talentos. Com uma metodologia própria desenvolvida ao longo da experiência em RH, a consultoria vai além do currículo, enxergando potencial, fit cultural e competências comportamentais para conectar profissionais e empresas que realmente se complementam.</p>
-      <p class="sobre-p">Empresas que investem em desenvolvimento e retenção crescem de forma mais sólida: reduzem turnover, fortalecem lideranças e criam times mais engajados. Por isso, o trabalho da Consultoria Trovalim vai além da contratação: identifica potenciais internos, estrutura planos de desenvolvimento e carreira, e apoia a formação de líderes preparados para conduzir suas equipes.</p>
-      <p class="sobre-p">Quando o processo envolve também recrutamento e seleção, a escuta qualificada é o ponto de partida: entender a real necessidade da empresa antes de qualquer análise técnica, para formar equipes alinhadas à cultura organizacional desde o primeiro dia.</p>
-      <p class="sobre-p">A abordagem une técnica de RH e um olhar atento ao comportamento organizacional para gerar decisões mais seguras: na entrada, no desenvolvimento e na retenção das pessoas dentro da organização.</p>
+      <p class="sobre-p">A Consultoria Trovalim atua na gestão estratégica de pessoas, unindo recrutamento por competência, desenvolvimento de liderança e retenção de talentos. Com uma metodologia própria, vai além do currículo: identifica potencial, fit cultural e competências comportamentais para conectar profissionais e empresas que realmente se complementam, reduzindo turnover e fortalecendo lideranças.</p>
+      <p class="sobre-p">Quando o processo envolve recrutamento e seleção, a escuta qualificada é o ponto de partida: entender a real necessidade da empresa antes de qualquer análise técnica, para formar equipes alinhadas à cultura organizacional e gerar decisões mais seguras na entrada, no desenvolvimento e na retenção das pessoas.</p>
       <p class="sobre-p">Quer entender como aplicar isso na sua empresa? <a href="#contato" class="sobre-cta">Vamos conversar.</a></p>
 
       <!-- Só aparece quando `credentials` for preenchido com as credenciais reais. -->
@@ -120,16 +118,24 @@
     </div>
 
     <div class="svcs stagger reveal">
-      @for (s of services; track s.title) {
-        <article class="svc">
+      @for (s of services; track s.title; let i = $index) {
+        <article class="svc" [class.open]="openServices().has(i)">
           <span class="svc-mark" aria-hidden="true"></span>
-          <h3 class="svc-t">{{ s.title }}</h3>
-          <p class="svc-d">{{ s.desc }}</p>
+          <button type="button" class="svc-toggle" (click)="toggleService(i)" [attr.aria-expanded]="openServices().has(i)">
+            <h3 class="svc-t">{{ s.title }}</h3>
+            <span class="svc-toggle-ico" aria-hidden="true"></span>
+          </button>
+          <div class="svc-more"><p class="svc-d">{{ s.desc }}</p></div>
         </article>
       }
     </div>
+  </div>
+</section>
 
-    <div class="reveal" style="margin-top:4.5rem">
+<!-- DIFERENCIAIS -->
+<section class="section diferenciais">
+  <div class="container">
+    <div class="reveal">
       <p class="eyebrow">Diferenciais</p>
       <h3 class="sec-title mask" style="font-size:1.6rem">Por que esse método funciona</h3>
       <div class="gold-bar"></div>
@@ -166,8 +172,8 @@
     </div>
 
     <div class="pcards stagger reveal">
-      @for (p of personalServices; track p.title) {
-        <article class="pcard" [class.pcard-feat]="p.featured">
+      @for (p of personalServices; track p.title; let i = $index) {
+        <article class="pcard" [class.pcard-feat]="p.featured" [class.open]="openPersonal().has(i)">
           <div class="pcard-icon">
             @switch (p.icon) {
               @case ('compass') {
@@ -188,14 +194,17 @@
             }
           </div>
           <div class="pcard-body">
-            <h3 class="pcard-t">{{ p.title }}</h3>
-            <p class="pcard-d">{{ p.desc }}</p>
+            <button type="button" class="pcard-toggle" (click)="togglePersonal(i)" [attr.aria-expanded]="openPersonal().has(i)">
+              <h3 class="pcard-t">{{ p.title }}</h3>
+              <span class="pcard-toggle-ico" aria-hidden="true"></span>
+            </button>
+            <div class="pcard-more"><p class="pcard-d">{{ p.desc }}</p></div>
           </div>
         </article>
       }
     </div>
     <div class="reveal" style="text-align:center;margin-top:3.5rem">
-      <a href="#contato" class="btn-gold" style="background:var(--wine);color:var(--gold-light)">Vamos conversar?</a>
+      <a href="#contato" class="btn-gold">Vamos conversar?</a>
     </div>
   </div>
 </section>
