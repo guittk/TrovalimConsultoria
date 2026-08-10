@@ -321,38 +321,30 @@
   font-family: var(--serif); font-style: italic; opacity: .85;
 }
 
-/* Serviços B2B: malha de hairlines douradas sobre o vinho, gap de 1px revelando o fundo. */
-.svcs {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
-  background: rgba(201,169,110,.2);
-  border: 1px solid rgba(201,169,110,.2);
-}
+/*
+  Serviços (B2B e individuais): lista vertical, texto alinhado à esquerda,
+  separada por hairlines — mesma lógica do FAQ, sem cartões nem grid.
+*/
+.svcs { display: flex; flex-direction: column; }
 .svc {
-  position: relative; background: var(--wine);
-  padding: 2.6rem 2.25rem 2.4rem;
-  transition: background .4s var(--ease);
+  padding: 1.9rem 0;
+  border-top: 1px solid rgba(201,169,110,.2);
 }
-.svc:hover { background: var(--wine-mid); }
-/* Traço que cresce da esquerda no hover: a única animação do card. */
-.svc-mark {
-  position: absolute; top: 0; left: 0; height: 2px; width: 56px;
-  background: var(--gold); transform: scaleX(0); transform-origin: left;
-  transition: transform .45s var(--ease);
-}
-.svc:hover .svc-mark { transform: scaleX(1); }
+.svc:first-child { padding-top: 0; border-top: none; }
+.svc:last-child { padding-bottom: 0; }
 .svc-toggle {
   width: 100%; background: none; border: none; cursor: pointer; padding: 0;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
   text-align: left; font-family: inherit;
 }
 .svc-t {
-  font-family: var(--serif); font-size: 1.22rem; font-weight: 500;
+  font-family: var(--serif); font-size: 1.28rem; font-weight: 500;
   color: var(--gold); line-height: 1.4; margin: 0; transition: color .25s;
 }
 .svc-toggle:hover .svc-t, .svc-toggle:focus-visible .svc-t { color: var(--gold-light); }
 .svc-toggle:focus-visible { outline: 1px dashed var(--gold); outline-offset: 6px; }
 /* Ícone +/− feito de dois traços: o vertical some ao abrir (mesmo padrão do FAQ). */
-.svc-toggle-ico { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: .5rem; }
+.svc-toggle-ico { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: .6rem; }
 .svc-toggle-ico::before, .svc-toggle-ico::after {
   content: ''; position: absolute; background: var(--gold);
   transition: transform .4s var(--ease), opacity .3s;
@@ -364,7 +356,7 @@
 .svc-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
 .svc.open .svc-more { grid-template-rows: 1fr; }
 .svc-more > .svc-d { overflow: hidden; }
-.svc-d { color: rgba(232,213,163,.72); font-size: .86rem; line-height: 1.95; }
+.svc-d { color: rgba(232,213,163,.72); font-size: .87rem; line-height: 1.95; max-width: 640px; }
 .svc.open .svc-d { padding-top: .9rem; }
 
 /* ── DIFERENCIAIS ── */
@@ -596,7 +588,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .nav-links, .nav-cta { display: none; }
   .hamburger { display: flex; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
-  .svcs { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
   .contato-grid { gap: 2.5rem; }
   .section { padding: 6rem 1.75rem; }
@@ -617,7 +608,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .sobre-grid { grid-template-columns: 1fr; gap: 3rem; }
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
-  .svcs { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
   .contato-grid { gap: 2.5rem; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }

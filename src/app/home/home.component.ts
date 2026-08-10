@@ -148,10 +148,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       desc: 'Ajuste estratégico do perfil no LinkedIn (headline, resumo, experiências e palavras-chave) para aumentar visibilidade, atrair recrutadores e fortalecer sua marca pessoal no mercado.',
     },
     {
-      title: 'Simulação de Entrevistas',
-      desc: 'Preparação prática para processos seletivos, com simulação de entrevistas reais e devolutiva estruturada sobre postura, discurso e argumentação, a partir da experiência de quem conduz seleções do outro lado da mesa.',
-    },
-    {
       title: 'Psicologia Aplicada ao Trabalho',
       desc: 'Suporte psicológico voltado às demandas da vida profissional: ansiedade em processos seletivos, autoconhecimento, gestão emocional e equilíbrio entre vida pessoal e carreira.',
     },
