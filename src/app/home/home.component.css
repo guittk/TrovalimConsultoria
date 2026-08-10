@@ -386,73 +386,7 @@
   color: var(--gold-light); font-size: .93rem; line-height: 1.9;
   max-width: 540px; margin-bottom: 3.5rem; opacity: .85;
 }
-/*
-  São 5 serviços, número ímpar que não fecha num grid de 2 ou 3 colunas.
-  Em vez de deixar uma célula órfã, o primeiro (porta de entrada da
-  jornada individual) ocupa a linha inteira em layout horizontal, e os
-  outros quatro fecham um 2x2 exato abaixo dele.
-*/
-.pcards {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
-  background: rgba(201,169,110,.25);
-  border: 1px solid rgba(201,169,110,.25);
-}
-.pcard {
-  position: relative; overflow: hidden;
-  background: var(--cream); padding: 2.6rem 2.25rem;
-  transition: background .35s;
-}
-.pcard:hover { background: var(--cream-warm); }
-.pcard::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-  background: var(--wine); transform: scaleX(0); transform-origin: left;
-  transition: transform .45s var(--ease);
-}
-.pcard:hover::after { transform: scaleX(1); }
-.pcard-icon {
-  width: 46px; height: 46px; flex-shrink: 0;
-  border: 1px solid rgba(201,169,110,.5);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 1.6rem; color: var(--gold);
-  transition: border-color .35s, background .35s;
-}
-.pcard:hover .pcard-icon { border-color: var(--gold); background: rgba(201,169,110,.1); }
-.pcard-body { width: 100%; }
-.pcard-toggle {
-  width: 100%; background: none; border: none; cursor: pointer; padding: 0;
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
-  text-align: left; font-family: inherit;
-}
-.pcard-t {
-  font-family: var(--serif); font-size: 1.2rem;
-  color: var(--wine); font-weight: 500; line-height: 1.4; margin: 0; transition: color .25s;
-}
-.pcard-toggle:hover .pcard-t, .pcard-toggle:focus-visible .pcard-t { color: var(--wine-mid); }
-.pcard-toggle:focus-visible { outline: 1px dashed var(--wine); outline-offset: 6px; }
-.pcard-toggle-ico { position: relative; width: 14px; height: 14px; flex-shrink: 0; margin-top: .5rem; }
-.pcard-toggle-ico::before, .pcard-toggle-ico::after {
-  content: ''; position: absolute; background: var(--gold);
-  transition: transform .4s var(--ease), opacity .3s;
-}
-.pcard-toggle-ico::before { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
-.pcard-toggle-ico::after { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
-.pcard.open .pcard-toggle-ico::after { transform: rotate(90deg); opacity: 0; }
-.pcard-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
-.pcard.open .pcard-more { grid-template-rows: 1fr; }
-.pcard-more > .pcard-d { overflow: hidden; }
-.pcard-d { font-size: .85rem; color: var(--muted); line-height: 1.9; }
-.pcard.open .pcard-d { padding-top: .85rem; }
-
-/* Destaque: linha inteira, ícone ao lado do texto e escala um pouco maior. */
-.pcard-feat {
-  grid-column: 1 / -1;
-  display: flex; align-items: flex-start; gap: 1.8rem;
-  background: var(--cream-warm);
-}
-.pcard-feat:hover { background: var(--gold-pale); }
-.pcard-feat .pcard-icon { margin-bottom: 0; }
-.pcard-feat .pcard-t { font-size: 1.45rem; }
-.pcard-feat .pcard-d { max-width: 780px; }
+/* Os 6 serviços individuais reaproveitam .svcs/.svc — mesmo visual dos serviços B2B. */
 
 /* ── DEPOIMENTOS ── */
 .depoimentos { background: var(--cream); }
@@ -662,7 +596,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .nav-links, .nav-cta { display: none; }
   .hamburger { display: flex; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
-  .svcs, .pcards { grid-template-columns: 1fr; }
+  .svcs { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
   .contato-grid { gap: 2.5rem; }
   .section { padding: 6rem 1.75rem; }
@@ -683,7 +617,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .sobre-grid { grid-template-columns: 1fr; gap: 3rem; }
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
-  .svcs, .pcards { grid-template-columns: 1fr; }
+  .svcs { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
   .contato-grid { gap: 2.5rem; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }
@@ -715,11 +649,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .svc { padding: 2.1rem 1.6rem; }
   .svc-t { font-size: 1.15rem; }
   .svc-d { font-size: .84rem; }
-  .pcard { padding: 2.1rem 1.6rem; }
-  /* No celular o destaque perde a vantagem do layout horizontal. */
-  .pcard-feat { flex-direction: column; gap: 0; }
-  .pcard-feat .pcard-icon { margin-bottom: 1.4rem; }
-  .pcard-feat .pcard-t { font-size: 1.2rem; }
   .faq-q { font-size: .94rem; }
   .cf-actions { flex-direction: column; }
   .cf-actions .btn-gold, .cf-actions .btn-ghost { width: 100%; text-align: center; }

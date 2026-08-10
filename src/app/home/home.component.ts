@@ -25,16 +25,10 @@ interface Service {
   desc: string;
 }
 
-/**
- * Serviço da seção "Para Você". `icon` seleciona o SVG no template
- * (cada serviço tem um desenho próprio, então é um switch, não um dado).
- */
+/** Serviço da seção "Para Você" — mesmo formato e visual dos serviços B2B. */
 interface PersonalService {
-  icon: 'compass' | 'doc' | 'linkedin' | 'mind' | 'radar';
   title: string;
   desc: string;
-  /** O primeiro serviço ocupa a linha inteira do grid, como porta de entrada. */
-  featured?: boolean;
 }
 
 interface Faq {
@@ -142,28 +136,26 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   /** Serviços para profissionais (seção "Para Você"). */
   readonly personalServices: PersonalService[] = [
     {
-      icon: 'compass',
-      featured: true,
       title: 'Orientação e Desenvolvimento de Carreira',
       desc: 'Acompanhamento individual para planejar próximos passos profissionais, identificar pontos fortes, definir metas de curto e longo prazo e traçar um plano de ação claro para transição ou evolução de carreira.',
     },
     {
-      icon: 'doc',
       title: 'Consultoria de Currículo',
       desc: 'Reestruturação e otimização do currículo para destacar suas competências e resultados, aumentando as chances de passar por filtros de recrutadores e sistemas automatizados (ATS).',
     },
     {
-      icon: 'linkedin',
       title: 'Otimização de LinkedIn',
       desc: 'Ajuste estratégico do perfil no LinkedIn (headline, resumo, experiências e palavras-chave) para aumentar visibilidade, atrair recrutadores e fortalecer sua marca pessoal no mercado.',
     },
     {
-      icon: 'mind',
+      title: 'Simulação de Entrevistas',
+      desc: 'Preparação prática para processos seletivos, com simulação de entrevistas reais e devolutiva estruturada sobre postura, discurso e argumentação, a partir da experiência de quem conduz seleções do outro lado da mesa.',
+    },
+    {
       title: 'Psicologia Aplicada ao Trabalho',
       desc: 'Suporte psicológico voltado às demandas da vida profissional: ansiedade em processos seletivos, autoconhecimento, gestão emocional e equilíbrio entre vida pessoal e carreira.',
     },
     {
-      icon: 'radar',
       title: 'Avaliação de Perfil Comportamental e Soft Skills',
       desc: 'Mapeamento das suas competências comportamentais (comunicação, liderança, adaptabilidade etc.), com devolutiva individual para uso em entrevistas, promoções ou autodesenvolvimento.',
     },

@@ -171,35 +171,15 @@
       <p class="prof-lead">Seja para uma promoção, uma transição ou uma recolocação, a estratégia certa faz toda a diferença. Vamos trabalhar juntos para posicionar você onde quer chegar.</p>
     </div>
 
-    <div class="pcards stagger reveal">
+    <div class="svcs stagger reveal">
       @for (p of personalServices; track p.title; let i = $index) {
-        <article class="pcard" [class.pcard-feat]="p.featured" [class.open]="openPersonal().has(i)">
-          <div class="pcard-icon">
-            @switch (p.icon) {
-              @case ('compass') {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-              }
-              @case ('doc') {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              }
-              @case ('linkedin') {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              }
-              @case ('mind') {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4.5a3.5 3.5 0 0 0-6.4 1.97A3.5 3.5 0 0 0 4.5 12a3.5 3.5 0 0 0 1.1 5.53A3.5 3.5 0 0 0 12 19.5z"/><path d="M12 4.5a3.5 3.5 0 0 1 6.4 1.97A3.5 3.5 0 0 1 19.5 12a3.5 3.5 0 0 1-1.1 5.53A3.5 3.5 0 0 1 12 19.5z"/><line x1="12" y1="4.5" x2="12" y2="19.5"/></svg>
-              }
-              @case ('radar') {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 3 20 8.5 17 18 7 18 4 8.5 12 3"/><polygon points="12 7.5 16.4 10.5 14.8 15 9.2 15 7.6 10.5 12 7.5"/></svg>
-              }
-            }
-          </div>
-          <div class="pcard-body">
-            <button type="button" class="pcard-toggle" (click)="togglePersonal(i)" [attr.aria-expanded]="openPersonal().has(i)">
-              <h3 class="pcard-t">{{ p.title }}</h3>
-              <span class="pcard-toggle-ico" aria-hidden="true"></span>
-            </button>
-            <div class="pcard-more"><p class="pcard-d">{{ p.desc }}</p></div>
-          </div>
+        <article class="svc" [class.open]="openPersonal().has(i)">
+          <span class="svc-mark" aria-hidden="true"></span>
+          <button type="button" class="svc-toggle" (click)="togglePersonal(i)" [attr.aria-expanded]="openPersonal().has(i)">
+            <h3 class="svc-t">{{ p.title }}</h3>
+            <span class="svc-toggle-ico" aria-hidden="true"></span>
+          </button>
+          <div class="svc-more"><p class="svc-d">{{ p.desc }}</p></div>
         </article>
       }
     </div>
