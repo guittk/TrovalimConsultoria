@@ -345,11 +345,6 @@
   color: var(--gold); line-height: 1.4; margin-bottom: .9rem;
 }
 .svc-d { color: rgba(232,213,163,.72); font-size: .86rem; line-height: 1.95; }
-.svcs-note {
-  margin-top: 2rem;
-  font-size: .78rem; color: rgba(232,213,163,.5); line-height: 1.8;
-  font-style: italic;
-}
 
 .diffs { display: grid; grid-template-columns: repeat(3,1fr); gap: 2.5rem; }
 .diff { border-top: 1px solid rgba(201,169,110,.25); padding-top: 1.5rem; }
