@@ -5,8 +5,8 @@ import { ContactSubmissionsService } from '../core/contact-submissions.service';
 import { lockBodyScroll, unlockBodyScroll } from '../shared/body-scroll-lock';
 
 const SUBJECT_OPTIONS = [
-  { value: 'empresa', label: 'Sou empresa — recrutamento e consultoria de RH' },
-  { value: 'carreira', label: 'Sou profissional — currículo, LinkedIn ou carreira' },
+  { value: 'empresa', label: 'Sou empresa · recrutamento e consultoria de RH' },
+  { value: 'carreira', label: 'Sou profissional · carreira, currículo ou LinkedIn' },
   { value: 'outro', label: 'Outro assunto' },
 ] as const;
 
@@ -19,15 +19,22 @@ interface Stat {
   label: string;
 }
 
-/** Serviço da jornada 01→05 da seção "Para Empresas". */
+/** Serviço da seção "Para Empresas". */
 interface Service {
-  n: string;
-  /** Verbo-âncora que resume o estágio (ATRAIR, ESTRUTURAR...). */
-  verb: string;
   title: string;
   desc: string;
-  /** Detalhamento opcional — hoje só o Recrutamento tem etapas próprias. */
-  items?: string[];
+}
+
+/**
+ * Serviço da seção "Para Você". `icon` seleciona o SVG no template
+ * (cada serviço tem um desenho próprio, então é um switch, não um dado).
+ */
+interface PersonalService {
+  icon: 'compass' | 'doc' | 'linkedin' | 'mind' | 'radar';
+  title: string;
+  desc: string;
+  /** O primeiro serviço ocupa a linha inteira do grid, como porta de entrada. */
+  featured?: boolean;
 }
 
 interface Faq {
@@ -82,67 +89,80 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   readonly credentials: string[] = [];
 
   /**
-   * Os 5 serviços B2B como jornada de maturidade organizacional
-   * (atrair → estruturar → alinhar → desenvolver → liderar). São
-   * contratáveis isoladamente — a numeração é narrativa, não pacote fechado.
+   * Serviços B2B. Sem numeração de propósito: cada um é contratado de forma
+   * independente, então uma sequência visual sugeriria um pacote fechado.
    */
   readonly services: Service[] = [
     {
-      n: '01',
-      verb: 'Atrair',
-      title: 'Recrutamento e Seleção',
-      desc: 'Encontramos os talentos certos para a sua empresa, com um olhar que vai além do currículo — avaliamos competências técnicas e comportamentais para garantir aderência real à cultura e aos objetivos do negócio.',
-      items: [
-        'Diagnóstico — entendimento da cultura, cargo e perfil ideal',
-        'Mapeamento — busca ativa de candidatos aderentes ao perfil',
-        'Avaliação — triagem técnica e comportamental estruturada',
-        'Apresentação — shortlist qualificado e suporte na decisão final',
-      ],
+      title: 'Recrutamento e Seleção por Competência',
+      desc: 'Processo seletivo estruturado com base em competências técnicas e comportamentais, garantindo contratações mais assertivas e alinhadas à cultura e às necessidades da empresa.',
     },
     {
-      n: '02',
-      verb: 'Estruturar',
+      title: 'Avaliação de Soft Skills e Competências Comportamentais',
+      desc: 'Aplicação de ferramentas e metodologias para mapear o perfil comportamental de candidatos e colaboradores, apoiando decisões de contratação, promoção e formação de equipes.',
+    },
+    {
       title: 'Estruturação de Cargos e Salários',
-      desc: 'Organizamos a estrutura de cargos e salários da empresa com critérios claros e justos, trazendo mais organização para os processos internos e clareza para o colaborador sobre o que se espera dele em cada função. Isso também abre espaço para que ele enxergue seu plano de crescimento dentro da empresa, com perspectiva real de futuro.',
+      desc: 'Desenho de planos de cargos, carreiras e remuneração, com definição de níveis, faixas salariais e critérios de progressão, trazendo equidade interna e competitividade externa.',
     },
     {
-      n: '03',
-      verb: 'Alinhar',
       title: 'Gestão Estratégica de Pessoas',
-      desc: 'Estruturamos processos de RH alinhados à estratégia da empresa, conectando cargos, salários e indicadores de performance com os resultados que o negócio precisa alcançar.',
+      desc: 'Consultoria em políticas e práticas de RH alinhadas à estratégia do negócio, cobrindo desde clima organizacional até indicadores de desempenho da área de gente e gestão.',
     },
     {
-      n: '04',
-      verb: 'Desenvolver',
       title: 'Desenvolvimento Humano e Organizacional',
-      desc: 'Trabalhamos o desenvolvimento contínuo das pessoas dentro da organização — mapeando competências, criando planos de crescimento e fortalecendo a cultura para que cada colaborador entenda seu propósito e seu impacto no todo.',
+      desc: 'Programas voltados ao crescimento das equipes e da organização como um todo: cultura, engajamento, treinamentos e processos de mudança organizacional.',
     },
     {
-      n: '05',
-      verb: 'Liderar',
       title: 'Desenvolvimento de Lideranças',
-      desc: 'Formamos líderes mais conscientes e estratégicos, capazes de engajar times, tomar decisões com mais clareza e criar ambientes de trabalho saudáveis e produtivos.',
+      desc: 'Formação e capacitação de líderes e gestores, com foco em habilidades de gestão de pessoas, comunicação, tomada de decisão e condução de equipes de alta performance.',
+    },
+  ];
+
+  /** Serviços para profissionais (seção "Para Você"). */
+  readonly personalServices: PersonalService[] = [
+    {
+      icon: 'compass',
+      featured: true,
+      title: 'Orientação e Desenvolvimento de Carreira',
+      desc: 'Acompanhamento individual para planejar próximos passos profissionais, identificar pontos fortes, definir metas de curto e longo prazo e traçar um plano de ação claro para transição ou evolução de carreira.',
+    },
+    {
+      icon: 'doc',
+      title: 'Consultoria de Currículo',
+      desc: 'Reestruturação e otimização do currículo para destacar suas competências e resultados, aumentando as chances de passar por filtros de recrutadores e sistemas automatizados (ATS).',
+    },
+    {
+      icon: 'linkedin',
+      title: 'Otimização de LinkedIn',
+      desc: 'Ajuste estratégico do perfil no LinkedIn (headline, resumo, experiências e palavras-chave) para aumentar visibilidade, atrair recrutadores e fortalecer sua marca pessoal no mercado.',
+    },
+    {
+      icon: 'mind',
+      title: 'Psicologia Aplicada ao Trabalho',
+      desc: 'Suporte psicológico voltado às demandas da vida profissional: ansiedade em processos seletivos, autoconhecimento, gestão emocional e equilíbrio entre vida pessoal e carreira.',
+    },
+    {
+      icon: 'radar',
+      title: 'Avaliação de Perfil Comportamental e Soft Skills',
+      desc: 'Mapeamento das suas competências comportamentais (comunicação, liderança, adaptabilidade etc.), com devolutiva individual para uso em entrevistas, promoções ou autodesenvolvimento.',
     },
   ];
 
   /**
    * Perguntas respondidas só com o que já é verdade na página (escopo,
    * método, formato de contratação). Perguntas de preço, prazo contratual e
-   * política de garantia ficaram de fora de propósito — dependem de
+   * política de garantia ficaram de fora de propósito: dependem de
    * informação comercial real.
    */
   readonly faqs: Faq[] = [
     {
-      q: 'Preciso contratar todos os serviços ou posso começar por um?',
-      a: 'Pode começar por um. A numeração de 01 a 05 mostra como os serviços se conectam numa jornada de maturidade, mas cada um é contratado de forma independente, conforme a necessidade do momento da empresa.',
-    },
-    {
       q: 'Qual a diferença entre recrutamento por competência e um processo tradicional?',
-      a: 'No processo tradicional, a triagem gira em torno do currículo e da experiência declarada. No recrutamento por competência, avaliamos também competências comportamentais, fit cultural e potencial — o que reduz o risco de uma contratação tecnicamente correta, mas desalinhada com a cultura e os objetivos do negócio.',
+      a: 'No processo tradicional, a triagem gira em torno do currículo e da experiência declarada. No recrutamento por competência, avaliamos também competências comportamentais, fit cultural e potencial, o que reduz o risco de uma contratação tecnicamente correta, mas desalinhada com a cultura e os objetivos do negócio.',
     },
     {
       q: 'Atende profissionais individuais ou só empresas?',
-      a: 'Os dois. Para empresas, a atuação é de consultoria de RH (recrutamento, cargos e salários, gestão estratégica, DHO e lideranças). Para profissionais, há consultoria de currículo, otimização de LinkedIn e orientação de carreira.',
+      a: 'Os dois. Para empresas, a atuação é de consultoria de RH: recrutamento por competência, avaliação comportamental, cargos e salários, gestão estratégica de pessoas, desenvolvimento humano e organizacional e formação de lideranças. Para profissionais, há orientação de carreira, consultoria de currículo, otimização de LinkedIn, psicologia aplicada ao trabalho e avaliação de perfil comportamental.',
     },
     {
       q: 'O acompanhamento termina quando o candidato é contratado?',
@@ -150,7 +170,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     },
     {
       q: 'Como começa uma conversa?',
-      a: 'Pelo WhatsApp ou e-mail, com uma escuta inicial sobre o seu contexto. Antes de qualquer proposta técnica, o primeiro passo é entender o desafio real — só depois desenhamos o caminho.',
+      a: 'Pelo WhatsApp ou e-mail, com uma escuta inicial sobre o seu contexto. Antes de qualquer proposta técnica, o primeiro passo é entender o desafio real. Só depois desenhamos o caminho.',
     },
   ];
 

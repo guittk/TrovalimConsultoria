@@ -90,14 +90,23 @@
       <p class="eyebrow">Sobre</p>
       <h2 class="sec-title mask">Quem é<br>Geovana Trovalim</h2>
       <div class="gold-bar"></div>
-      <p class="sobre-p">Estrategista de carreira com sólida experiência em recrutamento e seleção por competência. Desenvolveu uma metodologia própria que vai além do currículo — enxergando potencial, fit cultural e competências comportamentais para conectar profissionais e empresas que realmente se complementam.</p>
-      <p class="sobre-p">Antes de qualquer análise técnica, ofereço escuta qualificada para entender o que você realmente precisa. Do currículo ao LinkedIn, da orientação vocacional ao processo seletivo, estou aqui para ser a parceira estratégica que faz a diferença.</p>
-      <ul class="sobre-list">
-        <li>Recrutamento e Seleção por Competência</li>
-        <li>Gestão e Desenvolvimento de Carreira</li>
-        <li>Psicologia Aplicada ao Trabalho</li>
-        <li>Avaliação de Soft Skills e Competências Comportamentais</li>
-      </ul>
+      <p class="sobre-p">Psicóloga e estrategista de carreira, com sólida experiência em recrutamento e seleção por competência. Ao longo dos anos construiu uma forma de trabalhar que vai além do currículo, olhando para potencial, fit cultural e competências comportamentais para conectar pessoas e empresas que realmente se complementam.</p>
+      <p class="sobre-p">Antes de qualquer análise técnica, vem a escuta. É dela que nasce o entendimento do que está em jogo de verdade, seja o próximo passo de uma carreira, seja a estrutura de gente que sustenta o crescimento de um negócio. Por isso a atuação acontece nas duas pontas dessa mesma relação.</p>
+
+      <!-- As duas frentes de atuação, comentadas em tom de posicionamento.
+           O detalhamento de cada serviço vive nas seções próprias. -->
+      <div class="frentes">
+        <div class="frente">
+          <p class="frente-k">Para você</p>
+          <p class="frente-d">Um acompanhamento próximo para quem está decidindo o próximo passo, se preparando para uma seleção ou querendo enxergar o próprio perfil com mais clareza antes de se posicionar no mercado.</p>
+          <a href="#profissionais" class="frente-link">Ver serviços</a>
+        </div>
+        <div class="frente">
+          <p class="frente-k">Para empresas</p>
+          <p class="frente-d">Um olhar externo e estruturado sobre gente e gestão, da contratação certa à organização de cargos, cultura e liderança que fazem o time crescer junto com o negócio.</p>
+          <a href="#empresas" class="frente-link">Ver serviços</a>
+        </div>
+      </div>
 
       <!-- Só aparece quando `credentials` for preenchido com as credenciais reais. -->
       @if (credentials.length) {
@@ -119,30 +128,20 @@
       <p class="eyebrow">Para Empresas</p>
       <h2 class="sec-title mask">Consultoria de RH<br>com método</h2>
       <div class="gold-bar"></div>
-      <p class="emp-lead">Contratações equivocadas, estruturas confusas e lideranças despreparadas custam tempo, dinheiro e energia. Com critério e processo, ajudo a sua empresa a atrair as pessoas certas — e a construir a estrutura que faz elas permanecerem.</p>
+      <p class="emp-lead">Contratações equivocadas, estruturas confusas e lideranças despreparadas custam tempo, dinheiro e energia. Com critério e processo, ajudo a sua empresa a atrair as pessoas certas e a construir a estrutura que faz elas permanecerem.</p>
     </div>
 
-    <!-- JORNADA 01→05 -->
-    <div class="journey reveal">
-      <div class="journey-line"></div>
-      @for (s of services; track s.n; let i = $index) {
-        <article class="jrn" [style.--i]="i">
-          <div class="jrn-marker"><span>{{ s.n }}</span></div>
-          <div class="jrn-body">
-            <div class="jrn-verb">{{ s.verb }}</div>
-            <h3 class="jrn-t">{{ s.title }}</h3>
-            <p class="jrn-d">{{ s.desc }}</p>
-            @if (s.items?.length) {
-              <ul class="jrn-list">
-                @for (it of s.items; track it) { <li>{{ it }}</li> }
-              </ul>
-            }
-          </div>
+    <div class="svcs stagger reveal">
+      @for (s of services; track s.title) {
+        <article class="svc">
+          <span class="svc-mark" aria-hidden="true"></span>
+          <h3 class="svc-t">{{ s.title }}</h3>
+          <p class="svc-d">{{ s.desc }}</p>
         </article>
       }
     </div>
 
-    <p class="journey-note reveal">Cada serviço é contratado de forma independente — a sequência mostra como eles se conectam, não um pacote fechado.</p>
+    <p class="svcs-note reveal">Cada serviço é contratado de forma independente, conforme a necessidade do momento da empresa.</p>
 
     <div class="reveal" style="margin-top:4.5rem">
       <p class="eyebrow">Diferenciais</p>
@@ -152,11 +151,11 @@
     <div class="diffs stagger reveal">
       <div class="diff">
         <div class="diff-t">Método, não achismo</div>
-        <div class="diff-d">Do recrutamento à estrutura de cargos, cada decisão nasce de critérios definidos e avaliação estruturada — com consistência para ser explicada, auditada e repetida.</div>
+        <div class="diff-d">Do recrutamento à estrutura de cargos, cada decisão nasce de critérios definidos e avaliação estruturada, com consistência para ser explicada, auditada e repetida.</div>
       </div>
       <div class="diff">
         <div class="diff-t">Estratégia antes da execução</div>
-        <div class="diff-d">Nada começa sem diagnóstico. Entendo a cultura, os objetivos do negócio e o momento da empresa antes de propor qualquer solução — porque RH desconectado da estratégia vira custo.</div>
+        <div class="diff-d">Nada começa sem diagnóstico. Entendo a cultura, os objetivos do negócio e o momento da empresa antes de propor qualquer solução, porque RH desconectado da estratégia vira custo.</div>
       </div>
       <div class="diff">
         <div class="diff-t">Parceria de verdade</div>
@@ -177,51 +176,37 @@
       <p class="eyebrow">Para Você</p>
       <h2 class="sec-title mask">Construa sua carreira<br>com estratégia</h2>
       <div class="gold-bar"></div>
-      <p class="prof-lead">Seja para uma promoção, uma transição ou uma recolocação, a estratégia certa faz toda a diferença. Vamos trabalhar juntos para posicioná-la onde você quer chegar.</p>
+      <p class="prof-lead">Seja para uma promoção, uma transição ou uma recolocação, a estratégia certa faz toda a diferença. Vamos trabalhar juntos para posicionar você onde quer chegar.</p>
     </div>
-    <div class="cards stagger reveal">
-      <div class="card">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </div>
-        <h3 class="card-t">Consultoria de Currículo</h3>
-        <p class="card-d">Seu currículo é sua primeira impressão. Transformamos um documento comum em uma ferramenta estratégica de posicionamento.</p>
-        <ul class="card-list">
-          <li>Diagnóstico do currículo atual</li>
-          <li>Reescrita com linguagem de impacto</li>
-          <li>Formatação profissional</li>
-          <li>Versão em inglês (opcional)</li>
-          <li>Revisões incluídas</li>
-        </ul>
-      </div>
-      <div class="card">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        </div>
-        <h3 class="card-t">Otimização de LinkedIn</h3>
-        <p class="card-d">O LinkedIn é o novo currículo, e a maioria dos profissionais ainda não o usa com estratégia. Vamos mudar isso.</p>
-        <ul class="card-list">
-          <li>Headline e resumo estratégicos</li>
-          <li>Palavras-chave para seu setor</li>
-          <li>Posicionamento de marca pessoal</li>
-          <li>Foto e banner profissional</li>
-          <li>Guia de networking ativo</li>
-        </ul>
-      </div>
-      <div class="card">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
-        </div>
-        <h3 class="card-t">Orientação de Carreira</h3>
-        <p class="card-d">Para quem quer dar o próximo passo com clareza, direção e um plano real. Do autoconhecimento à estratégia de mercado.</p>
-        <ul class="card-list">
-          <li>Mapeamento de perfil e competências</li>
-          <li>Definição de objetivos de carreira</li>
-          <li>Estratégia de busca de vagas</li>
-          <li>Preparação para entrevistas</li>
-          <li>Acompanhamento contínuo</li>
-        </ul>
-      </div>
+
+    <div class="pcards stagger reveal">
+      @for (p of personalServices; track p.title) {
+        <article class="pcard" [class.pcard-feat]="p.featured">
+          <div class="pcard-icon">
+            @switch (p.icon) {
+              @case ('compass') {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+              }
+              @case ('doc') {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              }
+              @case ('linkedin') {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              }
+              @case ('mind') {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4.5a3.5 3.5 0 0 0-6.4 1.97A3.5 3.5 0 0 0 4.5 12a3.5 3.5 0 0 0 1.1 5.53A3.5 3.5 0 0 0 12 19.5z"/><path d="M12 4.5a3.5 3.5 0 0 1 6.4 1.97A3.5 3.5 0 0 1 19.5 12a3.5 3.5 0 0 1-1.1 5.53A3.5 3.5 0 0 1 12 19.5z"/><line x1="12" y1="4.5" x2="12" y2="19.5"/></svg>
+              }
+              @case ('radar') {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 3 20 8.5 17 18 7 18 4 8.5 12 3"/><polygon points="12 7.5 16.4 10.5 14.8 15 9.2 15 7.6 10.5 12 7.5"/></svg>
+              }
+            }
+          </div>
+          <div class="pcard-body">
+            <h3 class="pcard-t">{{ p.title }}</h3>
+            <p class="pcard-d">{{ p.desc }}</p>
+          </div>
+        </article>
+      }
     </div>
     <div class="reveal" style="text-align:center;margin-top:3.5rem">
       <a href="#contato" class="btn-gold" style="background:var(--wine);color:var(--gold-light)">Vamos conversar?</a>

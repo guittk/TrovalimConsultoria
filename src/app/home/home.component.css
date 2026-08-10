@@ -290,15 +290,33 @@
 .sobre-p {
   color: var(--muted); line-height: 1.95; font-size: .93rem; margin-bottom: 1.2rem;
 }
-.sobre-list { list-style: none; margin-top: 1.4rem; }
-.sobre-list li {
-  font-size: .85rem; color: var(--muted); padding: .5rem 0;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  display: flex; align-items: center; gap: .75rem; line-height: 1.5;
+/*
+  As duas frentes de atuação. Grid de 1px em cima de um fundo dourado
+  translúcido: o "gap" é a própria linha divisória, sem borda por card.
+*/
+.frentes {
+  margin-top: 2.2rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: rgba(201,169,110,.35);
+  border: 1px solid rgba(201,169,110,.35);
 }
-.sobre-list li::before {
-  content: ''; width: 16px; height: 1px; background: var(--gold); flex-shrink: 0;
+.frente {
+  background: var(--cream); padding: 1.7rem 1.6rem 1.5rem;
+  transition: background .35s;
 }
+.frente:hover { background: var(--cream-warm); }
+.frente-k {
+  font-size: .64rem; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: .85rem;
+}
+.frente-d { font-size: .84rem; color: var(--muted); line-height: 1.85; }
+.frente-link {
+  display: inline-block; margin-top: 1.1rem;
+  font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--wine); border-bottom: 1px solid rgba(201,169,110,.55);
+  padding-bottom: 2px; transition: color .25s, border-color .25s;
+}
+.frente-link:hover { color: var(--gold); border-color: var(--gold); }
 .creds {
   margin-top: 2.2rem; padding-top: 1.6rem;
   border-top: 1px solid rgba(201,169,110,.35);
@@ -325,56 +343,36 @@
   font-family: var(--serif); font-style: italic; opacity: .85;
 }
 
-/* Jornada 01→05: linha vertical desenhada + marcadores em cascata. */
-.journey { position: relative; padding-left: 5rem; }
-.journey-line {
-  position: absolute; left: 23px; top: 10px; bottom: 10px; width: 1px;
-  background: linear-gradient(to bottom, var(--gold), rgba(201,169,110,.15));
-  transform-origin: top;
-  transition: transform 1.7s var(--ease);
+/*
+  Serviços B2B: malha de hairlines douradas sobre o vinho. Mesma técnica
+  do bloco .frentes (gap de 1px revelando o fundo), então as duas seções
+  se leem como o mesmo sistema apesar de fundos opostos.
+*/
+.svcs {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+  background: rgba(201,169,110,.2);
+  border: 1px solid rgba(201,169,110,.2);
 }
-:host(.anim-ready) .journey-line { transform: scaleY(0); }
-:host(.anim-ready) .journey.vis .journey-line { transform: scaleY(1); }
-.jrn {
-  position: relative; padding-bottom: 3.2rem;
-  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
-  transition-delay: calc(var(--i, 0) * 150ms + 250ms);
+.svc {
+  position: relative; background: var(--wine);
+  padding: 2.6rem 2.25rem 2.4rem;
+  transition: background .4s var(--ease);
 }
-:host(.anim-ready) .jrn { opacity: 0; transform: translateY(22px); }
-:host(.anim-ready) .journey.vis .jrn { opacity: 1; transform: none; }
-.jrn:last-child { padding-bottom: 0; }
-.jrn-marker {
-  position: absolute; left: -5rem; top: -2px;
-  width: 47px; height: 47px; border-radius: 50%;
-  background: var(--wine); border: 1px solid rgba(201,169,110,.4);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--serif); font-size: .82rem; color: var(--gold);
-  letter-spacing: .08em; transition: border-color .4s, background .4s;
+.svc:hover { background: var(--wine-mid); }
+/* Traço que cresce da esquerda no hover: a única animação do card. */
+.svc-mark {
+  position: absolute; top: 0; left: 0; height: 2px; width: 56px;
+  background: var(--gold); transform: scaleX(0); transform-origin: left;
+  transition: transform .45s var(--ease);
 }
-.jrn-verb {
-  font-size: .6rem; letter-spacing: .34em; text-transform: uppercase;
-  color: rgba(201,169,110,.55); margin-bottom: .55rem;
+.svc:hover .svc-mark { transform: scaleX(1); }
+.svc-t {
+  font-family: var(--serif); font-size: 1.22rem; font-weight: 500;
+  color: var(--gold); line-height: 1.4; margin-bottom: .9rem;
 }
-.jrn-t {
-  font-family: var(--serif); font-size: 1.3rem; font-weight: 500;
-  color: var(--gold); margin-bottom: .85rem; line-height: 1.35;
-}
-.jrn-d {
-  color: rgba(232,213,163,.72); font-size: .88rem; line-height: 1.95;
-  max-width: 660px;
-}
-.jrn-list { list-style: none; margin-top: 1.3rem; max-width: 620px; }
-.jrn-list li {
-  font-size: .8rem; color: rgba(232,213,163,.6); padding: .5rem 0;
-  border-bottom: 1px solid rgba(201,169,110,.13);
-  display: flex; align-items: baseline; gap: .75rem; line-height: 1.65;
-}
-.jrn-list li::before {
-  content: ''; width: 14px; height: 1px; background: var(--gold);
-  flex-shrink: 0; transform: translateY(-4px); opacity: .7;
-}
-.journey-note {
-  margin-top: 2.5rem; padding-left: 5rem;
+.svc-d { color: rgba(232,213,163,.72); font-size: .86rem; line-height: 1.95; }
+.svcs-note {
+  margin-top: 2rem;
   font-size: .78rem; color: rgba(232,213,163,.5); line-height: 1.8;
   font-style: italic;
 }
@@ -394,42 +392,53 @@
   color: var(--muted); font-size: .93rem; line-height: 1.9;
   max-width: 540px; margin-bottom: 3.5rem;
 }
-.cards {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 2px; background: rgba(201,169,110,.2);
+/*
+  São 5 serviços, número ímpar que não fecha num grid de 2 ou 3 colunas.
+  Em vez de deixar uma célula órfã, o primeiro (porta de entrada da
+  jornada individual) ocupa a linha inteira em layout horizontal, e os
+  outros quatro fecham um 2x2 exato abaixo dele.
+*/
+.pcards {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+  background: rgba(201,169,110,.25);
+  border: 1px solid rgba(201,169,110,.25);
 }
-.card {
-  background: var(--cream); padding: 3rem 2.5rem;
+.pcard {
   position: relative; overflow: hidden;
-  transition: background .35s, transform .4s var(--ease);
+  background: var(--cream); padding: 2.6rem 2.25rem;
+  transition: background .35s;
 }
-.card::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-  background: var(--wine); transform: scaleX(0); transition: transform .45s var(--ease);
+.pcard:hover { background: var(--cream-warm); }
+.pcard::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: var(--wine); transform: scaleX(0); transform-origin: left;
+  transition: transform .45s var(--ease);
 }
-.card:hover { background: #EFE9DF; }
-.card:hover::after { transform: scaleX(1); }
-.card-icon {
-  width: 46px; height: 46px; border: 1px solid rgba(201,169,110,.5);
+.pcard:hover::after { transform: scaleX(1); }
+.pcard-icon {
+  width: 46px; height: 46px; flex-shrink: 0;
+  border: 1px solid rgba(201,169,110,.5);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 1.8rem; color: var(--gold);
+  margin-bottom: 1.6rem; color: var(--gold);
   transition: border-color .35s, background .35s;
 }
-.card:hover .card-icon { border-color: var(--gold); background: rgba(201,169,110,.1); }
-.card-t {
-  font-family: var(--serif); font-size: 1.25rem;
-  color: var(--wine); font-weight: 500; margin-bottom: .9rem;
+.pcard:hover .pcard-icon { border-color: var(--gold); background: rgba(201,169,110,.1); }
+.pcard-t {
+  font-family: var(--serif); font-size: 1.2rem;
+  color: var(--wine); font-weight: 500; line-height: 1.4; margin-bottom: .85rem;
 }
-.card-d { font-size: .85rem; color: var(--muted); line-height: 1.9; margin-bottom: 1.5rem; }
-.card-list { list-style: none; }
-.card-list li {
-  font-size: .78rem; color: var(--muted); padding: .45rem 0;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  display: flex; align-items: center; gap: .7rem;
+.pcard-d { font-size: .85rem; color: var(--muted); line-height: 1.9; }
+
+/* Destaque: linha inteira, ícone ao lado do texto e escala um pouco maior. */
+.pcard-feat {
+  grid-column: 1 / -1;
+  display: flex; align-items: flex-start; gap: 1.8rem;
+  background: var(--cream-warm);
 }
-.card-list li::before {
-  content: ''; width: 14px; height: 1px; background: var(--gold); flex-shrink: 0;
-}
+.pcard-feat:hover { background: var(--gold-pale); }
+.pcard-feat .pcard-icon { margin-bottom: 0; }
+.pcard-feat .pcard-t { font-size: 1.45rem; }
+.pcard-feat .pcard-d { max-width: 780px; }
 
 /* ── DEPOIMENTOS ── */
 .depoimentos { background: var(--wine-dark); }
@@ -640,7 +649,12 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .nav-links, .nav-cta { display: none; }
   .hamburger { display: flex; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
-  .cards { grid-template-columns: 1fr; }
+  .svcs, .pcards { grid-template-columns: 1fr; }
+  /*
+    Aqui o .sobre-grid ainda é de duas colunas, então cada frente ficaria
+    com ~220px de largura: estreito demais para o parágrafo.
+  */
+  .frentes { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; }
   .contato-grid { gap: 2.5rem; }
   .section { padding: 6rem 1.75rem; }
@@ -661,6 +675,7 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .sobre-grid { grid-template-columns: 1fr; gap: 3rem; }
   .photo-frame { aspect-ratio: 4/3; max-width: 380px; margin: 0 auto; }
   .diffs { grid-template-columns: 1fr; gap: 2rem; }
+  .svcs, .pcards { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 1.25rem; max-width: 540px; margin: 3.5rem auto 0; }
   .contato-grid { gap: 2.5rem; }
   .hero-btns { width: 100%; max-width: 380px; margin: 3rem auto 0; }
@@ -675,10 +690,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .sec-title { line-height: 1.25; }
   .hero-btns { width: 100%; max-width: 360px; margin: 3rem auto 0; }
   .btn-gold, .btn-ghost { flex: 1 1 auto; text-align: center; }
-  .journey { padding-left: 3.5rem; }
-  .journey-line { left: 17px; }
-  .jrn-marker { left: -3.5rem; width: 35px; height: 35px; font-size: .72rem; }
-  .journey-note { padding-left: 3.5rem; }
   .cf-row { grid-template-columns: 1fr; gap: 1.1rem; }
 }
 
@@ -693,8 +704,15 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
   .stats-strip { padding: 2.75rem 1.5rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
   .testi { padding: 2rem 1.5rem; }
-  .jrn-t { font-size: 1.15rem; }
-  .jrn-d { font-size: .85rem; }
+  .frentes { grid-template-columns: 1fr; }
+  .svc { padding: 2.1rem 1.6rem; }
+  .svc-t { font-size: 1.15rem; }
+  .svc-d { font-size: .84rem; }
+  .pcard { padding: 2.1rem 1.6rem; }
+  /* No celular o destaque perde a vantagem do layout horizontal. */
+  .pcard-feat { flex-direction: column; gap: 0; }
+  .pcard-feat .pcard-icon { margin-bottom: 1.4rem; }
+  .pcard-feat .pcard-t { font-size: 1.2rem; }
   .faq-q { font-size: .94rem; }
   .cf-actions { flex-direction: column; }
   .cf-actions .btn-gold, .cf-actions .btn-ghost { width: 100%; text-align: center; }
@@ -704,10 +722,6 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
 @media (max-width: 380px) {
   .nav-logo { font-size: .8rem; letter-spacing: .1em; }
   .nav-logo img { width: 30px !important; height: 30px !important; margin-right: 6px !important; }
-  .journey { padding-left: 2.9rem; }
-  .journey-line { left: 14px; }
-  .jrn-marker { left: -2.9rem; width: 29px; height: 29px; font-size: .66rem; }
-  .journey-note { padding-left: 2.9rem; }
 }
 
 /* Celular em paisagem: evita hero gigante cortando conteúdo */
@@ -722,11 +736,10 @@ footer { background: var(--wine-dark); padding: 2.2rem 2rem; text-align: center;
     transition-duration: .01ms !important;
   }
   /* Sem animação, o conteúdo precisa nascer visível — não preso no estado inicial. */
-  .reveal, .stagger > *, .jrn { opacity: 1 !important; transform: none !important; }
+  .reveal, .stagger > * { opacity: 1 !important; transform: none !important; }
   .sec-title.mask { clip-path: none !important; }
   .hero-logo, .hero-eyebrow, .hero-trovalim, .hero-btns, .scroll-hint { opacity: 1 !important; }
   .hero-tagline { opacity: .8 !important; }
   .hero-diamond { opacity: .75 !important; }
   .hero-eyebrow-line, .hero-rule { transform: none !important; }
-  .journey-line { transform: scaleY(1) !important; }
 }
