@@ -1,0 +1,93 @@
+@if (userData$ | async; as userData) {
+  <app-pnav logoLink="/mentoria" sectionLabel="Meu Desenvolvimento" [userName]="userData.name || userData.email || ''" logoutRedirect="/" />
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Meu Plano de Desenvolvimento</h1>
+      @if (mentorship()?.objetivo) { <p class="page-subtitle">{{ mentorship()!.objetivo }}</p> }
+    </div>
+
+    @if (mentorship()?.competencias?.length) {
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Competências</div>
+        <div style="display:flex;flex-direction:column;gap:1.1rem">
+          @for (c of mentorship()!.competencias; track c.id) {
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.4rem">
+                <span style="font-weight:600">{{ c.nome }}</span>
+                <span style="color:var(--muted)">{{ c.atual }} → {{ c.desejado }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:.3rem">
+                <div class="progress-bar" style="height:8px"><div class="progress-fill" [style.width.%]="pct(c.atual)" style="background:var(--wine)"></div></div>
+                <div class="progress-bar" style="height:8px;opacity:.4"><div class="progress-fill" [style.width.%]="pct(c.desejado)" style="background:var(--gold)"></div></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Minhas Ações</div>
+      @if (actionErr()) { <div class="alert alert-error show">{{ actionErr() }}</div> }
+
+      @if (!actions().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhuma ação combinada ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          @for (a of pendingActions(); track a.id) {
+            <div class="card" style="padding:1rem">
+              <div style="font-weight:600;font-size:.9rem">{{ a.titulo }}</div>
+              @if (a.comoFazer) { <div style="font-size:.82rem;color:var(--muted);margin-top:.35rem">{{ a.comoFazer }}</div> }
+              <div style="display:flex;gap:1rem;margin-top:.5rem;font-size:.75rem;color:var(--muted);flex-wrap:wrap">
+                @if (a.prazo) { <span>Prazo: {{ a.prazo }}</span> }
+                @if (a.evidenciaEsperada) { <span>Evidência esperada: {{ a.evidenciaEsperada }}</span> }
+              </div>
+              <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+                <button class="btn btn-primary btn-sm" (click)="markDone(a)">Marcar como Concluída</button>
+                <label class="btn btn-outline btn-sm" style="cursor:pointer">{{ uploadingFor() === a.id ? 'Enviando…' : (a.evidenciaUrl ? 'Substituir Evidência' : 'Anexar Evidência') }}<input type="file" style="display:none" [disabled]="uploadingFor() === a.id" (change)="uploadEvidence(a, $event)"></label>
+                @if (a.evidenciaUrl) { <a [href]="a.evidenciaUrl" target="_blank" rel="noopener" class="link-btn">{{ a.evidenciaNome || 'Ver arquivo' }} ↗</a> }
+              </div>
+            </div>
+          }
+          @if (doneActions().length) {
+            <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.5rem">Concluídas</div>
+            @for (a of doneActions(); track a.id) {
+              <div class="card" style="padding:1rem;opacity:.7">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
+                  <div style="font-weight:600;font-size:.9rem;text-decoration:line-through">{{ a.titulo }}</div>
+                  <button class="btn btn-outline btn-sm" (click)="markPending(a)">Reabrir</button>
+                </div>
+                @if (a.evidenciaUrl) { <a [href]="a.evidenciaUrl" target="_blank" rel="noopener" class="link-btn" style="font-size:.78rem">{{ a.evidenciaNome || 'Ver arquivo' }} ↗</a> }
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Mensagens</div>
+      <div class="messages-feed">
+        @if (messages$ | async; as messages) {
+          @if (!messages.length) {
+            <div class="msg-empty">Nenhuma mensagem ainda.</div>
+          }
+          @for (m of messages; track $index) {
+            <div class="msg" [class.msg-mine]="m.authorRole === 'mentorado'" [class.msg-theirs]="m.authorRole !== 'mentorado'">
+              <div class="msg-author">{{ m.author }}</div>
+              <div>{{ m.text }}</div>
+              <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>
+            </div>
+          }
+        }
+      </div>
+      <div class="msg-form">
+        <input type="text" class="msg-input" placeholder="Escreva uma mensagem…"
+          [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
+          (keydown.enter)="sendMessage()">
+        <button class="btn btn-primary btn-sm" (click)="sendMessage()">Enviar</button>
+      </div>
+    </div>
+  </div>
+}

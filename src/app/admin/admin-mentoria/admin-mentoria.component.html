@@ -1,0 +1,39 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Mentoria</h1>
+    <p class="page-subtitle">Planos de Desenvolvimento Individual em andamento</p>
+  </div>
+
+  <div class="cards-grid">
+    @if (!mentorados().length) {
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-text">Nenhum mentorado cadastrado ainda</div>
+        <div class="empty-state-sub">Crie a conta em Contas com o papel "Mentorado" — o plano aparece aqui assim que a conta existir.</div>
+      </div>
+    }
+    @for (m of mentorados(); track m.uid) {
+      <div class="client-card">
+        <div class="client-card-top">
+          <div class="client-card-avatar">
+            @if (m.photoUrl) {
+              <img [src]="m.photoUrl" alt="">
+            } @else {
+              {{ initials(m.name || m.email || '') }}
+            }
+          </div>
+          <div>
+            <div class="client-card-name">{{ m.name || m.email }}</div>
+          </div>
+        </div>
+        <div class="client-card-meta">{{ m.email }}</div>
+        <div class="client-card-footer">
+          <a [routerLink]="['/admin/mentoria', m.uid]" class="btn btn-outline btn-sm">Ver Plano →</a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

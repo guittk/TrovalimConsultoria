@@ -74,5 +74,13 @@ service firebase.storage {
     match /candidates/{candidateId}/{allPaths=**} {
       allow read, write, delete: if isStaff();
     }
+
+    // Evidência anexada pelo mentorado numa ação do PDI.
+    function isMentee(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    match /mentorships/{uid}/{allPaths=**} {
+      allow read, write, delete: if isStaff() || isMentee(uid);
+    }
   }
 }

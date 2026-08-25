@@ -11,6 +11,7 @@ export const ADMIN_TABS: PnavTab[] = [
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'calendario', label: 'Calendário', path: '/admin/calendario' },
   { key: 'prospeccao', label: 'Prospecção', path: '/admin/prospeccao' },
+  { key: 'mentoria', label: 'Mentoria', path: '/admin/mentoria' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
   { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },

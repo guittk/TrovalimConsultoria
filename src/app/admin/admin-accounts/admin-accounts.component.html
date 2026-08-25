@@ -123,6 +123,7 @@
         <select class="form-select" [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
           <option value="client">Cliente — acesso apenas ao próprio projeto</option>
           <option value="manager">Gerente — acesso total ao admin, exceto contas</option>
+          <option value="mentorado">Mentorado — acesso só ao próprio plano de desenvolvimento</option>
         </select>
         <div class="form-help">Para promover alguém a Proprietário, isso deve ser feito manualmente por segurança.</div>
       </div>

@@ -1,4 +1,4 @@
-export type Role = 'owner' | 'manager' | 'client';
+export type Role = 'owner' | 'manager' | 'client' | 'mentorado';
 
 export interface Branding {
   companyName: string;
@@ -346,4 +346,62 @@ export interface ProspectSuggestion {
   perguntasDiagnostico: string[];
   servicosRecomendados: string[];
   mensagemAbordagem: string;
+}
+
+export interface MentorshipCompetency {
+  id: string;
+  nome: string;
+  /** 1 a 5. */
+  atual: number;
+  desejado: number;
+}
+
+/**
+ * O Plano de Desenvolvimento Individual — id do documento É o uid do
+ * mentorado (nunca um id à parte), então não existe query pra achar "o
+ * PDI de fulano", é sempre um get() direto. `empresaId` é opcional: sem
+ * ele o mentorado contratou por conta própria (carreira); com ele, uma
+ * empresa contratou o desenvolvimento de um colaborador — mas a empresa
+ * NUNCA lê este documento (nem no modelo, nem na regra): o que a empresa
+ * eventualmente vier a acompanhar é outra tela, não este PDI.
+ */
+export interface Mentorship {
+  uid: string;
+  mentoradoName?: string;
+  empresaId?: string | null;
+  objetivo?: string;
+  competencias: MentorshipCompetency[];
+  updatedAt?: unknown;
+}
+
+export type MentorshipActionCategory = '70' | '20' | '10';
+export type MentorshipActionStatus = 'pendente' | 'concluida';
+
+/**
+ * Ação do PDI (subcoleção). Campos de conteúdo (título, como fazer, prazo,
+ * evidência esperada, categoria) só a equipe escreve; o mentorado só marca
+ * status e anexa a evidência — a régua exata está na regra do Firestore,
+ * não só na tela.
+ */
+export interface MentorshipAction {
+  id: string;
+  titulo: string;
+  comoFazer?: string;
+  prazo?: string | null;
+  evidenciaEsperada?: string;
+  /** 70 = experiência, 20 = exposição, 10 = educação formal. Opcional — nem todo PDI classifica assim. */
+  categoria?: MentorshipActionCategory | null;
+  status: MentorshipActionStatus;
+  evidenciaUrl?: string | null;
+  evidenciaNome?: string | null;
+  createdAt?: unknown;
+}
+
+/** Mensagem entre a equipe e o mentorado — mesmo formato de ProjectMessage, de propósito. */
+export interface MentorshipMessage {
+  id?: string;
+  author: string;
+  authorRole: 'admin' | 'mentorado' | string;
+  text: string;
+  date?: unknown;
 }

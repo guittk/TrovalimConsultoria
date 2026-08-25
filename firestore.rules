@@ -31,6 +31,11 @@ service cloud.firestore {
       return isOwner() || isManager();
     }
 
+    // O próprio mentorado, dono do PDI em /mentorships/{uid}.
+    function isMentee(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
     // Managers podem ter a visão restrita a um subconjunto de projetos
     // (campo projectAccess na própria conta). Sem o campo, ou null, = todos.
     function managerCanAccessProject(projectId) {
@@ -126,6 +131,39 @@ service cloud.firestore {
       // Notas internas: só a equipe (nunca o cliente dono do projeto) lê/escreve.
       match /internal/{docId} {
         allow read, write: if canAccessProject(projectId);
+      }
+    }
+
+    // Plano de Desenvolvimento Individual: id do documento é o uid do
+    // mentorado. Conteúdo do plano (objetivo, competências) só a equipe
+    // escreve — o mentorado lê o que a equipe montou, nunca reescreve as
+    // próprias metas.
+    match /mentorships/{uid} {
+      allow read: if isStaff() || isMentee(uid);
+      allow write: if isStaff();
+
+      // Ações: a equipe define o quê/como/prazo; o mentorado só marca
+      // status e anexa a própria evidência — nunca reescreve o enunciado
+      // da ação. hasOnly() garante isso na regra, não só na tela.
+      match /actions/{actionId} {
+        allow read: if isStaff() || isMentee(uid);
+        allow create, delete: if isStaff();
+        allow update: if isStaff() || (
+          isMentee(uid) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'evidenciaUrl', 'evidenciaNome'])
+        );
+      }
+
+      // Notas da consultora sobre os encontros: nunca o mentorado, mesmo
+      // sendo o dono do PDI — mesma régua de /projects/{id}/internal.
+      match /internal/{docId} {
+        allow read, write: if isStaff();
+      }
+
+      // Mensagens entre a equipe e o mentorado.
+      match /messages/{msgId} {
+        allow read, create: if isStaff() || isMentee(uid);
+        allow update, delete: if isStaff();
       }
     }
 

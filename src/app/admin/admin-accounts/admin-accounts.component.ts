@@ -3,7 +3,7 @@ import { Component, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
-import { AuthService, isStaffRole, normRole } from '../../core/auth.service';
+import { AuthService, isMentoradoRole, isStaffRole, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
@@ -12,10 +12,14 @@ import { ADMIN_TABS } from '../admin-tabs';
 import { RoleBadgeComponent } from '../../shared/role-badge/role-badge.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
-const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
+const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2, mentorado: 3 };
 
 /** Abas que podem ser escondidas de um manager (Projetos fica sempre visível — é a página inicial do admin). */
 const HIDEABLE_TABS: { key: string; label: string }[] = [
+  { key: 'painel', label: 'Painel' },
+  { key: 'calendario', label: 'Calendário' },
+  { key: 'prospeccao', label: 'Prospecção' },
+  { key: 'mentoria', label: 'Mentoria' },
   { key: 'clientes', label: 'Empresas' },
   { key: 'contas', label: 'Contas' },
   { key: 'kanban', label: 'Kanban' },
@@ -64,7 +68,7 @@ export class AdminAccountsComponent {
   readonly editingAccount = signal<UserAccount | null>(null);
   readonly isEditingClient = computed(() => {
     const a = this.editingAccount();
-    return !!a && !isStaffRole(a.role);
+    return !!a && !isStaffRole(a.role) && !isMentoradoRole(a.role);
   });
   readonly isEditingAccount = computed(() => !!this.editingAccount());
   readonly accName = signal('');
@@ -121,7 +125,8 @@ export class AdminAccountsComponent {
     this.accName.set(acc.name || '');
     this.accEmail.set(acc.email || '');
     this.accPassword.set('');
-    this.accRole.set(normRole(acc.role) === 'manager' ? 'manager' : 'client');
+    const currentRole = normRole(acc.role);
+    this.accRole.set(currentRole === 'manager' || currentRole === 'mentorado' ? (currentRole as Role) : 'client');
     this.restrictProjects.set(Array.isArray(acc.projectAccess));
     this.selectedProjectIds.set(new Set(acc.projectAccess || []));
     this.hiddenTabs.set(new Set(acc.hiddenTabs || []));

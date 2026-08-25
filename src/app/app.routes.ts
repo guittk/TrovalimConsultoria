@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { loginGuard, portalGuard, staffGuard, staffTabGuard } from './core/guards';
+import { loginGuard, mentoriaGuard, portalGuard, staffGuard, staffTabGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -20,6 +20,21 @@ export const routes: Routes = [
     path: 'portal/:id',
     canActivate: [portalGuard],
     loadComponent: () => import('./portal/portal-project/portal-project.component').then((m) => m.PortalProjectComponent),
+  },
+  {
+    path: 'mentoria',
+    canActivate: [mentoriaGuard],
+    loadComponent: () => import('./mentoria/mentoria-home/mentoria-home.component').then((m) => m.MentoriaHomeComponent),
+  },
+  {
+    path: 'admin/mentoria',
+    canActivate: [staffGuard, staffTabGuard('mentoria')],
+    loadComponent: () => import('./admin/admin-mentoria/admin-mentoria.component').then((m) => m.AdminMentoriaComponent),
+  },
+  {
+    path: 'admin/mentoria/:uid',
+    canActivate: [staffGuard, staffTabGuard('mentoria')],
+    loadComponent: () => import('./admin/admin-mentoria-detail/admin-mentoria-detail.component').then((m) => m.AdminMentoriaDetailComponent),
   },
   {
     path: 'admin/painel',

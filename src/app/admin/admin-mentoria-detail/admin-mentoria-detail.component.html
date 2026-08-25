@@ -1,0 +1,205 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
+}
+
+@if (mentee(); as mentee) {
+  <div class="breadcrumb">
+    <a routerLink="/admin/mentoria">Mentoria</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ mentee.name || mentee.email }}</span>
+  </div>
+
+  <div class="page">
+    <div class="proj-header">
+      <div class="proj-header-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:1.3rem">
+        {{ initials(mentee.name || mentee.email || '') }}
+      </div>
+      <div class="proj-header-info">
+        <div class="proj-header-company">{{ mentee.email }}</div>
+        <div class="proj-header-name">{{ mentee.name || 'Sem nome' }}</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0 2rem 2rem">
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'plano'" (click)="activeTab.set('plano')">Plano</button>
+        <button class="tab" [class.active]="activeTab() === 'acoes'" (click)="activeTab.set('acoes')">Ações</button>
+        <button class="tab" [class.active]="activeTab() === 'notas'" (click)="activeTab.set('notas')">Notas Internas</button>
+        <button class="tab" [class.active]="activeTab() === 'mensagens'" (click)="activeTab.set('mensagens')">Mensagens</button>
+      </div>
+
+      <!-- PLANO -->
+      @if (activeTab() === 'plano') {
+        <div class="tab-panel active">
+          @if (planoOk()) { <div class="alert alert-success show">Plano salvo.</div> }
+
+          <div class="form-group">
+            <label class="form-label">Objetivo</label>
+            <textarea class="form-textarea" rows="2" placeholder="O que esta pessoa quer alcançar, e em quanto tempo…" [ngModel]="objetivo()" (ngModelChange)="objetivo.set($event)"></textarea>
+          </div>
+
+          <h4 style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:1.5rem 0 .75rem">Competências — atual × desejado</h4>
+
+          @if (!competencias().length) {
+            <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma competência ainda.</div>
+          }
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            @for (c of competencias(); track c.id) {
+              <div style="border:1px solid var(--border);padding:.85rem">
+                <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:.6rem">
+                  <input type="text" class="form-input" placeholder="Ex: Comunicação assertiva" style="flex:1" [ngModel]="c.nome" (ngModelChange)="updateCompetencia(c.id, 'nome', $event)">
+                  <button class="btn-icon danger" title="Remover" (click)="removeCompetencia(c.id)">✕</button>
+                </div>
+                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
+                  <label style="font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.5rem">Atual
+                    <input type="number" min="1" max="5" class="form-input" style="width:4.5rem" [ngModel]="c.atual" (ngModelChange)="updateCompetencia(c.id, 'atual', +$event)">
+                  </label>
+                  <label style="font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.5rem">Desejado
+                    <input type="number" min="1" max="5" class="form-input" style="width:4.5rem" [ngModel]="c.desejado" (ngModelChange)="updateCompetencia(c.id, 'desejado', +$event)">
+                  </label>
+                </div>
+                <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.3rem">
+                  <div class="progress-bar" style="height:6px"><div class="progress-fill" [style.width.%]="pct(c.atual)" style="background:var(--wine)"></div></div>
+                  <div class="progress-bar" style="height:6px;opacity:.4"><div class="progress-fill" [style.width.%]="pct(c.desejado)" style="background:var(--gold)"></div></div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" (click)="addCompetencia()">+ Adicionar Competência</button>
+            <button class="btn btn-primary btn-sm" [disabled]="savingPlano()" (click)="savePlano()">{{ savingPlano() ? 'Salvando…' : 'Salvar Plano' }}</button>
+          </div>
+        </div>
+      }
+
+      <!-- AÇÕES -->
+      @if (activeTab() === 'acoes') {
+        <div class="tab-panel active">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+            <button class="btn btn-primary btn-sm" (click)="openCreateAction()">+ Nova Ação</button>
+          </div>
+
+          @if (!actions().length) {
+            <div class="empty-state"><div class="empty-state-sub">Nenhuma ação cadastrada ainda.</div></div>
+          } @else {
+            <div style="display:flex;flex-direction:column;gap:.6rem">
+              @for (a of actions(); track a.id) {
+                <div class="card" style="padding:.9rem;cursor:pointer" (click)="openEditAction(a)">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+                    <div style="min-width:0">
+                      <div style="font-weight:600;font-size:.88rem">{{ a.titulo }}</div>
+                      @if (a.evidenciaEsperada) { <div style="font-size:.76rem;color:var(--muted);margin-top:.25rem">Evidência: {{ a.evidenciaEsperada }}</div> }
+                    </div>
+                    <span class="badge" [style.background]="a.status === 'concluida' ? '#DCFCE7' : '#F3F4F6'" [style.color]="a.status === 'concluida' ? '#166534' : '#374151'">{{ a.status === 'concluida' ? 'Concluída' : 'Pendente' }}</span>
+                  </div>
+                  <div style="display:flex;gap:1rem;margin-top:.5rem;font-size:.75rem;color:var(--muted)">
+                    @if (a.prazo) { <span>Prazo: {{ a.prazo }}</span> }
+                    @if (a.categoria) { <span>{{ a.categoria }}% — {{ a.categoria === '70' ? 'experiência' : a.categoria === '20' ? 'exposição' : 'educação' }}</span> }
+                    @if (a.evidenciaUrl) { <a [href]="a.evidenciaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="link-btn">Ver evidência ↗</a> }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- NOTAS INTERNAS -->
+      @if (activeTab() === 'notas') {
+        <div class="tab-panel active">
+          @if (notesOk()) { <div class="alert alert-success show">Notas salvas.</div> }
+          <div class="form-group">
+            <label class="form-label">
+              Notas dos Encontros
+              <span style="font-size:.68rem;color:var(--muted);font-weight:400;margin-left:.4rem;letter-spacing:0;text-transform:none">(visível só para a equipe — o mentorado nunca vê isso)</span>
+            </label>
+            <textarea class="form-textarea" rows="10" placeholder="Pauta e observações de cada encontro…" [ngModel]="internalNotes()" (ngModelChange)="internalNotes.set($event)"></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm" [disabled]="savingNotes()" (click)="saveNotes()">{{ savingNotes() ? 'Salvando…' : 'Salvar Notas' }}</button>
+        </div>
+      }
+
+      <!-- MENSAGENS -->
+      @if (activeTab() === 'mensagens') {
+        <div class="tab-panel active">
+          <div class="messages-feed">
+            @if (messages$ | async; as messages) {
+              @if (!messages.length) {
+                <div class="msg-empty">Nenhuma mensagem ainda.</div>
+              }
+              @for (m of messages; track $index) {
+                <div class="msg" [class.msg-mine]="m.authorRole === 'admin'" [class.msg-theirs]="m.authorRole !== 'admin'">
+                  <div class="msg-author">{{ m.author }}</div>
+                  <div>{{ m.text }}</div>
+                  <div class="msg-date">{{ toDate(m.date) | date:'dd/MM/yyyy, HH:mm' }}</div>
+                </div>
+              }
+            }
+          </div>
+          <div class="msg-form">
+            <input type="text" class="msg-input" placeholder="Escreva uma mensagem para o mentorado…"
+              [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
+              (keydown.enter)="sendMessage()">
+            <button class="btn btn-primary btn-sm" (click)="sendMessage()">Enviar</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="loading-overlay show"><div class="spinner"></div></div>
+}
+
+<!-- MODAL DE AÇÃO -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">{{ editingAction() ? 'Editar Ação' : 'Nova Ação' }}</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Título</label>
+      <input type="text" class="form-input" placeholder="Ex: Liderar a reunião semanal do time" [ngModel]="form().titulo" (ngModelChange)="updateForm('titulo', $event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Como fazer</label>
+      <textarea class="form-textarea" rows="2" placeholder="Orientação de como executar…" [ngModel]="form().comoFazer" (ngModelChange)="updateForm('comoFazer', $event)"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prazo</label>
+        <input type="date" class="form-input" [ngModel]="form().prazo" (ngModelChange)="updateForm('prazo', $event)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoria (opcional)</label>
+        <select class="form-select" [ngModel]="form().categoria" (ngModelChange)="updateForm('categoria', $event)">
+          <option value="">— Sem categoria —</option>
+          <option value="70">70% — Experiência</option>
+          <option value="20">20% — Exposição</option>
+          <option value="10">10% — Educação formal</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Evidência Esperada</label>
+      <input type="text" class="form-input" placeholder="Ex: print da ata da reunião" [ngModel]="form().evidenciaEsperada" (ngModelChange)="updateForm('evidenciaEsperada', $event)">
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between">
+      <div>
+        @if (editingAction()) {
+          <button class="btn btn-danger-ghost" [disabled]="deleting()" (click)="handleDeleteAction()">{{ deleting() ? 'Excluindo…' : 'Excluir' }}</button>
+        }
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="handleSaveAction()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

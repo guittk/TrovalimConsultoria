@@ -1,7 +1,12 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map, of, switchMap, take } from 'rxjs';
-import { AuthService, isStaffRole, normRole } from './auth.service';
+import { AuthService, isMentoradoRole, isStaffRole, normRole } from './auth.service';
+
+/** Para onde mandar uma conta não-staff, conforme o papel. */
+function nonStaffHome(role: unknown): string {
+  return isMentoradoRole(role) ? '/mentoria' : '/portal';
+}
 
 /** Exige usuário autenticado (qualquer papel); senão manda pro login. */
 export const authGuard: CanActivateFn = () => {
@@ -13,7 +18,7 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
-/** Exige Owner ou Manager; senão manda pro portal do cliente. */
+/** Exige Owner ou Manager; senão manda pra área da própria conta (portal ou mentoria). */
 export const staffGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -23,7 +28,7 @@ export const staffGuard: CanActivateFn = () => {
       if (!user) return of(router.createUrlTree(['/login']));
       return auth.userData$.pipe(
         take(1),
-        map((data) => (isStaffRole(data?.role) ? true : router.createUrlTree(['/portal']))),
+        map((data) => (isStaffRole(data?.role) ? true : router.createUrlTree([nonStaffHome(data?.role)]))),
       );
     }),
   );
@@ -46,7 +51,7 @@ export function staffTabGuard(tabKey: string): CanActivateFn {
         return auth.userData$.pipe(
           take(1),
           map((data) => {
-            if (!isStaffRole(data?.role)) return router.createUrlTree(['/portal']);
+            if (!isStaffRole(data?.role)) return router.createUrlTree([nonStaffHome(data?.role)]);
             const isManager = normRole(data?.role) === 'manager';
             if (isManager && (data?.hiddenTabs || []).includes(tabKey)) {
               return router.createUrlTree(['/admin']);
@@ -59,7 +64,7 @@ export function staffTabGuard(tabKey: string): CanActivateFn {
   };
 }
 
-/** Rotas do portal: exige login e redireciona staff pra área admin. */
+/** Rotas do portal (empresas-cliente): staff vai pro admin, mentorado vai pra mentoria. */
 export const portalGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -69,7 +74,31 @@ export const portalGuard: CanActivateFn = () => {
       if (!user) return of(router.createUrlTree(['/login']));
       return auth.userData$.pipe(
         take(1),
-        map((data) => (isStaffRole(data?.role) ? router.createUrlTree(['/admin']) : true)),
+        map((data) => {
+          if (isStaffRole(data?.role)) return router.createUrlTree(['/admin']);
+          if (isMentoradoRole(data?.role)) return router.createUrlTree(['/mentoria']);
+          return true;
+        }),
+      );
+    }),
+  );
+};
+
+/** Rotas de Mentoria: staff vai pro admin, empresa-cliente vai pro portal. */
+export const mentoriaGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.user$.pipe(
+    take(1),
+    switchMap((user) => {
+      if (!user) return of(router.createUrlTree(['/login']));
+      return auth.userData$.pipe(
+        take(1),
+        map((data) => {
+          if (isStaffRole(data?.role)) return router.createUrlTree(['/admin']);
+          if (isMentoradoRole(data?.role)) return true;
+          return router.createUrlTree(['/portal']);
+        }),
       );
     }),
   );
@@ -85,7 +114,7 @@ export const loginGuard: CanActivateFn = () => {
       if (!user) return of(true);
       return auth.userData$.pipe(
         take(1),
-        map((data) => router.createUrlTree([isStaffRole(data?.role) ? '/admin' : '/portal'])),
+        map((data) => router.createUrlTree([isStaffRole(data?.role) ? '/admin' : nonStaffHome(data?.role)])),
       );
     }),
   );
