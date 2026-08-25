@@ -5,17 +5,9 @@ import { Timestamp } from 'firebase/firestore';
 import { AuthService } from '../../core/auth.service';
 import { ContactSubmissionsService } from '../../core/contact-submissions.service';
 import { ContactSubmission } from '../../core/models';
-import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
+import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-
-const ADMIN_TABS: PnavTab[] = [
-  { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
-  { key: 'contas', label: 'Contas', path: '/admin/contas' },
-  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
-  { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
-  { key: 'config', label: 'Configurações', path: '/admin/config' },
-];
 
 const SUBJECT_LABELS: Record<string, string> = {
   empresa: 'Empresa — recrutamento e consultoria de RH',

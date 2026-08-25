@@ -17,19 +17,11 @@ import {
 } from '../../core/project-status-settings.service';
 import { ProjectFile, TimelineMode, TimelineStep } from '../../core/models';
 import { initials } from '../../shared/initials';
-import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
+import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { ADMIN_TABS } from '../admin-tabs';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-
-const ADMIN_TABS: PnavTab[] = [
-  { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
-  { key: 'contas', label: 'Contas', path: '/admin/contas' },
-  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
-  { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
-  { key: 'config', label: 'Configurações', path: '/admin/config' },
-];
 
 type TabKey = 'geral' | 'timeline' | 'arquivos' | 'mensagens';
 

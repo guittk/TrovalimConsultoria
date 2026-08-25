@@ -7,18 +7,10 @@ import { AuthService, isStaffRole, normRole } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
-import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
+import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { ADMIN_TABS } from '../admin-tabs';
 import { RoleBadgeComponent } from '../../shared/role-badge/role-badge.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-
-const ADMIN_TABS: PnavTab[] = [
-  { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
-  { key: 'contas', label: 'Contas', path: '/admin/contas' },
-  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
-  { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
-  { key: 'config', label: 'Configurações', path: '/admin/config' },
-];
 
 const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2 };
 

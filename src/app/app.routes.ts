@@ -22,6 +22,11 @@ export const routes: Routes = [
     loadComponent: () => import('./portal/portal-project/portal-project.component').then((m) => m.PortalProjectComponent),
   },
   {
+    path: 'admin/painel',
+    canActivate: [staffGuard, staffTabGuard('painel')],
+    loadComponent: () => import('./admin/admin-painel/admin-painel.component').then((m) => m.AdminPainelComponent),
+  },
+  {
     path: 'admin',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-home/admin-home.component').then((m) => m.AdminHomeComponent),

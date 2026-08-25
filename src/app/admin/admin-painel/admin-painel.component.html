@@ -1,0 +1,101 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="painel" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Painel</h1>
+    <p class="page-subtitle">O que fazer agora</p>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:1.5rem">
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Empresas</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ empresasCount() }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Projetos Ativos</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ activeProjectsCount() }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Tarefas em Aberto</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ openTasksCount() }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Vencidos</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="overdueItems().length ? '#DC2626' : 'var(--wine)'">{{ overdueItems().length }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-bar"></span>Hoje e Atrasado</div>
+
+    @if (!dueItems().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nada com prazo pendente. Bom sinal.</div></div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        @for (item of overdueItems(); track item.kind + item.id) {
+          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:#FEF2F2;border:1px solid #FECACA">
+            <span class="badge" style="background:#FEE2E2;color:#DC2626;flex-shrink:0">{{ item.kind === 'tarefa' ? 'Tarefa' : 'Prazo do Projeto' }}</span>
+            <a [routerLink]="item.link" style="flex:1;min-width:0;font-weight:600;color:var(--graphite)">{{ item.title }}</a>
+            <span style="font-size:.78rem;color:#DC2626;flex-shrink:0">{{ item.date | date:'dd/MM' }}</span>
+            @if (item.task; as t) {
+              <div style="display:flex;gap:.4rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" (click)="postponeTask(t)">+1 dia</button>
+                <button class="btn btn-primary btn-sm" (click)="completeTask(t)">Concluir</button>
+              </div>
+            }
+          </div>
+        }
+        @for (item of upcomingItems(); track item.kind + item.id) {
+          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:var(--bg);border:1px solid var(--border)">
+            <span class="badge">{{ item.kind === 'tarefa' ? 'Tarefa' : 'Prazo do Projeto' }}</span>
+            <a [routerLink]="item.link" style="flex:1;min-width:0;font-weight:600;color:var(--graphite)">{{ item.title }}</a>
+            <span style="font-size:.78rem;color:var(--muted);flex-shrink:0">{{ item.date | date:'dd/MM' }}</span>
+            @if (item.task; as t) {
+              <div style="display:flex;gap:.4rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" (click)="postponeTask(t)">+1 dia</button>
+                <button class="btn btn-primary btn-sm" (click)="completeTask(t)">Concluir</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:1.3fr 1fr;margin-top:1.5rem;align-items:start">
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>A Carteira</div>
+      @if (!projects().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum projeto cadastrado ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (s of statusCounts(); track s.key) {
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <span style="flex:1;font-size:.85rem">{{ s.label }}</span>
+              <span style="font-family:var(--serif);font-size:1.1rem;color:var(--wine);min-width:2rem;text-align:right">{{ s.count }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Contatos Recentes</div>
+      @if (!recentContacts().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum contato recebido ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          @for (c of recentContacts(); track c.id) {
+            <div style="border-bottom:1px solid var(--border);padding-bottom:.6rem">
+              <div style="font-weight:600;font-size:.85rem">{{ c.name }}</div>
+              <div style="font-size:.78rem;color:var(--muted);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.message }}</div>
+            </div>
+          }
+        </div>
+        <a routerLink="/admin/contatos" class="link-btn" style="display:inline-block;margin-top:.75rem;font-size:.8rem">Ver todos →</a>
+      }
+    </div>
+  </div>
+</div>

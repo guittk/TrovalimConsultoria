@@ -12,16 +12,8 @@ import {
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
 import { Empresa, FileTypeLimit, ProjectStatusOption } from '../../core/models';
-import { PnavComponent, PnavTab } from '../../shared/pnav/pnav.component';
-
-const ADMIN_TABS: PnavTab[] = [
-  { key: 'projetos', label: 'Projetos', path: '/admin' },
-  { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
-  { key: 'contas', label: 'Contas', path: '/admin/contas' },
-  { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },
-  { key: 'contatos', label: 'Contatos', path: '/admin/contatos' },
-  { key: 'config', label: 'Configurações', path: '/admin/config' },
-];
+import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { ADMIN_TABS } from '../admin-tabs';
 
 function formatMb(mb: number): string {
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
