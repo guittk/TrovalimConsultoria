@@ -148,6 +148,29 @@ export interface ProjectFile {
   kind?: 'upload' | 'link';
 }
 
+export type CalendarEventType = 'entrevista' | 'mentoria' | 'reuniao' | 'outro';
+
+/**
+ * Compromisso marcado no Calendário interno (entrevista, sessão, reunião).
+ * Diferente de um PRAZO (etapa de projeto com data, ou tarefa do Kanban com
+ * dueDate) — esses continuam vivendo só em `Project`/`Task` e entram na
+ * mesma tela por leitura, nunca copiados pra cá.
+ */
+export interface CalendarEvent {
+  id?: string;
+  title: string;
+  /** Data no formato yyyy-mm-dd. */
+  date: string;
+  /** Horário solto "HH:mm", separado da data de propósito — funde tudo num timestamp reabriria o problema de fuso. Ausente = compromisso de dia inteiro. */
+  time?: string | null;
+  type: CalendarEventType;
+  description?: string;
+  /** Projeto relacionado, opcional (ex: entrevista de um processo específico). */
+  projectId?: string | null;
+  createdByName?: string;
+  createdAt?: unknown;
+}
+
 /** Envio do formulário de contato do site público (ainda sem tela na plataforma). */
 export interface ContactSubmission {
   id?: string;

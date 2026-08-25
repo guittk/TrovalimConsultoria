@@ -157,5 +157,13 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read, write: if isStaff();
     }
+
+    // Compromissos do Calendário interno: mesma régua do Kanban — só a
+    // equipe, nunca a empresa-cliente. Prazos (etapa de projeto, tarefa)
+    // aparecem na mesma tela por leitura de /projects e /tasks, não como
+    // documentos aqui.
+    match /calendarEvents/{eventId} {
+      allow read, write: if isStaff();
+    }
   }
 }

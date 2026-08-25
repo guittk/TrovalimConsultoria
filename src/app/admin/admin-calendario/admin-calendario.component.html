@@ -1,0 +1,156 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="calendario" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Calendário</h1>
+    <p class="page-subtitle">Compromissos da equipe e prazos em aberto</p>
+  </div>
+
+  <div class="card">
+    <div class="cal-toolbar">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <button class="btn-icon" title="Mês anterior" (click)="prevMonth()">‹</button>
+        <span class="cal-month-label">{{ monthLabel() }}</span>
+        <button class="btn-icon" title="Próximo mês" (click)="nextMonth()">›</button>
+        <button class="btn btn-outline btn-sm" (click)="goToday()">Hoje</button>
+      </div>
+      <label class="cal-toggle">
+        <input type="checkbox" [checked]="showDeadlines()" (change)="toggleDeadlines()">
+        Mostrar prazos
+      </label>
+    </div>
+
+    <div class="cal-grid">
+      @for (label of weekdayLabels; track label) {
+        <div class="cal-weekday">{{ label }}</div>
+      }
+      @for (week of weeks(); track $index) {
+        @for (cell of week; track cell.date) {
+          <div class="cal-cell" [class.out-month]="!cell.inMonth" [class.is-today]="cell.isToday"
+            [class.has-items]="eventsFor(cell.date).length > 0 || deadlinesFor(cell.date).length > 0"
+            (click)="openDay(cell.date)">
+            <span class="cal-cell-day">{{ cell.day }}</span>
+            <div class="cal-cell-items">
+              @for (e of eventsFor(cell.date).slice(0, 3); track e.id) {
+                <span class="cal-chip" [style.background]="typeColor(e.type)">{{ e.title }}</span>
+              }
+              @if (eventsFor(cell.date).length > 3) {
+                <span class="cal-chip-more">+{{ eventsFor(cell.date).length - 3 }}</span>
+              }
+              @for (d of deadlinesFor(cell.date).slice(0, 2); track d.title) {
+                <span class="cal-deadline-mark">{{ d.title }}</span>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="cal-legend">
+      @for (t of eventTypes; track t.key) {
+        <span class="cal-legend-item"><span class="cal-legend-dot" [style.background]="t.color"></span>{{ t.label }}</span>
+      }
+      <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-deadline"></span>Prazo (leitura)</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL DO DIA -->
+@if (selectedDate(); as date) {
+  <div class="modal-backdrop show" (click)="$event.target === $event.currentTarget && closeDay()">
+    <div class="modal" style="max-width:480px">
+      <button class="modal-close" (click)="closeDay()">✕</button>
+      <div class="modal-title" style="text-transform:capitalize">{{ dayPanelTitle(date) }}</div>
+
+      <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem">
+        @if (!eventsFor(date).length && !deadlinesFor(date).length) {
+          <div class="empty-state"><div class="empty-state-sub">Nada marcado neste dia.</div></div>
+        }
+        @for (e of eventsFor(date); track e.id) {
+          <div class="cal-day-item" (click)="openEdit(e)">
+            <span class="cal-legend-dot" [style.background]="typeColor(e.type)"></span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.88rem">{{ e.title }}</div>
+              <div style="font-size:.75rem;color:var(--muted)">{{ typeLabel(e.type) }}@if (e.time) { · {{ e.time }} }</div>
+            </div>
+          </div>
+        }
+        @if (deadlinesFor(date).length) {
+          <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.4rem">Prazos (leitura)</div>
+          @for (d of deadlinesFor(date); track d.title) {
+            <a [routerLink]="d.link" class="cal-day-item" style="text-decoration:none">
+              <span class="cal-legend-dot cal-legend-dot-deadline"></span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:.88rem;color:var(--graphite)">{{ d.title }}</div>
+                <div style="font-size:.75rem;color:var(--muted)">{{ d.kind === 'tarefa' ? 'Tarefa do Kanban' : 'Prazo do Projeto' }}</div>
+              </div>
+            </a>
+          }
+        }
+      </div>
+
+      <button class="btn btn-primary" style="width:100%" (click)="closeDay(); openCreate(date)">+ Novo Compromisso</button>
+    </div>
+  </div>
+}
+
+<!-- MODAL DE COMPROMISSO -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">{{ editingEvent() ? 'Editar Compromisso' : 'Novo Compromisso' }}</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Título</label>
+      <input type="text" class="form-input" placeholder="Ex: Entrevista — Analista de RH" [ngModel]="form().title" (ngModelChange)="updateForm('title', $event)">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input #dateInput type="date" class="form-input" [ngModel]="form().date" (ngModelChange)="updateForm('date', $event)" (click)="openDatePicker(dateInput)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horário (opcional)</label>
+        <input type="time" class="form-input" [ngModel]="form().time" (ngModelChange)="updateForm('time', $event)">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" [ngModel]="form().type" (ngModelChange)="updateForm('type', $event)">
+          @for (t of eventTypes; track t.key) { <option [value]="t.key">{{ t.label }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Projeto (opcional)</label>
+        <select class="form-select" [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
+          <option value="">Sem projeto</option>
+          @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-textarea" rows="3" placeholder="Detalhes do compromisso…" [ngModel]="form().description" (ngModelChange)="updateForm('description', $event)"></textarea>
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between">
+      <div>
+        @if (editingEvent()) {
+          <button class="btn btn-danger-ghost" [disabled]="deleting()" (click)="handleDelete()">{{ deleting() ? 'Excluindo…' : 'Excluir' }}</button>
+        }
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="handleSave()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+  </div>
+</div>
