@@ -14,10 +14,20 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { FirebaseStorage, deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { Functions, httpsCallable } from 'firebase/functions';
 import { Observable, catchError, of } from 'rxjs';
-import { FIRESTORE, FIREBASE_STORAGE } from './firebase.providers';
+import { FIRESTORE, FIREBASE_STORAGE, FIREBASE_FUNCTIONS } from './firebase.providers';
 import { collectionData$ } from './firestore-rx';
 import { Candidate, CandidateStage } from './models';
+
+/** Projeção segura de um candidato pro portal do cliente — nunca currículo, notas ou contato. */
+export interface VisibleCandidate {
+  id: string;
+  name: string;
+  stage: CandidateStage;
+  linkedinUrl: string;
+  clientFeedback: string;
+}
 
 export const CANDIDATE_STAGES: { key: CandidateStage; label: string }[] = [
   { key: 'triagem', label: 'Triagem' },
@@ -33,6 +43,7 @@ export const CANDIDATE_STAGES: { key: CandidateStage; label: string }[] = [
 export class CandidatesService {
   private readonly db: Firestore = inject(FIRESTORE);
   private readonly storage: FirebaseStorage = inject(FIREBASE_STORAGE);
+  private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
 
   /** Sem orderBy(): mesma razão de vagas.service.ts — evita exigir índice composto. */
   listForVaga$(vagaId: string): Observable<Candidate[]> {
@@ -71,14 +82,43 @@ export class CandidatesService {
    * Ao excluir uma vaga, os candidatos NÃO são apagados — só perdem o
    * vínculo (banco de talentos: quem foi reprovado numa vaga pode servir
    * pra outra). Uma exclusão em cascata destruiria histórico de candidato
-   * por causa de uma vaga fechada por engano.
+   * por causa de uma vaga fechada por engano. `projectId`/`clientVisible`
+   * também são limpos — senão o candidato ficaria "visível" pro cliente do
+   * projeto ANTIGO pra sempre, mesmo depois de desvinculado da vaga.
    */
   async unlinkFromVaga(vagaId: string): Promise<void> {
     const snap = await getDocs(query(collection(this.db, 'candidates'), where('vagaId', '==', vagaId)));
     if (snap.empty) return;
     const batch = writeBatch(this.db);
-    snap.docs.forEach((d) => batch.update(d.ref, { vagaId: null }));
+    snap.docs.forEach((d) => batch.update(d.ref, { vagaId: null, projectId: null, clientVisible: false }));
     await batch.commit();
+  }
+
+  /**
+   * Candidatos liberados pra empresa-cliente ver, dentro de UM projeto.
+   * NUNCA lê /candidates direto — a regra do Firestore é staff-only pra
+   * leitura porque um get()/list() devolve o documento inteiro (currículo,
+   * notas, contato inclusos), sem jeito de esconder campo por campo. Quem
+   * projeta só os campos seguros é a Cloud Function `listVisibleCandidates`,
+   * via Admin SDK.
+   */
+  async fetchVisibleCandidates(projectId: string): Promise<VisibleCandidate[]> {
+    try {
+      const fn = httpsCallable<{ projectId: string }, { candidates: VisibleCandidate[] }>(
+        this.functions,
+        'listVisibleCandidates',
+      );
+      const result = await fn({ projectId });
+      return result.data.candidates;
+    } catch (err) {
+      console.error('[candidates] falha ao carregar candidatos visíveis', err);
+      return [];
+    }
+  }
+
+  /** Único campo que a empresa-cliente pode escrever — a regra do Firestore garante isso, não só a tela. */
+  updateClientFeedback(id: string, clientFeedback: string): Promise<void> {
+    return updateDoc(doc(this.db, 'candidates', id), { clientFeedback } as DocumentData);
   }
 
   async uploadResume(candidateId: string, file: File): Promise<{ path: string; url: string }> {

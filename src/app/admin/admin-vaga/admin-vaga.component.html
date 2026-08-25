@@ -32,6 +32,7 @@
                 <div style="font-weight:600;font-size:.85rem">{{ c.name }}</div>
                 @if (c.linkedinUrl) { <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">LinkedIn ↗</div> }
                 @if (c.resumeUrl) { <div style="font-size:.72rem;color:var(--wine);margin-top:.2rem">📎 Currículo</div> }
+                @if (c.clientVisible) { <div style="font-size:.68rem;color:#166534;margin-top:.2rem">👁 Visível ao cliente</div> }
               </div>
             }
             @if (!candidatesFor(s.key).length) {
@@ -101,6 +102,18 @@
     <div class="form-group">
       <label class="form-label">Notas / Parecer</label>
       <textarea class="form-textarea" rows="3" placeholder="Impressões da entrevista, pontos fortes, ressalvas…" [ngModel]="form().notes" (ngModelChange)="updateForm('notes', $event)"></textarea>
+    </div>
+
+    <div class="form-group" style="background:var(--bg);padding:.85rem;border:1px solid var(--border)">
+      <label style="display:flex;align-items:flex-start;gap:.6rem;font-size:.82rem;cursor:pointer">
+        <input type="checkbox" style="margin-top:.15rem" [ngModel]="form().clientVisible" (ngModelChange)="updateForm('clientVisible', $event)">
+        <span>Liberar para a empresa-cliente ver este candidato no portal do projeto. Ela nunca vê currículo, notas nem contato — só nome, LinkedIn, estágio e pode deixar um parecer.</span>
+      </label>
+      @if (editingCandidate()?.clientFeedback) {
+        <div style="margin-top:.6rem;font-size:.78rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.6rem">
+          <strong style="color:var(--graphite)">Parecer da empresa:</strong> {{ editingCandidate()!.clientFeedback }}
+        </div>
+      }
     </div>
 
     <div class="form-group" style="background:var(--bg);padding:.85rem;border:1px solid var(--border)">

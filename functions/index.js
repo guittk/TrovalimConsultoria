@@ -185,3 +185,56 @@ exports.suggestProspectApproach = onCall(async (request) => {
     mensagemAbordagem: typeof parsed.mensagemAbordagem === 'string' ? parsed.mensagemAbordagem : '',
   };
 });
+
+/**
+ * Candidatos liberados pra empresa-cliente ver, dentro de UM projeto —
+ * chamada pelo portal (nunca lê /candidates direto: a regra do Firestore
+ * é staff-only pra leitura, porque um get()/list() não filtra campo a
+ * campo, e o resto do documento — currículo, notas, contato — é dado
+ * pessoal de terceiro que a empresa nunca pode ver). Esta function lê com
+ * o Admin SDK (ignora a regra) e devolve só os campos seguros.
+ */
+exports.listVisibleCandidates = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Você precisa estar autenticado.');
+  }
+  const projectId = request.data && request.data.projectId;
+  if (!projectId || typeof projectId !== 'string') {
+    throw new HttpsError('invalid-argument', 'projectId é obrigatório.');
+  }
+
+  const db = getFirestore();
+  const [callerSnap, projectSnap] = await Promise.all([
+    db.collection('users').doc(request.auth.uid).get(),
+    db.collection('projects').doc(projectId).get(),
+  ]);
+  if (!projectSnap.exists) {
+    throw new HttpsError('not-found', 'Projeto não encontrado.');
+  }
+  const caller = callerSnap.exists ? callerSnap.data() : {};
+  const project = projectSnap.data();
+  const isOwner = project.ownerId && (project.ownerId === request.auth.uid || project.ownerId === caller.companyId);
+  const isStaff = caller.role === 'owner' || caller.role === 'manager';
+  if (!isOwner && !isStaff) {
+    throw new HttpsError('permission-denied', 'Sem acesso a este projeto.');
+  }
+
+  const snap = await db
+    .collection('candidates')
+    .where('projectId', '==', projectId)
+    .where('clientVisible', '==', true)
+    .get();
+
+  return {
+    candidates: snap.docs.map((d) => {
+      const c = d.data();
+      return {
+        id: d.id,
+        name: c.name || '',
+        stage: c.stage || '',
+        linkedinUrl: c.linkedinUrl || '',
+        clientFeedback: c.clientFeedback || '',
+      };
+    }),
+  };
+});

@@ -298,6 +298,14 @@ export type CandidateStage =
 export interface Candidate {
   id: string;
   vagaId: string | null;
+  /**
+   * Denormalizado da vaga no momento da criação — é o que a regra do
+   * Firestore usa pra decidir se a empresa-cliente pode ver este
+   * candidato, num hop só (candidato→projeto) em vez de dois
+   * (candidato→vaga→projeto). Ausente/null = candidato sem vaga (banco
+   * de talentos avulso), nunca visível pra cliente nenhum.
+   */
+  projectId?: string | null;
   name: string;
   email?: string;
   phone?: string;
@@ -310,8 +318,9 @@ export interface Candidate {
   consentGiven: boolean;
   consentDate?: string | null;
   retentionMonths?: number | null;
-  /** Reservado para quando o portal do cliente puder ver candidatos liberados — não lido ainda. */
+  /** Liberado pra empresa-cliente ver no portal do projeto. */
   clientVisible?: boolean;
+  /** Parecer da empresa-cliente sobre o candidato — só ela escreve, a equipe só lê. */
   clientFeedback?: string;
   createdAt?: unknown;
 }

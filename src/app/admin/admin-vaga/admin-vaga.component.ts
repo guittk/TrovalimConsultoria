@@ -20,6 +20,7 @@ interface FormState {
   stage: CandidateStage;
   consentGiven: boolean;
   retentionMonths: string;
+  clientVisible: boolean;
 }
 
 function emptyForm(): FormState {
@@ -32,6 +33,7 @@ function emptyForm(): FormState {
     stage: 'triagem',
     consentGiven: false,
     retentionMonths: '12',
+    clientVisible: false,
   };
 }
 
@@ -118,6 +120,7 @@ export class AdminVagaComponent {
       stage: c.stage,
       consentGiven: c.consentGiven,
       retentionMonths: c.retentionMonths != null ? String(c.retentionMonths) : '12',
+      clientVisible: !!c.clientVisible,
     });
     this.modalErr.set('');
     this.uploadErr.set('');
@@ -156,11 +159,16 @@ export class AdminVagaComponent {
         consentGiven: f.consentGiven,
         consentDate: f.consentGiven ? (editing?.consentDate ?? new Date().toISOString().slice(0, 10)) : null,
         retentionMonths: f.retentionMonths ? Number(f.retentionMonths) : null,
+        clientVisible: f.clientVisible,
       };
       if (editing) {
         await this.candidatesSvc.update(editing.id, payload);
       } else {
-        await this.candidatesSvc.create({ ...payload, vagaId: this.vid } as Omit<Candidate, 'id' | 'createdAt'>);
+        await this.candidatesSvc.create({
+          ...payload,
+          vagaId: this.vid,
+          projectId: this.vaga()?.projectId ?? null,
+        } as Omit<Candidate, 'id' | 'createdAt'>);
       }
       this.modalOpen.set(false);
     } catch {

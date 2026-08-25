@@ -9,6 +9,7 @@ import { ProjectsService } from '../../core/projects.service';
 import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
+import { CandidatesService, CANDIDATE_STAGES, VisibleCandidate } from '../../core/candidates.service';
 import { ProjectFile } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
@@ -30,6 +31,7 @@ export class PortalProjectComponent {
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
+  private readonly candidatesSvc = inject(CandidatesService);
   private readonly confirmSvc = inject(ConfirmService);
 
   readonly pid = this.route.snapshot.paramMap.get('id')!;
@@ -37,6 +39,8 @@ export class PortalProjectComponent {
   readonly project$ = this.projectsSvc.get$(this.pid);
   readonly messages$ = this.projectsSvc.messages$(this.pid);
   readonly files$ = this.projectsSvc.files$(this.pid);
+  readonly candidates = signal<VisibleCandidate[] | null>(null);
+  readonly candidateStages = CANDIDATE_STAGES;
   readonly platformColor = toSignal(this.platformSettingsSvc.get$(), {
     initialValue: { primaryColor: DEFAULT_PLATFORM_COLOR },
   });
@@ -49,6 +53,33 @@ export class PortalProjectComponent {
   readonly uploadErr = signal('');
   readonly dragOver = signal(false);
 
+  /* ── CANDIDATOS ── */
+  readonly feedbackDrafts = signal<Record<string, string>>({});
+  readonly savingFeedbackFor = signal<string | null>(null);
+
+  stageLabel(stage: string): string {
+    return this.candidateStages.find((s) => s.key === stage)?.label || stage;
+  }
+
+  /** Buffer local até o primeiro toque — depois disso o rascunho manda, senão recarregar a lista apagaria o que a pessoa está digitando. */
+  feedbackFor(c: VisibleCandidate): string {
+    const drafts = this.feedbackDrafts();
+    return c.id in drafts ? drafts[c.id] : c.clientFeedback || '';
+  }
+
+  updateFeedbackDraft(id: string, value: string): void {
+    this.feedbackDrafts.update((d) => ({ ...d, [id]: value }));
+  }
+
+  async saveFeedback(c: VisibleCandidate): Promise<void> {
+    this.savingFeedbackFor.set(c.id);
+    try {
+      await this.candidatesSvc.updateClientFeedback(c.id, this.feedbackFor(c).trim());
+    } finally {
+      this.savingFeedbackFor.set(null);
+    }
+  }
+
   constructor() {
     combineLatest([this.auth.user$, this.userData$, this.project$])
       .pipe(takeUntilDestroyed())
@@ -59,6 +90,7 @@ export class PortalProjectComponent {
           this.router.navigateByUrl('/portal');
         }
       });
+    this.candidatesSvc.fetchVisibleCandidates(this.pid).then((list) => this.candidates.set(list));
   }
 
   toDate(value: unknown): Date {

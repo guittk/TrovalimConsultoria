@@ -223,17 +223,33 @@ service cloud.firestore {
 
     // Vagas de recrutamento (pertencem a um projeto) e candidatos (banco de
     // talentos, coleção própria — candidato reprovado numa vaga continua
-    // existindo pra outra). Só a equipe: currículo e parecer de entrevista
-    // são dado pessoal de terceiro (LGPD), o titular não é o cliente da
-    // Trovalim. Exposição pro cliente-empresa (liberar candidato pra ver no
-    // portal) fica pra uma rodada futura — precisa de regra encadeada
-    // candidato→vaga→projeto, testada no emulador antes de valer pra
-    // produção, pra nunca vazar candidato de outra empresa por engano.
+    // existindo pra outra). Currículo e parecer de entrevista são dado
+    // pessoal de terceiro (LGPD), o titular não é o cliente da Trovalim —
+    // só a equipe vê tudo. A empresa-cliente só enxerga um candidato
+    // quando a equipe marca `clientVisible == true`, e só dentro do
+    // PRÓPRIO projeto (`Candidate.projectId`, denormalizado da vaga na
+    // criação — um hop só, candidato→projeto, em vez de dois
+    // candidato→vaga→projeto). Testado no Emulator Suite antes de valer
+    // pra produção.
     match /vagas/{vagaId} {
       allow read, write: if isStaff();
     }
+    // IMPORTANTE: leitura de documento no Firestore é tudo-ou-nada — não dá
+    // pra liberar só nome/estágio/LinkedIn e esconder currículo/notas/
+    // contato no MESMO get()/list(). Por isso `read` continua staff-only
+    // mesmo com clientVisible=true: o que a empresa-cliente vê vem da
+    // Cloud Function `listVisibleCandidates` (Admin SDK, projeta só os
+    // campos seguros antes de devolver). Só a ESCRITA do parecer é direta
+    // pelo cliente — updateDoc() não exige ler o documento antes, e a
+    // regra restringe por campo com affectedKeys().hasOnly(...).
     match /candidates/{candidateId} {
-      allow read, write: if isStaff();
+      allow read, create, delete: if isStaff();
+      allow update: if isStaff() || (
+        resource.data.get('clientVisible', false) == true &&
+        resource.data.projectId != null &&
+        isProjectOwner(resource.data.projectId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback'])
+      );
     }
 
     // Registro de aparelho pra Push (FCM): o id do doc é o próprio token.
