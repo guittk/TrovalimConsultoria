@@ -9,6 +9,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 </head>
 <body>
+<title>Evolução da Plataforma Trovalim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 :root{
   --ground:#FAF7F2; --surface:#FFFFFF; --surface-2:#F4EEE4;
@@ -849,12 +853,12 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="phase">
     <div class="dot">3</div>
     <div>
-      <h3>Pessoas <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <h3>Pessoas <span class="status status-done" style="margin-left:8px">Concluído</span></h3>
       <p class="when">Mentoria e PDI</p>
       <ul>
-        <li>O plano, os encontros, as ações, a reavaliação e o gráfico de evolução. <em>— plano, encontros (como notas internas) e ações feitos; reavaliação por competência e gráfico visual ficaram de fora.</em></li>
+        <li>O plano, os encontros, as ações, a reavaliação e o gráfico de evolução. <em>— feito: reavaliação grava um snapshot novo por competência sem apagar histórico, e o gráfico de evolução (barras CSS, sem canvas) mostra cada reavaliação lado a lado até "hoje".</em></li>
         <li>Portal do mentorado, com a fronteira de privacidade na regra do Firestore. <em>— feito: área própria em /mentoria, notas de encontro nunca visíveis ao mentorado.</em></li>
-        <li>Modelos de PDI prontos para reuso. <em>— não feito.</em></li>
+        <li>Modelos de PDI prontos para reuso. <em>— não feito; fica para quando houver demanda real de reuso entre mentorados.</em></li>
       </ul>
     </div>
   </div>
@@ -862,11 +866,12 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="phase">
     <div class="dot">4</div>
     <div>
-      <h3>Candidatos <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <h3>Candidatos <span class="status status-done" style="margin-left:8px">Concluído</span></h3>
       <p class="when">Vagas, currículos e LinkedIn</p>
       <ul>
         <li>Vagas dentro do projeto, pipeline com arrasto, banco de talentos. <em>— feito.</em></li>
-        <li>Versões de currículo, checklist de LinkedIn, parecer do cliente no portal. <em>— o parecer do cliente está feito (via portal, campo próprio); versões de currículo e checklist de LinkedIn são o "lado pessoa" descrito na seção 04, que ainda não entrou.</em></li>
+        <li>Visibilidade do candidato para a empresa-cliente no portal, sem vazar dado sensível. <em>— feito: a leitura passa por uma Cloud Function (<code>listVisibleCandidates</code>) que projeta só os campos seguros (nome, etapa, LinkedIn, parecer) — a regra do Firestore nunca dá leitura direta do documento completo ao cliente.</em></li>
+        <li>Versões de currículo, checklist de LinkedIn, parecer do cliente no portal. <em>— feito: o "lado pessoa" (seção 04) ganhou área própria em /admin/carreira e /portal/carreira, com versões de currículo (upload/download) e checklist de LinkedIn editável pelo próprio cliente.</em></li>
         <li>Consentimento, retenção e regra de Storage — na mesma fase, não depois. <em>— feito.</em></li>
       </ul>
     </div>
@@ -888,13 +893,14 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="phase">
     <div class="dot">6</div>
     <div>
-      <h3>Opcionais <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <h3>Opcionais <span class="status status-partial" style="margin-left:8px">Em andamento</span></h3>
       <p class="when">Ligados quando você quiser</p>
       <ul>
         <li>IA no brainstorm de prospecção. <em>— feito.</em></li>
+        <li>PWA instalável. <em>— feito: manifest com marca da Trovalim, ícones próprios, funciona offline via Angular Service Worker; escopo do push (FCM) isolado do escopo do app pra não colidir.</em></li>
         <li>Relatórios e indicadores.</li>
         <li>Auditoria e central de LGPD.</li>
-        <li>Avaliações aplicadas dentro da plataforma; financeiro; PWA.</li>
+        <li>Avaliações aplicadas dentro da plataforma; financeiro.</li>
       </ul>
     </div>
   </div>
@@ -967,6 +973,7 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="foot">
     <p>Documento gerado a partir da leitura do código de <code>TrovalimConsultoria</code> na branch <code>main</code> e da documentação de arquitetura do projeto Ápice. Os esforços eram relativos entre si, não estimativas de prazo.</p>
     <p><strong>Atualizado em 25 de agosto de 2026:</strong> os 7 itens pedidos estão implementados e verificados (build limpo a cada commit) na branch <code>evolucao-plataforma</code>, criada a partir de <code>main</code> — nada foi deployado em produção. O Push tem o código pronto mas ainda não deployado: falta gerar a chave VAPID no Console do Firebase e revisar a Cloud Function antes do deploy (o Blaze já foi confirmado). Detalhe de cada item na seção 04, o resolvido de cada decisão na seção 08.</p>
+    <p><strong>Depois disso:</strong> visibilidade de candidato no portal (via Cloud Function, sem vazar dado sensível), consultoria de currículo/LinkedIn ("lado pessoa"), reavaliação de competência com histórico e gráfico de evolução na Mentoria, e PWA instalável — todos concluídos e verificados, na mesma branch. Seguem em aberto, por ordem de prioridade: relatórios/indicadores, central de auditoria/LGPD, avaliações aplicadas dentro da plataforma e financeiro. O cálculo de precificação congelado na proposta (com link público de aceite) segue fora de escopo até você decidir como quer o PDF da proposta.</p>
   </div>
 
 </section>
