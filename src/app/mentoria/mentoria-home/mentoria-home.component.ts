@@ -6,7 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { MentorshipService } from '../../core/mentorship.service';
-import { Mentorship, MentorshipAction } from '../../core/models';
+import { CompetencyReassessment, Mentorship, MentorshipAction } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 
 @Component({
@@ -24,6 +24,7 @@ export class MentoriaHomeComponent {
 
   readonly mentorship = toSignal(this.mentorshipSvc.get$(this.uid), { initialValue: null as Mentorship | null });
   readonly actions = toSignal(this.mentorshipSvc.actions$(this.uid), { initialValue: [] as MentorshipAction[] });
+  readonly reassessments = toSignal(this.mentorshipSvc.reassessments$(this.uid), { initialValue: [] as CompetencyReassessment[] });
   readonly messages$ = this.mentorshipSvc.messages$(this.uid);
 
   readonly pendingActions = () => this.actions().filter((a) => a.status !== 'concluida');

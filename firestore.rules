@@ -160,6 +160,14 @@ service cloud.firestore {
         allow read, write: if isStaff();
       }
 
+      // Reavaliação de competências: fotografia gravada pela equipe, mas o
+      // mentorado PODE ver o próprio histórico (diferente das notas
+      // internas) — é o que dá sensação de evolução.
+      match /reassessments/{reassessmentId} {
+        allow read: if isStaff() || isMentee(uid);
+        allow write: if isStaff();
+      }
+
       // Mensagens entre a equipe e o mentorado.
       match /messages/{msgId} {
         allow read, create: if isStaff() || isMentee(uid);

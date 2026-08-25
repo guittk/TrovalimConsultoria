@@ -69,7 +69,41 @@
           <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" (click)="addCompetencia()">+ Adicionar Competência</button>
             <button class="btn btn-primary btn-sm" [disabled]="savingPlano()" (click)="savePlano()">{{ savingPlano() ? 'Salvando…' : 'Salvar Plano' }}</button>
+            @if (competencias().length) {
+              <button class="btn btn-outline btn-sm" [disabled]="reassessing()" (click)="reassessNow()">{{ reassessing() ? 'Registrando…' : '📸 Reavaliar Agora' }}</button>
+            }
           </div>
+
+          @if (reassessments().length) {
+            <h4 style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:1.75rem 0 .75rem">Histórico de Reavaliação</h4>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    @for (c of competencias(); track c.id) { <th>{{ c.nome }}</th> }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of reassessments(); track r.id) {
+                    <tr>
+                      <td data-label="Data">{{ r.date }}</td>
+                      @for (c of competencias(); track c.id) {
+                        <td [attr.data-label]="c.nome">
+                          @if (r.values[c.id] != null) {
+                            <div class="progress-bar" style="height:6px;width:60px"><div class="progress-fill" [style.width.%]="pct(r.values[c.id])" style="background:var(--wine)"></div></div>
+                            <span style="font-size:.72rem;color:var(--muted)">{{ r.values[c.id] }}</span>
+                          } @else {
+                            <span style="color:var(--muted)">—</span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       }
 

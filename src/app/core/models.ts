@@ -383,6 +383,21 @@ export interface Mentorship {
   updatedAt?: unknown;
 }
 
+/**
+ * Fotografia dos valores "atual" de cada competência num momento —
+ * subcoleção, nunca sobrescrita, pra existir histórico de verdade. A régua
+ * "atual" no documento raiz do PDI é sempre o valor mais recente; reavaliar
+ * grava um snapshot ANTES de atualizar esse valor, então nada se perde.
+ */
+export interface CompetencyReassessment {
+  id: string;
+  /** yyyy-mm-dd. */
+  date: string;
+  /** competenciaId → valor (1 a 5) no momento desta reavaliação. */
+  values: Record<string, number>;
+  createdAt?: unknown;
+}
+
 export type MentorshipActionCategory = '70' | '20' | '10';
 export type MentorshipActionStatus = 'pendente' | 'concluida';
 

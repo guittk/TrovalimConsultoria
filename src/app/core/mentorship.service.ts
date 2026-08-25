@@ -16,7 +16,7 @@ import { FirebaseStorage, deleteObject, getDownloadURL, ref, uploadBytes } from 
 import { Observable, map } from 'rxjs';
 import { FIRESTORE, FIREBASE_STORAGE } from './firebase.providers';
 import { collectionData$, docData$ } from './firestore-rx';
-import { Mentorship, MentorshipAction, MentorshipMessage } from './models';
+import { CompetencyReassessment, Mentorship, MentorshipAction, MentorshipMessage } from './models';
 
 /**
  * O documento raiz de um PDI é indexado pelo próprio uid do mentorado —
@@ -81,6 +81,22 @@ export class MentorshipService {
 
   removeEvidence(path: string): Promise<void> {
     return deleteObject(ref(this.storage, path)).catch(() => {});
+  }
+
+  /* ── REAVALIAÇÃO DE COMPETÊNCIAS ── */
+  reassessments$(uid: string): Observable<CompetencyReassessment[]> {
+    return collectionData$<DocumentData>(
+      query(collection(this.db, 'mentorships', uid, 'reassessments'), orderBy('date', 'asc')),
+    ).pipe(map((docs) => docs.map((d) => ({ ...d, id: d.id }) as CompetencyReassessment)));
+  }
+
+  /** Grava a fotografia — nunca sobrescreve uma reavaliação anterior, cada uma é um documento novo. */
+  createReassessment(uid: string, date: string, values: Record<string, number>): Promise<unknown> {
+    return addDoc(collection(this.db, 'mentorships', uid, 'reassessments'), {
+      date,
+      values,
+      createdAt: serverTimestamp(),
+    });
   }
 
   /* ── NOTAS INTERNAS (só a equipe lê) ── */

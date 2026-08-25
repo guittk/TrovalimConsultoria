@@ -9,6 +9,7 @@ import { AuthService } from '../../core/auth.service';
 import { AccountsService } from '../../core/accounts.service';
 import { MentorshipService } from '../../core/mentorship.service';
 import {
+  CompetencyReassessment,
   MentorshipAction,
   MentorshipActionCategory,
   MentorshipCompetency,
@@ -54,6 +55,7 @@ export class AdminMentoriaDetailComponent {
   readonly mentee = toSignal(this.accountsSvc.get$(this.uid), { initialValue: null as UserAccount | null });
   readonly mentorship = toSignal(this.mentorshipSvc.get$(this.uid), { initialValue: null });
   readonly actions = toSignal(this.mentorshipSvc.actions$(this.uid), { initialValue: [] as MentorshipAction[] });
+  readonly reassessments = toSignal(this.mentorshipSvc.reassessments$(this.uid), { initialValue: [] as CompetencyReassessment[] });
   readonly internalNotesSaved = toSignal(this.mentorshipSvc.internalNotes$(this.uid), { initialValue: '' });
   readonly messages$ = this.mentorshipSvc.messages$(this.uid);
 
@@ -108,6 +110,27 @@ export class AdminMentoriaDetailComponent {
       setTimeout(() => this.planoOk.set(false), 3000);
     } finally {
       this.savingPlano.set(false);
+    }
+  }
+
+  /**
+   * Fotografa o "atual" de cada competência de hoje num documento novo —
+   * nunca sobrescreve uma reavaliação anterior — e SÓ DEPOIS abre os
+   * campos "atual" pra edição, prontos pra registrar onde a pessoa está
+   * agora. Sem o snapshot antes, editar o valor perderia o histórico.
+   */
+  readonly reassessing = signal(false);
+
+  async reassessNow(): Promise<void> {
+    const comps = this.competencias();
+    if (!comps.length) return;
+    this.reassessing.set(true);
+    try {
+      const values: Record<string, number> = {};
+      for (const c of comps) values[c.id] = c.atual;
+      await this.mentorshipSvc.createReassessment(this.uid, new Date().toISOString().slice(0, 10), values);
+    } finally {
+      this.reassessing.set(false);
     }
   }
 

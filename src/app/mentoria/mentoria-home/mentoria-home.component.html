@@ -27,6 +27,37 @@
       </div>
     }
 
+    @if (reassessments().length) {
+      <div class="card" style="margin-top:1.5rem">
+        <div class="card-title"><span class="card-title-bar"></span>Evolução</div>
+        <div style="display:flex;flex-direction:column;gap:1.25rem">
+          @for (c of mentorship()!.competencias; track c.id) {
+            <div>
+              <div style="font-weight:600;font-size:.85rem;margin-bottom:.5rem">{{ c.nome }}</div>
+              <div style="display:flex;gap:.5rem;align-items:flex-end">
+                @for (r of reassessments(); track r.id) {
+                  @if (r.values[c.id] != null) {
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+                      <div style="width:20px;height:60px;background:var(--bg);display:flex;align-items:flex-end;border-radius:2px;overflow:hidden">
+                        <div [style.height.%]="pct(r.values[c.id])" style="width:100%;background:var(--wine)"></div>
+                      </div>
+                      <span style="font-size:.65rem;color:var(--muted)">{{ r.date.slice(5) }}</span>
+                    </div>
+                  }
+                }
+                <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+                  <div style="width:20px;height:60px;background:var(--bg);display:flex;align-items:flex-end;border-radius:2px;overflow:hidden">
+                    <div [style.height.%]="pct(c.atual)" style="width:100%;background:var(--gold)"></div>
+                  </div>
+                  <span style="font-size:.65rem;color:var(--muted)">hoje</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     <div class="card" style="margin-top:1.5rem">
       <div class="card-title"><span class="card-title-bar"></span>Minhas Ações</div>
       @if (actionErr()) { <div class="alert alert-error show">{{ actionErr() }}</div> }
