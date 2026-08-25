@@ -340,7 +340,7 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
         <tr><td>Calendário</td><td><span class="status status-done">Concluído</span></td><td>Compromissos da equipe + prazos de projeto/tarefa em leitura.</td></tr>
         <tr><td>Brainstorm de Prospecção</td><td><span class="status status-done">Concluído</span></td><td>Funil de 6 estágios + sugestão por IA (OpenAI), com a chave configurável em Configurações.</td></tr>
         <tr><td>Mentoria (PDI)</td><td><span class="status status-done">Concluído</span></td><td>Papel mentorado, plano com competências, ações e mensagens, área própria em <code>/mentoria</code>.</td></tr>
-        <tr><td>Projetos, Precificação, Currículos e LinkedIn</td><td><span class="status status-done">Concluído</span></td><td>Catálogo de preços + calculadora; Vagas com pipeline de candidatos. Portal do cliente ver candidato liberado ficou de fora — precisa de regra testada no emulador.</td></tr>
+        <tr><td>Projetos, Precificação, Currículos e LinkedIn</td><td><span class="status status-done">Concluído</span></td><td>Catálogo de preços + calculadora; Vagas com pipeline de candidatos; portal do cliente já mostra candidato liberado (testado no emulador). Falta só o "lado pessoa" (consultoria de currículo/LinkedIn individual).</td></tr>
         <tr><td>Push Notification</td><td><span class="status status-partial">Código pronto</span></td><td>Blaze confirmado pelo usuário. Falta gerar a chave VAPID e revisar/deployar a function.</td></tr>
       </tbody>
     </table>
@@ -618,13 +618,13 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <article class="feature">
     <div class="feature-head">
       <h3>Currículos, LinkedIn e o processo do candidato</h3>
-      <span class="status status-partial">Lado empresa concluído</span>
+      <span class="status status-partial">Falta o lado pessoa</span>
       <span class="area">Pessoas</span>
     </div>
     <div class="body">
       <div class="note good">
         <span class="tag">Feito</span>
-        <p>Implementei o lado empresa — que é o que o seu pedido original nomeava ("acompanhar o processo do candidato"). Cada projeto ganhou uma aba "Vagas"; cada vaga abre um pipeline de 7 estágios com arrasto, igual ao de Prospecção. Candidato é coleção própria (banco de talentos — sobrevive à vaga, não é apagado se a vaga fechar), e por lidar com dado pessoal de terceiro (LGPD), salvar exige marcar consentimento e um campo de retenção em meses guia a limpeza manual depois. A visibilidade do candidato pro cliente ver no portal (a parte de "liberar" mencionada abaixo) ficou de fora — motivo na seção 08. O lado pessoa (consultoria de currículo/LinkedIn com versões, descrito abaixo) não entrou nesta rodada.</p>
+        <p>Implementei o lado empresa — que é o que o seu pedido original nomeava ("acompanhar o processo do candidato"). Cada projeto ganhou uma aba "Vagas"; cada vaga abre um pipeline de 7 estágios com arrasto, igual ao de Prospecção. Candidato é coleção própria (banco de talentos — sobrevive à vaga, não é apagado se a vaga fechar), e por lidar com dado pessoal de terceiro (LGPD), salvar exige marcar consentimento e um campo de retenção em meses guia a limpeza manual depois. <strong>A visibilidade pro cliente entrou depois</strong>, testada no emulador: a equipe libera um candidato, e o portal mostra nome/estágio/LinkedIn/parecer através de uma Cloud Function que nunca expõe currículo, notas ou contato — a primeira versão vazava isso por uma regra do Firestore mal desenhada, corrigida antes de considerar pronto (detalhe na seção 08). O lado pessoa (consultoria de currículo/LinkedIn com versões, descrito abaixo) não entrou ainda.</p>
       </div>
       <p>Aqui há duas coisas com o mesmo nome, e separá-las é metade do trabalho — são dois produtos diferentes na sua landing.</p>
 
@@ -866,7 +866,7 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
       <p class="when">Vagas, currículos e LinkedIn</p>
       <ul>
         <li>Vagas dentro do projeto, pipeline com arrasto, banco de talentos. <em>— feito.</em></li>
-        <li>Versões de currículo, checklist de LinkedIn, parecer do cliente no portal. <em>— não feito; é o "lado pessoa" descrito na seção 04, que ficou de fora.</em></li>
+        <li>Versões de currículo, checklist de LinkedIn, parecer do cliente no portal. <em>— o parecer do cliente está feito (via portal, campo próprio); versões de currículo e checklist de LinkedIn são o "lado pessoa" descrito na seção 04, que ainda não entrou.</em></li>
         <li>Consentimento, retenção e regra de Storage — na mesma fase, não depois. <em>— feito.</em></li>
       </ul>
     </div>
@@ -935,9 +935,9 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   </div>
 
   <div class="decision">
-    <h4>6. A empresa-cliente vê os candidatos no portal? A partir de qual etapa? <span class="status status-pending" style="margin-left:6px">Não entrou</span></h4>
+    <h4>6. A empresa-cliente vê os candidatos no portal? A partir de qual etapa? <span class="status status-done" style="margin-left:6px">Resolvido — diferente</span></h4>
     <p>Muda a regra do Firestore e muda o desenho do portal. O padrão seguro é: só quem você marcar como liberado, e a partir da entrevista de RH.</p>
-    <p style="font-size:.85rem;color:var(--muted)">Fica pra quando puder testar a regra encadeada candidato→vaga→projeto no emulador — não quis arriscar escrevê-la sem testar.</p>
+    <p class="rec"><b>Ficou diferente da recomendação:</b> em vez de liberar automaticamente a partir de uma etapa, cada candidato tem um checkbox manual ("Liberar para a empresa-cliente ver") — mais simples e mais explícito que uma regra por estágio. E a arquitetura ficou diferente da planejada: como leitura de documento no Firestore não filtra campo, a regra encadeada candidato→vaga→projeto vazaria currículo/notas/contato junto. A solução final usa uma Cloud Function (Admin SDK) que devolve só os 4 campos seguros — testada no emulador com dado de teste sensível, confirmando que nada além disso sai.</p>
   </div>
 
   <div class="decision">
