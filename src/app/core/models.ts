@@ -455,6 +455,28 @@ export interface CareerTrack {
   updatedAt?: unknown;
 }
 
+export type AuditAction =
+  | 'candidate.delete'
+  | 'candidate.retention-extend'
+  | 'candidate.consent-update';
+
+/**
+ * Registro de ação sensível (LGPD) — append-only: a regra do Firestore não
+ * libera update nem delete pra ninguém, nem pro owner, porque um log que
+ * pode ser editado ou apagado deixa de servir como prova de auditoria.
+ */
+export interface AuditLogEntry {
+  id?: string;
+  action: AuditAction;
+  targetType: 'candidate';
+  targetId: string;
+  targetName?: string;
+  details?: string;
+  actorUid: string;
+  actorName: string;
+  createdAt?: unknown;
+}
+
 /** Versão do currículo (subcoleção) — a equipe sobe o arquivo, a pessoa só lê. */
 export interface ResumeVersion {
   id: string;

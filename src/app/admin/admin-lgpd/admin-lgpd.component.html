@@ -1,0 +1,101 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="lgpd" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Central de LGPD</h1>
+    <p class="page-subtitle">Retenção de dado de candidato e trilha de auditoria — sem exclusão automática, é sempre decisão de quem está vendo aqui</p>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:1.5rem">
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Candidatos Monitorados</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ monitoredCount() }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Sem Consentimento</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="withoutConsent().length ? '#DC2626' : 'var(--wine)'">{{ withoutConsent().length }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Retenção Vencida</div>
+      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="overdueRetention().length ? '#DC2626' : 'var(--wine)'">{{ overdueRetention().length }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-bar"></span>Retenção Vencida — Candidatos Reprovados</div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Reprovado há mais tempo do que o prazo de retenção combinado. Revise um por um: exclua o dado ou estenda o prazo — nada acontece sozinho.</p>
+
+    @if (!overdueRetention().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nenhum candidato com retenção vencida no momento.</div></div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Candidato</th><th>Reprovado em</th><th>Prazo combinado</th><th>Vencido há</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (row of overdueRetention(); track row.candidate.id) {
+              <tr>
+                <td style="font-weight:600">{{ row.candidate.name }}</td>
+                <td>{{ row.createdDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ row.candidate.retentionMonths }} meses</td>
+                <td style="color:#DC2626">{{ row.overdueDays }} dia(s)</td>
+                <td>
+                  <div style="display:flex;gap:.5rem;justify-content:flex-end">
+                    <button class="btn btn-outline btn-sm" [disabled]="extendingId() === row.candidate.id" (click)="extendRetention(row)">Estender</button>
+                    <button class="btn btn-danger btn-sm" [disabled]="deletingId() === row.candidate.id" (click)="deleteData(row)">{{ deletingId() === row.candidate.id ? 'Excluindo…' : 'Excluir dado' }}</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  @if (withoutConsent().length) {
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Candidatos Sem Consentimento Registrado</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Sem <code>consentGiven</code> marcado — confirme com a pessoa e atualize o cadastro do candidato.</p>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        @for (c of withoutConsent(); track c.id) {
+          <div style="display:flex;justify-content:space-between;padding:.6rem .9rem;background:var(--bg);border:1px solid var(--border);font-size:.85rem">
+            <span style="font-weight:600">{{ c.name }}</span>
+            <span style="color:var(--muted)">{{ c.stage }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="card" style="margin-top:1.5rem">
+    <div class="card-title"><span class="card-title-bar"></span>Trilha de Auditoria</div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Toda ação tomada nesta central fica registrada aqui — quem, o quê, quando. Sem edição, sem exclusão: é a prova do que foi decidido.</p>
+
+    @if (!auditLog().length) {
+      <div class="empty-state"><div class="empty-state-sub">Nenhuma ação registrada ainda.</div></div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Quando</th><th>Ação</th><th>Alvo</th><th>Quem</th><th>Detalhe</th></tr>
+          </thead>
+          <tbody>
+            @for (entry of auditLog(); track entry.id) {
+              <tr>
+                <td style="white-space:nowrap">{{ toDate(entry.createdAt) | date:'dd/MM/yyyy, HH:mm' }}</td>
+                <td>{{ actionLabels[entry.action] }}</td>
+                <td>{{ entry.targetName || entry.targetId }}</td>
+                <td>{{ entry.actorName }}</td>
+                <td style="color:var(--muted);font-size:.8rem">{{ entry.details }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
