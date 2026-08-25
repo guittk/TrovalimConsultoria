@@ -65,6 +65,26 @@ Storage usage is maintained as an **incremental counter** (`increment()` on uplo
 - **Branding propagation**: a company's `branding` (color/logo) is looked up live and threaded through to whatever it's displayed on (project header, portal, message bubbles) rather than duplicated — see `AuthService.withCompanyData$` and the `ownerAccount`/`empresa` signals in the admin project/client components.
 - **Company/project deletion cascades**: deleting an `Empresa` or a `Project` is destructive and cascades (deletes Storage files, subcollections, etc.) — see `ProjectsService.deleteProject` and the delete flow in `admin-client.component.ts`, which lets the operator choose per-linked-item whether to delete or just unlink before removing the parent.
 
+## Pendências do plano de evolução (branch `evolucao-plataforma`, 2026-08-25)
+
+Nada da branch `evolucao-plataforma` foi mergeado em `main` nem deployado em produção ainda — está tudo pronto e verificado no Emulator Suite, aguardando revisão. Detalhe completo em [docs/plano-evolucao-plataforma.html](docs/plano-evolucao-plataforma.html).
+
+**O que ainda falta construir:**
+- **Item 4 (Comercial) — precificação congelada + proposta.** Catálogo e calculadora prontos, mas o cálculo não fica "congelado" na proposta, e não existe PDF de proposta nem link público de aceite. Parado até decidir o formato do PDF/aceite (ver pendência do usuário abaixo).
+- **Financeiro.** Combinado que nasce junto do item 4 — não faz sentido separar os dois.
+- **Fase 0 (Fundação) nunca fechada.** Backup completo do Firestore + arquivo de índices — nunca foi feito.
+- **Painel — marcador de mensagem não lida.** O Painel lê os dados existentes, mas esse campo nunca foi construído.
+- **Push Notifications — só o gatilho de mensagem existe.** `notifyClientMessage` está escrita mas não deployada (ver pendência do usuário). Sino dentro do app, resumo diário agendado e gatilho de arquivo novo — não foram construídos.
+- **Mentoria — modelos de PDI reutilizáveis.** Não feito; baixa prioridade, só faz sentido quando houver demanda real de reaproveitar entre mentorados.
+
+**Pendências que são do usuário (Claude não pode resolver sozinho):**
+1. Checar o [Firebase Console → Authentication](https://console.firebase.google.com/project/geovana-trovalim-prod/authentication/users) e apagar contas de teste que vazaram pro Auth real por causa do bug do `createAccount()` (pelo menos `mentorado@trovalim.local`) — ver "Known issues" abaixo.
+2. Gerar a chave VAPID no Console do Firebase (Cloud Messaging) e colar em Configurações — único passo que falta pro Push funcionar.
+3. Revisar as 3 Cloud Functions antes de dar deploy (`notifyClientMessage`, `suggestProspectApproach`, `listVisibleCandidates`) — nenhuma foi deployada ainda, ficaram só escritas de propósito.
+4. Decidir o formato do PDF da proposta + aceite público (item 4) — destrava esse item e o Financeiro.
+5. Revisar e mergear a branch `evolucao-plataforma` quando estiver satisfeito.
+6. Ao instalar dependências do zero, usar `npm install --legacy-peer-deps` (ver "Known issues" abaixo).
+
 ## Known issues / pitfalls
 
 - **`AccountsService.createAccount()` leaks into real prod Auth even when testing against the emulator.** It opens a *secondary* Firebase app (`initializeApp(environment.firebase, 'Secondary-...')`) so creating a new account doesn't swap out the admin's own session — but that secondary app's `Auth` instance is built with a bare `getAuth(secondaryApp)` and never gets `connectAuthEmulator(...)` called on it, unlike the primary app's `FIREBASE_AUTH` token in `firebase.providers.ts`. Net effect: clicking "Nova Conta" while running `npm start` + `npm run emulators` creates the Firestore `/users` doc in the emulator (fine), but calls `createUserWithEmailAndPassword` against the **real** `geovana-trovalim-prod` Authentication — a real login gets created in production every time this is tested locally.
