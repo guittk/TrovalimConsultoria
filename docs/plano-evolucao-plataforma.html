@@ -893,14 +893,15 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="phase">
     <div class="dot">6</div>
     <div>
-      <h3>Opcionais <span class="status status-partial" style="margin-left:8px">Em andamento</span></h3>
+      <h3>Opcionais <span class="status status-partial" style="margin-left:8px">Concluído, exceto Financeiro</span></h3>
       <p class="when">Ligados quando você quiser</p>
       <ul>
         <li>IA no brainstorm de prospecção. <em>— feito.</em></li>
         <li>PWA instalável. <em>— feito: manifest com marca da Trovalim, ícones próprios, funciona offline via Angular Service Worker; escopo do push (FCM) isolado do escopo do app pra não colidir.</em></li>
         <li>Relatórios e indicadores. <em>— feito: tela própria em /admin/relatorios com KPIs (empresas ativas, projetos ativos, conversão de leads, taxa de contratação) e funil por etapa de prospecção, candidatos, tarefas e carteira de projetos — tudo lido das coleções existentes, sem dado novo.</em></li>
         <li>Auditoria e central de LGPD. <em>— feito: tela em /admin/lgpd pra revisar candidato reprovado com retenção vencida (excluir dado ou estender prazo, um por um) e sinalizar quem está sem consentimento registrado. Toda ação vira um registro de auditoria — append-only, sem edição nem exclusão pra ninguém — visível na mesma tela.</em></li>
-        <li>Avaliações aplicadas dentro da plataforma; financeiro.</li>
+        <li>Avaliações aplicadas dentro da plataforma. <em>— feito: tela em /admin/avaliacoes com modelos de questionário reutilizáveis (pergunta de escala 1-5 ou texto livre), aplicados a candidato ou mentorado, com pontuação e histórico registrados.</em></li>
+        <li>Financeiro. <em>— combinado com você: fica pra depois, junto do item 4 (cálculo congelado na proposta) — os dois nascem ligados, não faz sentido separar.</em></li>
       </ul>
     </div>
   </div>
@@ -973,7 +974,7 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <div class="foot">
     <p>Documento gerado a partir da leitura do código de <code>TrovalimConsultoria</code> na branch <code>main</code> e da documentação de arquitetura do projeto Ápice. Os esforços eram relativos entre si, não estimativas de prazo.</p>
     <p><strong>Atualizado em 25 de agosto de 2026:</strong> os 7 itens pedidos estão implementados e verificados (build limpo a cada commit) na branch <code>evolucao-plataforma</code>, criada a partir de <code>main</code> — nada foi deployado em produção. O Push tem o código pronto mas ainda não deployado: falta gerar a chave VAPID no Console do Firebase e revisar a Cloud Function antes do deploy (o Blaze já foi confirmado). Detalhe de cada item na seção 04, o resolvido de cada decisão na seção 08.</p>
-    <p><strong>Depois disso:</strong> visibilidade de candidato no portal (via Cloud Function, sem vazar dado sensível), consultoria de currículo/LinkedIn ("lado pessoa"), reavaliação de competência com histórico e gráfico de evolução na Mentoria, PWA instalável, Relatórios/indicadores e Central de LGPD — todos concluídos e verificados, na mesma branch. Seguem em aberto, por ordem de prioridade: avaliações aplicadas dentro da plataforma e financeiro. O cálculo de precificação congelado na proposta (com link público de aceite) segue fora de escopo até você decidir como quer o PDF da proposta.</p>
+    <p><strong>Depois disso:</strong> visibilidade de candidato no portal (via Cloud Function, sem vazar dado sensível), consultoria de currículo/LinkedIn ("lado pessoa"), reavaliação de competência com histórico e gráfico de evolução na Mentoria, PWA instalável, Relatórios/indicadores, Central de LGPD e Avaliações aplicadas — todos concluídos e verificados, na mesma branch. Isso fecha a Fase 6 inteira, exceto Financeiro: combinado que ele nasce junto do item 4 (cálculo congelado na proposta), quando você decidir o formato do PDF/aceite — os dois são a mesma decisão, não faz sentido separar. O cálculo de precificação congelado na proposta (com link público de aceite) segue fora de escopo até você decidir como quer o PDF da proposta.</p>
   </div>
 
 </section>
