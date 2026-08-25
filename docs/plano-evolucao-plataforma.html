@@ -339,8 +339,8 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
         <tr><td>Dashboard (Painel)</td><td><span class="status status-done">Concluído</span></td><td>Vencidos/próximos com ação no cartão, carteira por status, contatos recentes.</td></tr>
         <tr><td>Calendário</td><td><span class="status status-done">Concluído</span></td><td>Compromissos da equipe + prazos de projeto/tarefa em leitura.</td></tr>
         <tr><td>Brainstorm de Prospecção</td><td><span class="status status-done">Concluído</span></td><td>Funil de 6 estágios + sugestão por IA (OpenAI), com a chave configurável em Configurações.</td></tr>
-        <tr><td>Mentoria (PDI)</td><td><span class="status status-done">Concluído</span></td><td>Papel mentorado, plano com competências, ações e mensagens, área própria em <code>/mentoria</code>.</td></tr>
-        <tr><td>Projetos, Precificação, Currículos e LinkedIn</td><td><span class="status status-done">Concluído</span></td><td>Catálogo de preços + calculadora; Vagas com pipeline de candidatos; portal do cliente já mostra candidato liberado (testado no emulador). Falta só o "lado pessoa" (consultoria de currículo/LinkedIn individual).</td></tr>
+        <tr><td>Mentoria (PDI)</td><td><span class="status status-done">Concluído</span></td><td>Papel mentorado, plano com competências, ações, reavaliação com histórico e gráfico de evolução, e mensagens — área própria em <code>/mentoria</code>.</td></tr>
+        <tr><td>Projetos, Precificação, Currículos e LinkedIn</td><td><span class="status status-done">Concluído</span></td><td>Catálogo de preços + calculadora; Vagas com pipeline de candidatos e portal do cliente; consultoria de currículo/LinkedIn individual (o "lado pessoa") com versões e checklist.</td></tr>
         <tr><td>Push Notification</td><td><span class="status status-partial">Código pronto</span></td><td>Blaze confirmado pelo usuário. Falta gerar a chave VAPID e revisar/deployar a function.</td></tr>
       </tbody>
     </table>
@@ -581,7 +581,7 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
     <div class="body">
       <div class="note good">
         <span class="tag">Feito</span>
-        <p>Papel novo <code>mentorado</code>, com área própria em <code>/mentoria</code> (fora do admin e do portal da empresa-cliente). O PDI (<code>/mentorships/{{ '{uid}' }}</code>, indexado pelo próprio uid) tem objetivo + competências (atual × desejado, 1 a 5, mostradas como duas barras comparadas — sem gráfico em Canvas, que ficaria bonito mas era arriscado construir sem poder ver renderizado), ações onde a equipe define o quê/como/prazo e o mentorado só marca status e anexa evidência (a regra do Firestore restringe isso por campo, não só a tela), notas de encontro visíveis só pra equipe (mesma régua de privacidade das notas internas de projeto) e mensagens. Reavaliação por competência e gráfico visual ficaram de fora — dá pra reabrir o valor "atual" quando for reavaliar, mas não existe uma tela de histórico ainda.</p>
+        <p>Papel novo <code>mentorado</code>, com área própria em <code>/mentoria</code> (fora do admin e do portal da empresa-cliente). O PDI (<code>/mentorships/{{ '{uid}' }}</code>, indexado pelo próprio uid) tem objetivo + competências (atual × desejado, 1 a 5, mostradas como duas barras comparadas), ações onde a equipe define o quê/como/prazo e o mentorado só marca status e anexa evidência (a regra do Firestore restringe isso por campo, não só a tela), notas de encontro visíveis só pra equipe (mesma régua de privacidade das notas internas de projeto) e mensagens. <strong>Reavaliação entrou depois:</strong> "Reavaliar Agora" fotografa o valor atual de cada competência num documento novo (nunca sobrescreve uma reavaliação anterior), com histórico em tabela pra equipe e um gráfico de evolução em barras (sem Canvas, mesma técnica de barra de progresso já usada no resto da tela — ficou mais simples que um Canvas de verdade, mas evita construir algo que eu não conseguiria verificar renderizado).</p>
       </div>
       <p>Este é o módulo que <strong>não existe no Ápice</strong>. Ele é do seu ramo, e é o que a plataforma tem de mais próprio. Atende os dois lados que a landing já vende: o profissional que contrata orientação de carreira, e a empresa que contrata desenvolvimento de lideranças para um colaborador.</p>
       <h4>A estrutura de um PDI</h4>
@@ -618,13 +618,13 @@ td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
   <article class="feature">
     <div class="feature-head">
       <h3>Currículos, LinkedIn e o processo do candidato</h3>
-      <span class="status status-partial">Falta o lado pessoa</span>
+      <span class="status status-done">Concluído</span>
       <span class="area">Pessoas</span>
     </div>
     <div class="body">
       <div class="note good">
         <span class="tag">Feito</span>
-        <p>Implementei o lado empresa — que é o que o seu pedido original nomeava ("acompanhar o processo do candidato"). Cada projeto ganhou uma aba "Vagas"; cada vaga abre um pipeline de 7 estágios com arrasto, igual ao de Prospecção. Candidato é coleção própria (banco de talentos — sobrevive à vaga, não é apagado se a vaga fechar), e por lidar com dado pessoal de terceiro (LGPD), salvar exige marcar consentimento e um campo de retenção em meses guia a limpeza manual depois. <strong>A visibilidade pro cliente entrou depois</strong>, testada no emulador: a equipe libera um candidato, e o portal mostra nome/estágio/LinkedIn/parecer através de uma Cloud Function que nunca expõe currículo, notas ou contato — a primeira versão vazava isso por uma regra do Firestore mal desenhada, corrigida antes de considerar pronto (detalhe na seção 08). O lado pessoa (consultoria de currículo/LinkedIn com versões, descrito abaixo) não entrou ainda.</p>
+        <p>Lado empresa: cada projeto ganhou uma aba "Vagas"; cada vaga abre um pipeline de 7 estágios com arrasto, igual ao de Prospecção. Candidato é coleção própria (banco de talentos — sobrevive à vaga), e por lidar com dado pessoal de terceiro (LGPD), salvar exige marcar consentimento. A visibilidade pro cliente é testada no emulador: a equipe libera um candidato, e o portal mostra nome/estágio/LinkedIn/parecer através de uma Cloud Function que nunca expõe currículo, notas ou contato — a primeira versão vazava isso por uma regra do Firestore mal desenhada, corrigida antes de considerar pronto (detalhe na seção 08). <strong>Lado pessoa (entrou depois):</strong> aba "Carreira" própria, indexada por conta cliente — currículo sobe como versão numerada com comentário do que mudou (a equipe envia, a pessoa só baixa), e um checklist de LinkedIn de 7 itens fixos que a PRÓPRIA pessoa marca — diferente das ações do PDI de mentoria, aqui não há conteúdo autorado pela equipe pra restringir.</p>
       </div>
       <p>Aqui há duas coisas com o mesmo nome, e separá-las é metade do trabalho — são dois produtos diferentes na sua landing.</p>
 
