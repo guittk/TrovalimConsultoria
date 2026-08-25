@@ -56,6 +56,13 @@ export class CareerTrackService {
     );
   }
 
+  /** Coleção inteira, staff-only — usado pelo relatório de indicadores (trilhas de carreira ativas). */
+  listAll$(): Observable<CareerTrack[]> {
+    return collectionData$<DocumentData>(collection(this.db, 'careerTracks')).pipe(
+      map((docs) => docs.map((d) => ({ ...d, uid: d.id, linkedinChecklist: d['linkedinChecklist'] || [] }) as unknown as CareerTrack)),
+    );
+  }
+
   /** Uso da EQUIPE — objetivo, estágio, nome. setDoc(merge) porque o doc pode não existir ainda. */
   update(uid: string, data: Partial<Omit<CareerTrack, 'uid'>>): Promise<void> {
     return setDoc(doc(this.db, 'careerTracks', uid), { ...data, updatedAt: serverTimestamp() }, { merge: true });

@@ -35,6 +35,13 @@ export class MentorshipService {
     );
   }
 
+  /** Coleção inteira, staff-only — usado pelo relatório de indicadores (mentorados ativos). */
+  listAll$(): Observable<Mentorship[]> {
+    return collectionData$<DocumentData>(collection(this.db, 'mentorships')).pipe(
+      map((docs) => docs.map((d) => ({ uid: d.id, competencias: [], ...d }) as Mentorship)),
+    );
+  }
+
   /** setDoc(merge) — o doc pode não existir ainda na primeira vez que a equipe monta o plano. */
   update(uid: string, data: Partial<Omit<Mentorship, 'uid'>>): Promise<void> {
     return setDoc(doc(this.db, 'mentorships', uid), { ...data, updatedAt: serverTimestamp() }, { merge: true });

@@ -57,6 +57,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-painel/admin-painel.component').then((m) => m.AdminPainelComponent),
   },
   {
+    path: 'admin/relatorios',
+    canActivate: [staffGuard, staffTabGuard('relatorios')],
+    loadComponent: () => import('./admin/admin-relatorios/admin-relatorios.component').then((m) => m.AdminRelatoriosComponent),
+  },
+  {
     path: 'admin',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-home/admin-home.component').then((m) => m.AdminHomeComponent),

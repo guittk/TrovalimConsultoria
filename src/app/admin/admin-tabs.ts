@@ -8,6 +8,7 @@ import { PnavTab } from '../shared/pnav/pnav.component';
  */
 export const ADMIN_TABS: PnavTab[] = [
   { key: 'painel', label: 'Painel', path: '/admin/painel' },
+  { key: 'relatorios', label: 'Relatórios', path: '/admin/relatorios' },
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'calendario', label: 'Calendário', path: '/admin/calendario' },
   { key: 'prospeccao', label: 'Prospecção', path: '/admin/prospeccao' },

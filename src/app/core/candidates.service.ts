@@ -45,6 +45,18 @@ export class CandidatesService {
   private readonly storage: FirebaseStorage = inject(FIREBASE_STORAGE);
   private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
 
+  /** Coleção inteira, staff-only — usado pelo relatório de indicadores (pipeline por etapa). */
+  listAll$(): Observable<Candidate[]> {
+    return (
+      collectionData$<DocumentData>(collection(this.db, 'candidates')) as Observable<Candidate[]>
+    ).pipe(
+      catchError((err) => {
+        console.error('[candidates] falha ao carregar — as regras do Firestore foram implantadas?', err);
+        return of([]);
+      }),
+    );
+  }
+
   /** Sem orderBy(): mesma razão de vagas.service.ts — evita exigir índice composto. */
   listForVaga$(vagaId: string): Observable<Candidate[]> {
     return (
