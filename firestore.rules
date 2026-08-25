@@ -167,6 +167,26 @@ service cloud.firestore {
       }
     }
 
+    // Consultoria de currículo/LinkedIn (o "lado pessoa"). Mesmo padrão de
+    // /mentorships/{uid} — indexado pelo uid, isMentee(uid) reutilizado
+    // (é só "este uid sou eu mesmo", serve pra qualquer papel não-staff).
+    match /careerTracks/{uid} {
+      allow read: if isStaff() || isMentee(uid);
+      allow create, delete: if isStaff();
+      // linkedinChecklist é ferramenta de autoacompanhamento — a PRÓPRIA
+      // pessoa marca os itens. Estágio/objetivo continuam só da equipe.
+      allow update: if isStaff() || (
+        isMentee(uid) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['linkedinChecklist'])
+      );
+
+      // Versões do currículo: a equipe sobe o arquivo, a pessoa só lê.
+      match /versions/{versionId} {
+        allow read: if isStaff() || isMentee(uid);
+        allow write: if isStaff();
+      }
+    }
+
     // Configurações da plataforma (ex: cor, limites de arquivo/armazenamento).
     // Qualquer usuário autenticado lê, só owner escreve.
     match /settings/{docId} {

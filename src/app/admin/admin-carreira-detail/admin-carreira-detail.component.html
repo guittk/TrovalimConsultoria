@@ -1,0 +1,92 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="carreira" [userName]="userData.name || userData.email || ''" />
+}
+
+@if (client(); as c) {
+  <div class="breadcrumb">
+    <a routerLink="/admin/carreira">Carreira</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ c.name || c.email }}</span>
+  </div>
+
+  <div class="page">
+    <div class="proj-header">
+      <div class="proj-header-logo-ph" style="border-radius:50%;background:var(--wine);color:var(--gold);opacity:1;font-family:var(--serif);font-size:1.3rem">
+        {{ initials(c.name || c.email || '') }}
+      </div>
+      <div class="proj-header-info">
+        <div class="proj-header-company">{{ c.email }}</div>
+        <div class="proj-header-name">{{ c.name || 'Sem nome' }}</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Plano</div>
+        @if (planoOk()) { <div class="alert alert-success show">Plano salvo.</div> }
+
+        <div class="form-group">
+          <label class="form-label">Estágio</label>
+          <select class="form-select" [ngModel]="stage()" (ngModelChange)="stage.set($event)">
+            @for (s of stages; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Objetivo</label>
+          <textarea class="form-textarea" rows="3" placeholder="O que esta pessoa busca — nova área, promoção, recolocação…" [ngModel]="objetivo()" (ngModelChange)="objetivo.set($event)"></textarea>
+        </div>
+
+        <button class="btn btn-primary btn-sm" [disabled]="savingPlano()" (click)="savePlano()">{{ savingPlano() ? 'Salvando…' : 'Salvar Plano' }}</button>
+
+        <h4 style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:1.75rem 0 .75rem">Checklist do LinkedIn — {{ checklistPercent() }}%</h4>
+        <div class="progress-bar" style="margin-bottom:.85rem"><div class="progress-fill" [style.width.%]="checklistPercent()" style="background:var(--gold)"></div></div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          @for (item of checklist(); track item.key) {
+            <label style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;cursor:pointer">
+              <input type="checkbox" [checked]="item.done" (change)="toggleChecklistItem(item.key)">
+              <span [style.text-decoration]="item.done ? 'line-through' : 'none'" [style.color]="item.done ? 'var(--muted)' : 'var(--graphite)'">{{ item.label }}</span>
+            </label>
+          }
+        </div>
+        <div class="form-help" style="margin-top:.75rem">A própria pessoa também marca estes itens pelo portal dela — o que aparece aqui é o mesmo checklist.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Versões do Currículo</div>
+
+        @if (uploadErr()) { <div class="alert alert-error show">{{ uploadErr() }}</div> }
+
+        <div class="form-group">
+          <label class="form-label">Comentário (o que mudou nesta versão)</label>
+          <textarea class="form-textarea" rows="2" placeholder="Ex: ajustei o resumo profissional e reordenei as experiências" [ngModel]="uploadComment()" (ngModelChange)="uploadComment.set($event)"></textarea>
+        </div>
+        <label class="btn btn-primary btn-sm" style="cursor:pointer;display:inline-block;margin-bottom:1.25rem">{{ uploading() ? 'Enviando…' : '+ Enviar Nova Versão' }}<input type="file" style="display:none" [disabled]="uploading()" (change)="uploadVersion($event)"></label>
+
+        @if (!versions().length) {
+          <div class="empty-state"><div class="empty-state-sub">Nenhuma versão enviada ainda.</div></div>
+        } @else {
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            @for (v of versions(); track v.id) {
+              <div class="card" style="padding:.85rem">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+                  <div>
+                    <div style="font-weight:600;font-size:.85rem">Versão {{ v.versionNumber }}</div>
+                    @if (v.comment) { <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">{{ v.comment }}</div> }
+                    <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">{{ v.createdByName }} · {{ toDate(v.createdAt) | date:'dd/MM/yyyy' }}</div>
+                  </div>
+                  <div style="display:flex;gap:.5rem;flex-shrink:0">
+                    <a [href]="v.fileUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Ver ↗</a>
+                    <button class="btn btn-danger-ghost btn-sm" (click)="deleteVersion(v)">Excluir</button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="loading-overlay show"><div class="spinner"></div></div>
+}

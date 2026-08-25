@@ -2,9 +2,12 @@
   <app-pnav logoLink="/portal" sectionLabel="Portal do Cliente" [userName]="userData.name || userData.email || ''" logoutRedirect="/" />
 
   <div class="page">
-    <div class="page-header">
-      <h1 class="page-title">Meus Projetos</h1>
-      <p class="page-subtitle">Acompanhe o andamento dos seus projetos em tempo real</p>
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap">
+      <div>
+        <h1 class="page-title">Meus Projetos</h1>
+        <p class="page-subtitle">Acompanhe o andamento dos seus projetos em tempo real</p>
+      </div>
+      <a routerLink="/portal/carreira/minha" class="btn btn-outline btn-sm">Minha Carreira →</a>
     </div>
 
     @if (projects$ | async; as projects) {

@@ -414,3 +414,40 @@ export interface MentorshipMessage {
   text: string;
   date?: unknown;
 }
+
+export type CareerTrackStage = 'diagnostico' | 'versao1' | 'revisao' | 'versao-final' | 'linkedin-otimizado';
+
+export interface LinkedinChecklistItem {
+  key: string;
+  label: string;
+  done: boolean;
+}
+
+/**
+ * Consultoria de currículo/LinkedIn — o "lado pessoa" (carreira
+ * individual), diferente do pipeline de candidato de R&S. Indexado pelo
+ * uid da conta client, igual ao PDI de mentoria. `linkedinChecklist` é o
+ * único campo que a PRÓPRIA pessoa pode escrever — é uma ferramenta de
+ * autoacompanhamento, os itens são fixos (ver CAREER_LINKEDIN_ITEMS), não
+ * autorados pela equipe como as ações do PDI.
+ */
+export interface CareerTrack {
+  uid: string;
+  clientName?: string;
+  stage: CareerTrackStage;
+  objetivo?: string;
+  linkedinChecklist: LinkedinChecklistItem[];
+  updatedAt?: unknown;
+}
+
+/** Versão do currículo (subcoleção) — a equipe sobe o arquivo, a pessoa só lê. */
+export interface ResumeVersion {
+  id: string;
+  versionNumber: number;
+  fileUrl: string;
+  filePath: string;
+  /** O que mudou nesta versão em relação à anterior. */
+  comment?: string;
+  createdAt?: unknown;
+  createdByName?: string;
+}

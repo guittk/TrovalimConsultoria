@@ -1,0 +1,39 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="carreira" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Carreira</h1>
+    <p class="page-subtitle">Consultoria de currículo e LinkedIn — acompanhamento individual</p>
+  </div>
+
+  <div class="cards-grid">
+    @if (!clients().length) {
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-text">Nenhum cliente cadastrado ainda</div>
+        <div class="empty-state-sub">Contas com o papel "Cliente" aparecem aqui — vinculadas a uma empresa ou não.</div>
+      </div>
+    }
+    @for (c of clients(); track c.uid) {
+      <div class="client-card">
+        <div class="client-card-top">
+          <div class="client-card-avatar">
+            @if (c.photoUrl) {
+              <img [src]="c.photoUrl" alt="">
+            } @else {
+              {{ initials(c.name || c.email || '') }}
+            }
+          </div>
+          <div>
+            <div class="client-card-name">{{ c.name || c.email }}</div>
+          </div>
+        </div>
+        <div class="client-card-meta">{{ c.email }}</div>
+        <div class="client-card-footer">
+          <a [routerLink]="['/admin/carreira', c.uid]" class="btn btn-outline btn-sm">Ver Trilha →</a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

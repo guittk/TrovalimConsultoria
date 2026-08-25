@@ -22,6 +22,11 @@ export const routes: Routes = [
     loadComponent: () => import('./portal/portal-project/portal-project.component').then((m) => m.PortalProjectComponent),
   },
   {
+    path: 'portal/carreira/minha',
+    canActivate: [portalGuard],
+    loadComponent: () => import('./portal/portal-carreira/portal-carreira.component').then((m) => m.PortalCarreiraComponent),
+  },
+  {
     path: 'mentoria',
     canActivate: [mentoriaGuard],
     loadComponent: () => import('./mentoria/mentoria-home/mentoria-home.component').then((m) => m.MentoriaHomeComponent),
@@ -35,6 +40,16 @@ export const routes: Routes = [
     path: 'admin/mentoria/:uid',
     canActivate: [staffGuard, staffTabGuard('mentoria')],
     loadComponent: () => import('./admin/admin-mentoria-detail/admin-mentoria-detail.component').then((m) => m.AdminMentoriaDetailComponent),
+  },
+  {
+    path: 'admin/carreira',
+    canActivate: [staffGuard, staffTabGuard('carreira')],
+    loadComponent: () => import('./admin/admin-carreira/admin-carreira.component').then((m) => m.AdminCarreiraComponent),
+  },
+  {
+    path: 'admin/carreira/:uid',
+    canActivate: [staffGuard, staffTabGuard('carreira')],
+    loadComponent: () => import('./admin/admin-carreira-detail/admin-carreira-detail.component').then((m) => m.AdminCarreiraDetailComponent),
   },
   {
     path: 'admin/painel',

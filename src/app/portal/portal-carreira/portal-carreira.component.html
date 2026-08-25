@@ -1,0 +1,52 @@
+@if (userData$ | async; as userData) {
+  <app-pnav logoLink="/portal" sectionLabel="Minha Carreira" [userName]="userData.name || userData.email || ''" logoutRedirect="/" />
+
+  <div class="page">
+    @if (track(); as t) {
+      <div class="page-header">
+        <h1 class="page-title">Minha Carreira</h1>
+        <p class="page-subtitle">{{ stageLabel(t.stage) }}@if (t.objetivo) { — {{ t.objetivo }} }</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="card-title-bar"></span>Checklist do LinkedIn — {{ checklistPercent(t) }}%</div>
+        <div class="progress-bar" style="margin-bottom:1rem"><div class="progress-fill" [style.width.%]="checklistPercent(t)" style="background:var(--gold)"></div></div>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (item of t.linkedinChecklist; track item.key) {
+            <label style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;cursor:pointer">
+              <input type="checkbox" [checked]="item.done" (change)="toggleChecklistItem(t, item.key)">
+              <span [style.text-decoration]="item.done ? 'line-through' : 'none'" [style.color]="item.done ? 'var(--muted)' : 'var(--graphite)'">{{ item.label }}</span>
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem">
+        <div class="card-title"><span class="card-title-bar"></span>Versões do Currículo</div>
+        @if (!versions().length) {
+          <div class="empty-state"><div class="empty-state-sub">Nenhuma versão enviada ainda.</div></div>
+        } @else {
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            @for (v of versions(); track v.id) {
+              <div class="card" style="padding:.9rem">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+                  <div>
+                    <div style="font-weight:600;font-size:.88rem">Versão {{ v.versionNumber }}</div>
+                    @if (v.comment) { <div style="font-size:.8rem;color:var(--muted);margin-top:.25rem">{{ v.comment }}</div> }
+                    <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">{{ toDate(v.createdAt) | date:'dd/MM/yyyy' }}</div>
+                  </div>
+                  <a [href]="v.fileUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="flex-shrink:0">Baixar ↗</a>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-state-text">Sua trilha de carreira ainda não começou</div>
+        <div class="empty-state-sub">Assim que a consultora montar seu plano, ele aparece aqui.</div>
+      </div>
+    }
+  </div>
+}

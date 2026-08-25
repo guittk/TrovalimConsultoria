@@ -20,6 +20,7 @@ const HIDEABLE_TABS: { key: string; label: string }[] = [
   { key: 'calendario', label: 'Calendário' },
   { key: 'prospeccao', label: 'Prospecção' },
   { key: 'mentoria', label: 'Mentoria' },
+  { key: 'carreira', label: 'Carreira' },
   { key: 'clientes', label: 'Empresas' },
   { key: 'contas', label: 'Contas' },
   { key: 'kanban', label: 'Kanban' },

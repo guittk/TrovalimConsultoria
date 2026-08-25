@@ -82,5 +82,11 @@ service firebase.storage {
     match /mentorships/{uid}/{allPaths=**} {
       allow read, write, delete: if isStaff() || isMentee(uid);
     }
+
+    // Versões de currículo — a equipe sobe, a pessoa só lê.
+    match /careerTracks/{uid}/{allPaths=**} {
+      allow read: if isStaff() || isMentee(uid);
+      allow write, delete: if isStaff();
+    }
   }
 }
