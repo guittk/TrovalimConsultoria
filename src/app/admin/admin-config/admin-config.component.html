@@ -262,4 +262,40 @@
       </table>
     </div>
   </div>
+
+  <!-- ── NOTIFICAÇÕES PUSH ── -->
+  <div class="card" style="margin-top:2rem">
+    <div class="card-title"><span class="card-title-bar"></span>Notificações Push</div>
+
+    @if (notifSavingOk()) { <div class="alert alert-success show">Chave salva com sucesso.</div> }
+    @if (notifSavingErr()) { <div class="alert alert-error show">{{ notifSavingErr() }}</div> }
+
+    <div class="form-help" style="margin-bottom:1rem">
+      Avisa a equipe quando uma empresa-cliente enviar mensagem num projeto. A chave é gerada no Console do Firebase (Configurações do Projeto → Cloud Messaging → Certificados Web Push) e é PÚBLICA — colá-la aqui não expõe nada. Enquanto ela não for colada, ninguém consegue ativar o push.
+    </div>
+
+    <div class="form-group" style="max-width:520px">
+      <label class="form-label">Chave VAPID (Web Push)</label>
+      <input type="text" class="form-input" placeholder="Cole aqui a chave gerada no Console do Firebase" [ngModel]="vapidKeyForm()" (ngModelChange)="vapidKeyForm.set($event)" [disabled]="!isOwner()">
+    </div>
+
+    @if (isOwner()) {
+      <button class="btn btn-primary btn-sm" [disabled]="notifSaving()" (click)="saveNotificationSettings()">{{ notifSaving() ? 'Salvando…' : 'Salvar Chave' }}</button>
+    }
+
+    <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+      @if (!pushSupported) {
+        <p style="font-size:.82rem;color:var(--muted)">Este navegador não aceita notificações push.</p>
+      } @else if (!vapidKeyForm()) {
+        <p style="font-size:.82rem;color:var(--muted)">Cole a chave VAPID acima antes de ativar.</p>
+      } @else if (pushStatus() === 'granted') {
+        <p style="font-size:.82rem;color:#166534">✓ Notificações ativas neste navegador.</p>
+      } @else if (pushStatus() === 'denied') {
+        <p style="font-size:.82rem;color:var(--muted)">Bloqueadas nas configurações deste navegador — para reativar, mude a permissão de notificações do site e recarregue a página.</p>
+      } @else {
+        <button class="btn btn-outline btn-sm" [disabled]="activatingPush()" (click)="activatePush()">{{ activatingPush() ? 'Ativando…' : 'Ativar Notificações Neste Navegador' }}</button>
+      }
+      @if (pushErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.5rem">{{ pushErr() }}</p> }
+    </div>
+  </div>
 </div>

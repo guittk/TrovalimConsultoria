@@ -12,6 +12,8 @@ import {
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
 import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
+import { NotificationSettingsService, DEFAULT_NOTIFICATION_SETTINGS } from '../../core/notification-settings.service';
+import { PushService } from '../../core/push.service';
 import { Empresa, FileTypeLimit, PricingItem, ProjectStatusOption } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
@@ -40,6 +42,8 @@ export class AdminConfigComponent {
   private readonly storageUsageSvc = inject(StorageUsageService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
   private readonly pricingSettingsSvc = inject(PricingSettingsService);
+  private readonly notificationSettingsSvc = inject(NotificationSettingsService);
+  private readonly pushSvc = inject(PushService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -90,6 +94,14 @@ export class AdminConfigComponent {
       if (s && !this.pricingSyncedOnce) {
         this.pricingSyncedOnce = true;
         this.pricingForm.set(s.items.map((it) => ({ ...it })));
+      }
+    });
+
+    effect(() => {
+      const s = this.notificationSettingsSig();
+      if (s && !this.notifSyncedOnce) {
+        this.notifSyncedOnce = true;
+        this.vapidKeyForm.set(s.vapidKey);
       }
     });
   }
@@ -325,6 +337,56 @@ export class AdminConfigComponent {
       this.pricingSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
       this.pricingSaving.set(false);
+    }
+  }
+
+  /* ── NOTIFICAÇÕES PUSH ── */
+  private readonly notificationSettingsSig = toSignal(this.notificationSettingsSvc.get$(), {
+    initialValue: DEFAULT_NOTIFICATION_SETTINGS,
+  });
+  private notifSyncedOnce = false;
+
+  readonly vapidKeyForm = signal('');
+  readonly notifSavingOk = signal(false);
+  readonly notifSavingErr = signal('');
+  readonly notifSaving = signal(false);
+
+  readonly pushSupported = this.pushSvc.supported;
+  readonly pushStatus = this.pushSvc.status;
+  readonly activatingPush = signal(false);
+  readonly pushErr = signal('');
+
+  async saveNotificationSettings(): Promise<void> {
+    this.notifSavingOk.set(false);
+    this.notifSavingErr.set('');
+    this.notifSaving.set(true);
+    try {
+      await this.notificationSettingsSvc.update(this.vapidKeyForm().trim());
+      this.notifSavingOk.set(true);
+      setTimeout(() => this.notifSavingOk.set(false), 3000);
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      this.notifSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+    } finally {
+      this.notifSaving.set(false);
+    }
+  }
+
+  async activatePush(): Promise<void> {
+    const uid = this.auth.currentUser?.uid;
+    const vapidKey = this.vapidKeyForm().trim();
+    if (!uid || !vapidKey) return;
+    this.activatingPush.set(true);
+    this.pushErr.set('');
+    try {
+      await this.pushSvc.register(uid, vapidKey);
+      if (this.pushSvc.status() !== 'granted') {
+        this.pushErr.set('Permissão não concedida — o navegador pode ter bloqueado o pedido.');
+      }
+    } catch {
+      this.pushErr.set('Erro ao ativar notificações. Tente novamente.');
+    } finally {
+      this.activatingPush.set(false);
     }
   }
 }

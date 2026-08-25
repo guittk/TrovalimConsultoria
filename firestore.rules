@@ -187,5 +187,13 @@ service cloud.firestore {
     match /candidates/{candidateId} {
       allow read, write: if isStaff();
     }
+
+    // Registro de aparelho pra Push (FCM): o id do doc é o próprio token.
+    // Cada conta só grava/apaga o PRÓPRIO registro; leitura é só pras
+    // Cloud Functions, via Admin SDK, que ignora estas regras.
+    match /pushTokens/{token} {
+      allow create, update: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
   }
 }

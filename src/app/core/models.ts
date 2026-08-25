@@ -313,3 +313,19 @@ export interface Candidate {
   clientFeedback?: string;
   createdAt?: unknown;
 }
+
+/**
+ * Registro de aparelho pra Push (FCM). O id do documento é o próprio token
+ * — grava com setDoc(merge) em vez de addDoc, então registrar de novo o
+ * mesmo aparelho nunca duplica linha.
+ */
+export interface PushToken {
+  uid: string;
+  token: string;
+  createdAt?: unknown;
+}
+
+/** /settings/notifications — chave pública do Web Push, colada uma vez no console do Firebase. */
+export interface NotificationSettings {
+  vapidKey: string;
+}
