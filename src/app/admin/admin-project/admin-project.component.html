@@ -144,7 +144,18 @@
             <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0">Nenhuma etapa. Clique em "Adicionar Etapa".</div>
           }
           @for (item of displaySteps(); track item.originalIndex; let i = $index) {
-            <div class="step-item">
+            <div class="step-item"
+              [class.dragging]="timelineMode() === 'ordem' && draggingStepId() === item.s.id"
+              [class.drop-before]="timelineMode() === 'ordem' && dropTarget()?.id === item.s.id && !dropTarget()?.after"
+              [class.drop-after]="timelineMode() === 'ordem' && dropTarget()?.id === item.s.id && dropTarget()?.after"
+              (dragover)="onStepDragOver($event, item.s.id)"
+              (drop)="onStepDrop($event)">
+              @if (timelineMode() === 'ordem') {
+                <span class="step-drag-handle" title="Arrastar para reordenar" draggable="true"
+                  (dragstart)="onStepDragStart(item.s.id)" (dragend)="onStepDragEnd()">
+                  <svg width="11" height="16" viewBox="0 0 11 16" fill="currentColor"><circle cx="2" cy="2" r="1.6"/><circle cx="9" cy="2" r="1.6"/><circle cx="2" cy="8" r="1.6"/><circle cx="9" cy="8" r="1.6"/><circle cx="2" cy="14" r="1.6"/><circle cx="9" cy="14" r="1.6"/></svg>
+                </span>
+              }
               <input type="checkbox" class="step-check" [checked]="item.s.done" (change)="updateStep(item.originalIndex, 'done', $any($event.target).checked)">
               <div class="step-inputs">
                 <input type="text" class="step-name-input" placeholder="Nome da etapa" [ngModel]="item.s.name" (ngModelChange)="updateStep(item.originalIndex, 'name', $event)">
@@ -157,8 +168,8 @@
               </div>
               <div class="step-btns">
                 @if (timelineMode() === 'ordem') {
-                  <button class="btn-icon" title="Mover para cima" (click)="moveStep(item.originalIndex, -1)">↑</button>
-                  <button class="btn-icon" title="Mover para baixo" (click)="moveStep(item.originalIndex, 1)">↓</button>
+                  <button class="btn-icon step-move-btn" title="Mover para cima" (click)="moveStep(item.originalIndex, -1)">↑</button>
+                  <button class="btn-icon step-move-btn" title="Mover para baixo" (click)="moveStep(item.originalIndex, 1)">↓</button>
                 }
                 <button class="btn-icon danger" title="Remover" (click)="removeStep(item.originalIndex)">✕</button>
               </div>

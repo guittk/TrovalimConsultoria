@@ -216,7 +216,7 @@ export class AdminProjectComponent {
       this.responsibleUid.set(p.responsibleUid || '');
       this.hidden.set(!!p.hidden);
       this.timelineMode.set(p.timelineMode === 'ordem' ? 'ordem' : 'data');
-      this.stepsData.set((p.steps || []).map((s) => ({ ...s })));
+      this.stepsData.set((p.steps || []).map((s) => ({ ...s, id: s.id || crypto.randomUUID() })));
     });
     effect(() => this.internalNotes.set(this.internalNotesSaved()));
   }
@@ -308,7 +308,7 @@ export class AdminProjectComponent {
   addStep(): void {
     this.stepsData.update((steps) => [
       ...steps,
-      { name: '', date: '', done: false, ...(this.timelineMode() === 'ordem' ? { weight: 1 } : {}) },
+      { id: crypto.randomUUID(), name: '', date: '', done: false, ...(this.timelineMode() === 'ordem' ? { weight: 1 } : {}) },
     ]);
   }
   updateStep(i: number, field: keyof TimelineStep, value: string | boolean | number): void {
@@ -327,6 +327,54 @@ export class AdminProjectComponent {
     this.stepsData.update((steps) => steps.filter((_, idx) => idx !== i));
   }
 
+  /**
+   * Arrastar-e-soltar (modo "ordem" apenas — no modo "data" a ordem é
+   * derivada da data, então arrastar mentiria até a data mudar). Segue o
+   * padrão já usado no Kanban: a alça carrega o id da etapa, não a linha
+   * inteira (a linha tem inputs de texto dentro). `dropTarget` guarda se o
+   * cursor está na metade de cima ou de baixo da linha sobrevoada, para o
+   * indicador (e o drop) saberem se a etapa entra antes ou depois dela.
+   */
+  readonly draggingStepId = signal<string | null>(null);
+  readonly dropTarget = signal<{ id: string; after: boolean } | null>(null);
+
+  onStepDragStart(id: string | undefined): void {
+    if (!id) return;
+    this.draggingStepId.set(id);
+  }
+
+  onStepDragEnd(): void {
+    this.draggingStepId.set(null);
+    this.dropTarget.set(null);
+  }
+
+  onStepDragOver(event: DragEvent, targetId: string | undefined): void {
+    if (!targetId || !this.draggingStepId() || targetId === this.draggingStepId()) return;
+    event.preventDefault();
+    const row = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const after = event.clientY - row.top > row.height / 2;
+    this.dropTarget.set({ id: targetId, after });
+  }
+
+  onStepDrop(event: DragEvent): void {
+    event.preventDefault();
+    const draggedId = this.draggingStepId();
+    const target = this.dropTarget();
+    this.draggingStepId.set(null);
+    this.dropTarget.set(null);
+    if (!draggedId || !target || draggedId === target.id) return;
+    this.stepsData.update((steps) => {
+      const from = steps.findIndex((s) => s.id === draggedId);
+      let to = steps.findIndex((s) => s.id === target.id);
+      if (from === -1 || to === -1) return steps;
+      const copy = [...steps];
+      const [moved] = copy.splice(from, 1);
+      to = copy.findIndex((s) => s.id === target.id);
+      copy.splice(target.after ? to + 1 : to, 0, moved);
+      return copy;
+    });
+  }
+
   async saveTimeline(): Promise<void> {
     this.timelineOk.set(false);
     this.timelineErr.set('');
@@ -335,8 +383,8 @@ export class AdminProjectComponent {
       const mode = this.timelineMode();
       const steps: TimelineStep[] =
         mode === 'ordem'
-          ? this.stepsData().map((s) => ({ name: s.name, date: '', done: s.done, weight: Number(s.weight) || 0 }))
-          : this.displaySteps().map((x) => ({ name: x.s.name, date: x.s.date, done: x.s.done }));
+          ? this.stepsData().map((s) => ({ id: s.id, name: s.name, date: '', done: s.done, weight: Number(s.weight) || 0 }))
+          : this.displaySteps().map((x) => ({ id: x.s.id, name: x.s.name, date: x.s.date, done: x.s.done }));
       this.stepsData.set(steps.map((s) => ({ ...s })));
       await Promise.all([
         this.projectsSvc.updateSteps(this.pid, steps),

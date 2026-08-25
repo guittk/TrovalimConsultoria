@@ -92,6 +92,8 @@ export interface ProjectStatusSettings {
 export type TimelineMode = 'data' | 'ordem';
 
 export interface TimelineStep {
+  /** Identificador estável da etapa, gerado no cliente — permite arrastar/reordenar e, futuramente, vincular comentário ou aviso a uma etapa específica. Etapa antiga sem id recebe um ao ser carregada. */
+  id?: string;
   name: string;
   /** Data no formato yyyy-mm-dd. Usada apenas quando o projeto está no modo "data". */
   date: string;

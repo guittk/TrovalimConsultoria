@@ -497,7 +497,33 @@ img { max-width: 100%; display: block; }
   background: var(--bg);
   border: 1px solid var(--border);
   margin-bottom: .5rem;
+  position: relative;
 }
+.step-item.dragging { opacity: .4; }
+.step-item.drop-before::before,
+.step-item.drop-after::after {
+  content: '';
+  position: absolute;
+  left: .8rem;
+  right: .8rem;
+  height: 2px;
+  background: var(--gold);
+}
+.step-item.drop-before::before { top: -.27rem; }
+.step-item.drop-after::after { bottom: -.27rem; }
+.step-drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+}
+.step-drag-handle:active { cursor: grabbing; }
+/* Arrastar-e-soltar HTML5 não existe em toque: a alça some abaixo do
+   breakpoint mobile e as setas (escondidas no desktop) voltam a ser o
+   único jeito de reordenar. */
+.step-move-btn { display: none; }
 .step-check {
   width: 17px;
   height: 17px;
@@ -1261,6 +1287,9 @@ img { max-width: 100%; display: block; }
     mesmo com o nome encolhendo a zero, então quebra em duas.
   */
   .step-item { flex-wrap: wrap; }
+  /* Arrastar-e-soltar não existe em toque: a alça some e as setas voltam. */
+  .step-drag-handle { display: none; }
+  .step-move-btn { display: flex; }
   .step-inputs { flex-wrap: wrap; row-gap: .4rem; }
   .step-name-input { flex: 1 1 100%; }
 }
