@@ -298,4 +298,26 @@
       @if (pushErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.5rem">{{ pushErr() }}</p> }
     </div>
   </div>
+
+  <!-- ── INTEGRAÇÃO COM IA ── -->
+  @if (isOwner()) {
+    <div class="card" style="margin-top:2rem">
+      <div class="card-title"><span class="card-title-bar"></span>Integração com IA</div>
+
+      @if (openaiSavingOk()) { <div class="alert alert-success show">Chave salva com sucesso.</div> }
+      @if (openaiSavingErr()) { <div class="alert alert-error show">{{ openaiSavingErr() }}</div> }
+
+      <div class="form-help" style="margin-bottom:1rem">
+        Usada pelo botão "Sugerir com IA" dentro de uma prospecção — sugere quais serviços do catálogo atacam a dor da empresa, perguntas de diagnóstico e um rascunho de mensagem de abordagem. Diferente da chave VAPID, esta é SEGREDO: só o Proprietário vê e altera, e ela nunca sai desta tela — quem de fato chama a OpenAI é uma Cloud Function, o navegador nunca usa a chave diretamente.
+      </div>
+
+      <div class="form-group" style="max-width:520px">
+        <label class="form-label">Chave da API (OpenAI)</label>
+        <input type="password" class="form-input" placeholder="sk-…" autocomplete="off" [ngModel]="openaiKeyForm()" (ngModelChange)="openaiKeyForm.set($event)">
+        <div class="form-help">Gerada em platform.openai.com → API keys. Sem ela, o botão "Sugerir com IA" avisa que a chave não está configurada.</div>
+      </div>
+
+      <button class="btn btn-primary btn-sm" [disabled]="openaiSaving()" (click)="saveOpenAiSettings()">{{ openaiSaving() ? 'Salvando…' : 'Salvar Chave' }}</button>
+    </div>
+  }
 </div>

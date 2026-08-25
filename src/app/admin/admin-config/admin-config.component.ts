@@ -14,6 +14,8 @@ import {
 import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
 import { NotificationSettingsService, DEFAULT_NOTIFICATION_SETTINGS } from '../../core/notification-settings.service';
 import { PushService } from '../../core/push.service';
+import { OpenAiSettingsService, DEFAULT_OPENAI_SETTINGS } from '../../core/openai-settings.service';
+import { of, switchMap } from 'rxjs';
 import { Empresa, FileTypeLimit, PricingItem, ProjectStatusOption } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
@@ -44,6 +46,7 @@ export class AdminConfigComponent {
   private readonly pricingSettingsSvc = inject(PricingSettingsService);
   private readonly notificationSettingsSvc = inject(NotificationSettingsService);
   private readonly pushSvc = inject(PushService);
+  private readonly openaiSettingsSvc = inject(OpenAiSettingsService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -102,6 +105,14 @@ export class AdminConfigComponent {
       if (s && !this.notifSyncedOnce) {
         this.notifSyncedOnce = true;
         this.vapidKeyForm.set(s.vapidKey);
+      }
+    });
+
+    effect(() => {
+      const s = this.openaiSettingsSig();
+      if (s && !this.openaiSyncedOnce && this.isOwner()) {
+        this.openaiSyncedOnce = true;
+        this.openaiKeyForm.set(s.apiKey);
       }
     });
   }
@@ -387,6 +398,39 @@ export class AdminConfigComponent {
       this.pushErr.set('Erro ao ativar notificações. Tente novamente.');
     } finally {
       this.activatingPush.set(false);
+    }
+  }
+
+  /* ── INTEGRAÇÃO COM IA (OPENAI) ── */
+  /**
+   * Regra do Firestore restringe /settings/openai a owner — pra um manager
+   * não estourar permission-denied ao simplesmente abrir esta tela, só
+   * chama get$() quando isOwner$ já confirmou; senão fica no padrão vazio.
+   */
+  private readonly openaiSettingsSig = toSignal(
+    this.auth.isOwner$.pipe(switchMap((owner) => (owner ? this.openaiSettingsSvc.get$() : of(DEFAULT_OPENAI_SETTINGS)))),
+    { initialValue: DEFAULT_OPENAI_SETTINGS },
+  );
+  private openaiSyncedOnce = false;
+
+  readonly openaiKeyForm = signal('');
+  readonly openaiSavingOk = signal(false);
+  readonly openaiSavingErr = signal('');
+  readonly openaiSaving = signal(false);
+
+  async saveOpenAiSettings(): Promise<void> {
+    this.openaiSavingOk.set(false);
+    this.openaiSavingErr.set('');
+    this.openaiSaving.set(true);
+    try {
+      await this.openaiSettingsSvc.update(this.openaiKeyForm().trim());
+      this.openaiSavingOk.set(true);
+      setTimeout(() => this.openaiSavingOk.set(false), 3000);
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      this.openaiSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+    } finally {
+      this.openaiSaving.set(false);
     }
   }
 }

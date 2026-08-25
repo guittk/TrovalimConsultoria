@@ -144,6 +144,16 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    // Chave da OpenAI: diferente da chave VAPID (pública), esta é SEGREDO.
+    // A regra genérica de /settings/{docId} acima libera leitura pra
+    // qualquer usuário autenticado — inclusive uma conta client no portal —
+    // então este doc precisa de uma regra própria, mais restrita, ou a
+    // chave vazaria pra fora da equipe pelo próprio SDK do navegador. Só a
+    // Cloud Function usa a chave de verdade (Admin SDK, ignora esta regra).
+    match /settings/openai {
+      allow read, write: if isOwner();
+    }
+
     // Envios do formulário de contato do site público: qualquer visitante
     // (sem login) pode criar; leitura só para a equipe (ainda sem tela na
     // plataforma para consumir isso, mas os dados já ficam guardados).

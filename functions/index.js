@@ -90,3 +90,98 @@ exports.notifyClientMessage = onDocumentCreated('projects/{projectId}/messages/{
   });
   await Promise.all(deletions);
 });
+
+/**
+ * Brainstorm de prospecção via OpenAI: dado o nome e a dor declarada de um
+ * lead, sugere quais serviços do catálogo atacam aquela dor, perguntas de
+ * diagnóstico e um rascunho de mensagem de abordagem. A chave da OpenAI é
+ * lida de /settings/openai via Admin SDK — o navegador nunca a vê, e a
+ * regra do Firestore já restringe o doc a owner mesmo por engano.
+ * O catálogo é lido aqui (não confiado do payload do cliente) e usado
+ * pra FILTRAR a resposta depois: a IA nunca pode sugerir um serviço que
+ * não existe de verdade, senão o time vê algo que não vende.
+ */
+exports.suggestProspectApproach = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Você precisa estar autenticado.');
+  }
+
+  const db = getFirestore();
+  const callerSnap = await db.collection('users').doc(request.auth.uid).get();
+  const callerRole = callerSnap.exists ? callerSnap.data().role : null;
+  if (callerRole !== 'owner' && callerRole !== 'manager') {
+    throw new HttpsError('permission-denied', 'Apenas a equipe pode usar o brainstorm.');
+  }
+
+  const name = request.data && request.data.name;
+  const dor = request.data && request.data.dor;
+  if (!name || typeof name !== 'string') {
+    throw new HttpsError('invalid-argument', 'name é obrigatório.');
+  }
+  if (!dor || typeof dor !== 'string' || !dor.trim()) {
+    throw new HttpsError('invalid-argument', 'Preencha a Dor Declarada / Contexto antes de pedir sugestão.');
+  }
+
+  const [keySnap, pricingSnap] = await Promise.all([
+    db.collection('settings').doc('openai').get(),
+    db.collection('settings').doc('pricing').get(),
+  ]);
+  const apiKey = keySnap.exists ? keySnap.data().apiKey : '';
+  if (!apiKey) {
+    throw new HttpsError('failed-precondition', 'Chave da OpenAI não configurada — cole em Configurações → Integração com IA.');
+  }
+  const catalogItems = (pricingSnap.exists && Array.isArray(pricingSnap.data().items)) ? pricingSnap.data().items : [];
+  const catalogNames = catalogItems.map((it) => it.name).filter(Boolean);
+
+  const prompt = [
+    'Você ajuda uma consultoria de RH e carreira (a Trovalim) a preparar a abordagem de um lead.',
+    `Nome do lead: ${name}`,
+    `Dor declarada / contexto: ${dor}`,
+    catalogNames.length
+      ? `Catálogo de serviços da Trovalim (sugira SOMENTE destes, pelo nome exato): ${catalogNames.join(', ')}`
+      : 'Não há catálogo de serviços cadastrado ainda — não sugira nomes de serviço, deixe a lista vazia.',
+    'Responda em JSON com exatamente estas chaves: "perguntasDiagnostico" (array de 3 a 5 perguntas em português, pra fazer na primeira conversa), "servicosRecomendados" (array com os nomes EXATOS do catálogo acima que atacam essa dor, vazio se nenhum catálogo foi passado), "mensagemAbordagem" (um rascunho curto, em português, de mensagem pra abordar esse lead — tom profissional e direto, sem emoji).',
+  ].join('\n');
+
+  let aiResponse;
+  try {
+    aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.5,
+      }),
+    });
+  } catch (err) {
+    throw new HttpsError('unavailable', 'Não consegui contatar a OpenAI. Tente novamente.');
+  }
+
+  if (!aiResponse.ok) {
+    const status = aiResponse.status;
+    if (status === 401) throw new HttpsError('failed-precondition', 'Chave da OpenAI inválida — confira em Configurações → Integração com IA.');
+    if (status === 429) throw new HttpsError('resource-exhausted', 'Limite da OpenAI atingido — tente novamente em instantes.');
+    throw new HttpsError('internal', `Erro da OpenAI (${status}).`);
+  }
+
+  const payload = await aiResponse.json();
+  let parsed;
+  try {
+    parsed = JSON.parse(payload.choices[0].message.content);
+  } catch (err) {
+    throw new HttpsError('internal', 'A OpenAI devolveu uma resposta que não deu pra entender. Tente novamente.');
+  }
+
+  const catalogNamesLower = new Set(catalogNames.map((n) => n.toLowerCase()));
+  const servicosRecomendados = Array.isArray(parsed.servicosRecomendados)
+    ? parsed.servicosRecomendados.filter((s) => typeof s === 'string' && catalogNamesLower.has(s.toLowerCase()))
+    : [];
+
+  return {
+    perguntasDiagnostico: Array.isArray(parsed.perguntasDiagnostico) ? parsed.perguntasDiagnostico.filter((p) => typeof p === 'string') : [],
+    servicosRecomendados,
+    mensagemAbordagem: typeof parsed.mensagemAbordagem === 'string' ? parsed.mensagemAbordagem : '',
+  };
+});

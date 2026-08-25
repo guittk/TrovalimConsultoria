@@ -3,12 +3,14 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Functions, httpsCallable } from 'firebase/functions';
 import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { LeadsService, LEAD_STAGES } from '../../core/leads.service';
 import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
-import { Lead, LeadStage } from '../../core/models';
+import { FIREBASE_FUNCTIONS } from '../../core/firebase.providers';
+import { Lead, LeadStage, ProspectSuggestion } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
@@ -23,6 +25,7 @@ interface FormState {
   diagnostico: string;
   escopo: string;
   condicoes: string;
+  mensagemAbordagem: string;
   stage: LeadStage;
   lostReason: string;
 }
@@ -38,6 +41,7 @@ function emptyForm(): FormState {
     diagnostico: '',
     escopo: '',
     condicoes: '',
+    mensagemAbordagem: '',
     stage: 'novo',
     lostReason: '',
   };
@@ -58,6 +62,7 @@ export class AdminProspeccaoComponent {
   private readonly confirmSvc = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -168,6 +173,54 @@ export class AdminProspeccaoComponent {
     this.showCalc.set(false);
   }
 
+  /* ── BRAINSTORM COM IA ── */
+  readonly suggesting = signal(false);
+  readonly suggestErr = signal('');
+  readonly suggestion = signal<ProspectSuggestion | null>(null);
+
+  async suggestApproach(): Promise<void> {
+    const f = this.form();
+    if (!f.dor.trim()) {
+      this.suggestErr.set('Preencha a Dor Declarada / Contexto antes de pedir sugestão.');
+      return;
+    }
+    this.suggesting.set(true);
+    this.suggestErr.set('');
+    this.suggestion.set(null);
+    try {
+      const suggestProspectApproach = httpsCallable<{ name: string; dor: string }, ProspectSuggestion>(
+        this.functions,
+        'suggestProspectApproach',
+      );
+      const result = await suggestProspectApproach({ name: f.name.trim() || 'este lead', dor: f.dor.trim() });
+      this.suggestion.set(result.data);
+    } catch (e) {
+      const err = e as { message?: string };
+      this.suggestErr.set(err.message || 'Erro ao pedir sugestão. Tente novamente.');
+    } finally {
+      this.suggesting.set(false);
+    }
+  }
+
+  /** Preenche só o que está vazio — nunca sobrescreve o que já foi digitado à mão. */
+  applySuggestedQuestions(): void {
+    const s = this.suggestion();
+    if (!s || this.form().diagnostico.trim()) return;
+    this.updateForm('diagnostico', s.perguntasDiagnostico.map((p) => `• ${p}`).join('\n'));
+  }
+
+  applySuggestedServices(): void {
+    const s = this.suggestion();
+    if (!s || this.form().escopo.trim()) return;
+    this.updateForm('escopo', s.servicosRecomendados.join(', '));
+  }
+
+  applySuggestedMessage(): void {
+    const s = this.suggestion();
+    if (!s || this.form().mensagemAbordagem.trim()) return;
+    this.updateForm('mensagemAbordagem', s.mensagemAbordagem);
+  }
+
   openCreate(): void {
     this.editingLead.set(null);
     this.form.set(emptyForm());
@@ -175,6 +228,8 @@ export class AdminProspeccaoComponent {
     this.wonResult.set(null);
     this.showCalc.set(false);
     this.calcQty.set({});
+    this.suggestion.set(null);
+    this.suggestErr.set('');
     this.modalOpen.set(true);
   }
 
@@ -190,6 +245,7 @@ export class AdminProspeccaoComponent {
       diagnostico: lead.diagnostico || '',
       escopo: lead.escopo || '',
       condicoes: lead.condicoes || '',
+      mensagemAbordagem: lead.mensagemAbordagem || '',
       stage: lead.stage,
       lostReason: lead.lostReason || '',
     });
@@ -197,6 +253,8 @@ export class AdminProspeccaoComponent {
     this.wonResult.set(lead.empresaId && lead.projectId ? { empresaId: lead.empresaId, projectId: lead.projectId } : null);
     this.showCalc.set(false);
     this.calcQty.set({});
+    this.suggestion.set(null);
+    this.suggestErr.set('');
     this.modalOpen.set(true);
   }
 
@@ -231,6 +289,7 @@ export class AdminProspeccaoComponent {
         diagnostico: f.diagnostico.trim(),
         escopo: f.escopo.trim(),
         condicoes: f.condicoes.trim(),
+        mensagemAbordagem: f.mensagemAbordagem.trim(),
         stage: f.stage,
         lostReason: f.stage === 'perdido' ? f.lostReason.trim() : '',
       };

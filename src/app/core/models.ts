@@ -256,6 +256,8 @@ export interface Lead {
   diagnostico?: string;
   escopo?: string;
   condicoes?: string;
+  /** Rascunho de mensagem pra abordar o lead — sugerido pelo brainstorm de IA, editável antes de usar de verdade. */
+  mensagemAbordagem?: string;
   lostReason?: string;
   /** Preenchidos só quando o lead vira Empresa + Projeto (estágio "ganho"). */
   empresaId?: string | null;
@@ -328,4 +330,20 @@ export interface PushToken {
 /** /settings/notifications — chave pública do Web Push, colada uma vez no console do Firebase. */
 export interface NotificationSettings {
   vapidKey: string;
+}
+
+/**
+ * /settings/openai — a chave é SEGREDO (ao contrário da VAPID, que é
+ * pública), então a regra do Firestore restringe leitura e escrita a
+ * owner, e o valor nunca é lido pelo cliente fora da tela de
+ * Configurações: só a Cloud Function usa a chave de verdade, via Admin SDK.
+ */
+export interface OpenAiSettings {
+  apiKey: string;
+}
+
+export interface ProspectSuggestion {
+  perguntasDiagnostico: string[];
+  servicosRecomendados: string[];
+  mensagemAbordagem: string;
 }

@@ -123,7 +123,43 @@
     <div class="form-group">
       <label class="form-label">Dor Declarada / Contexto</label>
       <textarea class="form-textarea" rows="2" placeholder="Por que essa empresa/pessoa procurou a Trovalim…" [ngModel]="form().dor" (ngModelChange)="updateForm('dor', $event)"></textarea>
+      <div style="margin-top:.5rem">
+        <button type="button" class="btn btn-outline btn-sm" [disabled]="suggesting()" (click)="suggestApproach()">{{ suggesting() ? 'Pensando…' : '✨ Sugerir com IA' }}</button>
+      </div>
+      @if (suggestErr()) { <p style="font-size:.78rem;color:#DC2626;margin-top:.5rem">{{ suggestErr() }}</p> }
     </div>
+
+    @if (suggestion(); as s) {
+      <div class="card" style="background:var(--bg);padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:.78rem;font-weight:600;color:var(--wine);margin-bottom:.6rem">Sugestão da IA</div>
+
+        @if (s.perguntasDiagnostico.length) {
+          <div style="margin-bottom:.85rem">
+            <div style="font-size:.75rem;font-weight:600;margin-bottom:.3rem">Perguntas de diagnóstico</div>
+            <ul style="margin:0 0 .5rem 1.1rem;font-size:.82rem">
+              @for (p of s.perguntasDiagnostico; track p) { <li>{{ p }}</li> }
+            </ul>
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!form().diagnostico.trim()" (click)="applySuggestedQuestions()">{{ form().diagnostico.trim() ? 'Diagnóstico já preenchido' : 'Usar no Diagnóstico' }}</button>
+          </div>
+        }
+
+        @if (s.servicosRecomendados.length) {
+          <div style="margin-bottom:.85rem">
+            <div style="font-size:.75rem;font-weight:600;margin-bottom:.3rem">Serviços recomendados</div>
+            <p style="font-size:.82rem;margin-bottom:.5rem">{{ s.servicosRecomendados.join(', ') }}</p>
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!form().escopo.trim()" (click)="applySuggestedServices()">{{ form().escopo.trim() ? 'Escopo já preenchido' : 'Usar no Escopo' }}</button>
+          </div>
+        }
+
+        @if (s.mensagemAbordagem) {
+          <div>
+            <div style="font-size:.75rem;font-weight:600;margin-bottom:.3rem">Rascunho de mensagem</div>
+            <p style="font-size:.82rem;white-space:pre-wrap;margin-bottom:.5rem">{{ s.mensagemAbordagem }}</p>
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!form().mensagemAbordagem.trim()" (click)="applySuggestedMessage()">{{ form().mensagemAbordagem.trim() ? 'Mensagem já preenchida' : 'Usar como Mensagem de Abordagem' }}</button>
+          </div>
+        }
+      </div>
+    }
 
     <div class="form-group">
       <label class="form-label">Diagnóstico</label>
@@ -138,6 +174,11 @@
     <div class="form-group">
       <label class="form-label">Condições Comerciais</label>
       <textarea class="form-textarea" rows="2" placeholder="Prazo, parcelamento, garantia…" [ngModel]="form().condicoes" (ngModelChange)="updateForm('condicoes', $event)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mensagem de Abordagem</label>
+      <textarea class="form-textarea" rows="3" placeholder="Rascunho da mensagem pra esse lead…" [ngModel]="form().mensagemAbordagem" (ngModelChange)="updateForm('mensagemAbordagem', $event)"></textarea>
     </div>
 
     <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:.75rem">
