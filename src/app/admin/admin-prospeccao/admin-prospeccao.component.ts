@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { LeadsService, LEAD_STAGES } from '../../core/leads.service';
+import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
 import { Lead, LeadStage } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
@@ -51,6 +52,7 @@ function emptyForm(): FormState {
 export class AdminProspeccaoComponent {
   private readonly auth = inject(AuthService);
   private readonly leadsSvc = inject(LeadsService);
+  private readonly pricingSettingsSvc = inject(PricingSettingsService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly confirmSvc = inject(ConfirmService);
@@ -138,11 +140,41 @@ export class AdminProspeccaoComponent {
   readonly modalErr = signal('');
   readonly wonResult = signal<{ empresaId: string; projectId: string } | null>(null);
 
+  /* ── CALCULADORA DE INVESTIMENTO ── */
+  readonly pricingUnits = PRICING_UNITS;
+  readonly pricingSettings = toSignal(this.pricingSettingsSvc.get$(), { initialValue: DEFAULT_PRICING_SETTINGS });
+  readonly showCalc = signal(false);
+  /** key do item de catálogo → quantidade escolhida (0 = fora da conta). */
+  readonly calcQty = signal<Record<string, number>>({});
+
+  calcQtyFor(key: string): number {
+    return this.calcQty()[key] || 0;
+  }
+
+  setCalcQty(key: string, qty: number): void {
+    this.calcQty.update((m) => ({ ...m, [key]: Math.max(0, qty) }));
+  }
+
+  readonly calcTotal = computed(() =>
+    this.pricingSettings().items.reduce((sum, item) => sum + item.baseValue * this.calcQtyFor(item.key), 0),
+  );
+
+  toggleCalc(): void {
+    this.showCalc.update((v) => !v);
+  }
+
+  useCalcTotal(): void {
+    this.updateForm('valorEstimado', String(this.calcTotal()));
+    this.showCalc.set(false);
+  }
+
   openCreate(): void {
     this.editingLead.set(null);
     this.form.set(emptyForm());
     this.modalErr.set('');
     this.wonResult.set(null);
+    this.showCalc.set(false);
+    this.calcQty.set({});
     this.modalOpen.set(true);
   }
 
@@ -163,6 +195,8 @@ export class AdminProspeccaoComponent {
     });
     this.modalErr.set('');
     this.wonResult.set(lead.empresaId && lead.projectId ? { empresaId: lead.empresaId, projectId: lead.projectId } : null);
+    this.showCalc.set(false);
+    this.calcQty.set({});
     this.modalOpen.set(true);
   }
 

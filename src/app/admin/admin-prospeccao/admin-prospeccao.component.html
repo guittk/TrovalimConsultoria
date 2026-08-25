@@ -84,9 +84,34 @@
       </div>
       <div class="form-group">
         <label class="form-label">Valor Estimado (R$)</label>
-        <input type="number" min="0" step="1" class="form-input" placeholder="0" [ngModel]="form().valorEstimado" (ngModelChange)="updateForm('valorEstimado', $event)">
+        <div style="display:flex;gap:.5rem">
+          <input type="number" min="0" step="1" class="form-input" placeholder="0" [ngModel]="form().valorEstimado" (ngModelChange)="updateForm('valorEstimado', $event)">
+          <button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0" (click)="toggleCalc()">{{ showCalc() ? 'Fechar' : 'Calcular' }}</button>
+        </div>
       </div>
     </div>
+
+    @if (showCalc()) {
+      <div class="card" style="background:var(--bg);padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:.78rem;font-weight:600;color:var(--wine);margin-bottom:.6rem">Calculadora de Investimento</div>
+        @if (!pricingSettings().items.length) {
+          <div style="font-size:.8rem;color:var(--muted)">Nenhum serviço no catálogo ainda — cadastre em Configurações → Catálogo de Preços.</div>
+        } @else {
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            @for (item of pricingSettings().items; track item.key) {
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <span style="flex:1;font-size:.82rem">{{ item.name }} <span style="color:var(--muted)">({{ formatCurrency(item.baseValue) }} / {{ item.unit }})</span></span>
+                <input type="number" min="0" step="1" class="form-input" style="width:70px;flex-shrink:0" [ngModel]="calcQtyFor(item.key)" (ngModelChange)="setCalcQty(item.key, $event)">
+              </div>
+            }
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">
+            <span style="font-weight:600;font-size:.85rem">Total: {{ formatCurrency(calcTotal()) }}</span>
+            <button type="button" class="btn btn-primary btn-sm" (click)="useCalcTotal()">Usar este valor</button>
+          </div>
+        }
+      </div>
+    }
 
     @if (form().stage === 'perdido') {
       <div class="form-group">

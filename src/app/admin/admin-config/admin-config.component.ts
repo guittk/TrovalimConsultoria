@@ -11,7 +11,8 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { Empresa, FileTypeLimit, ProjectStatusOption } from '../../core/models';
+import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
+import { Empresa, FileTypeLimit, PricingItem, ProjectStatusOption } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
 
@@ -38,6 +39,7 @@ export class AdminConfigComponent {
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
+  private readonly pricingSettingsSvc = inject(PricingSettingsService);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -80,6 +82,14 @@ export class AdminConfigComponent {
       if (s && !this.statusSyncedOnce) {
         this.statusSyncedOnce = true;
         this.statusForm.set(s.statuses.map((st) => ({ ...st })));
+      }
+    });
+
+    effect(() => {
+      const s = this.pricingSettingsSig();
+      if (s && !this.pricingSyncedOnce) {
+        this.pricingSyncedOnce = true;
+        this.pricingForm.set(s.items.map((it) => ({ ...it })));
       }
     });
   }
@@ -268,6 +278,53 @@ export class AdminConfigComponent {
       this.statusSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
       this.statusSaving.set(false);
+    }
+  }
+
+  /* ── CATÁLOGO DE PREÇOS ── */
+  private readonly pricingSettingsSig = toSignal(this.pricingSettingsSvc.get$(), {
+    initialValue: DEFAULT_PRICING_SETTINGS,
+  });
+  private pricingSyncedOnce = false;
+
+  readonly pricingUnits = PRICING_UNITS;
+  readonly pricingForm = signal<PricingItem[]>([]);
+  readonly pricingSavingOk = signal(false);
+  readonly pricingSavingErr = signal('');
+  readonly pricingSaving = signal(false);
+
+  unitLabel(unit: PricingItem['unit']): string {
+    return this.pricingUnits.find((u) => u.key === unit)?.label || unit;
+  }
+
+  addPricingItem(): void {
+    this.pricingForm.update((rows) => [
+      ...rows,
+      { key: `item-${Date.now()}`, name: 'Novo serviço', unit: 'projeto', baseValue: 0 },
+    ]);
+  }
+
+  removePricingItem(index: number): void {
+    this.pricingForm.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  updatePricingItem<K extends keyof PricingItem>(index: number, field: K, value: PricingItem[K]): void {
+    this.pricingForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  }
+
+  async savePricingSettings(): Promise<void> {
+    this.pricingSavingOk.set(false);
+    this.pricingSavingErr.set('');
+    this.pricingSaving.set(true);
+    try {
+      await this.pricingSettingsSvc.update(this.pricingForm());
+      this.pricingSavingOk.set(true);
+      setTimeout(() => this.pricingSavingOk.set(false), 3000);
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      this.pricingSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+    } finally {
+      this.pricingSaving.set(false);
     }
   }
 }

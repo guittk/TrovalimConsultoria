@@ -89,6 +89,21 @@ export interface ProjectStatusSettings {
   statuses: ProjectStatusOption[];
 }
 
+export type PricingUnit = 'vaga' | 'participante' | 'encontro' | 'projeto' | 'hora';
+
+export interface PricingItem {
+  key: string;
+  name: string;
+  unit: PricingUnit;
+  /** Valor base em reais, por unidade (por vaga, por participante, por encontro…). */
+  baseValue: number;
+}
+
+/** Catálogo editável em Configurações — sem deploy. Usado pela calculadora dentro da Prospecção. */
+export interface PricingSettings {
+  items: PricingItem[];
+}
+
 export type TimelineMode = 'data' | 'ordem';
 
 export interface TimelineStep {

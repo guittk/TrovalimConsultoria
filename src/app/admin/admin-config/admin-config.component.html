@@ -78,6 +78,65 @@
     }
   </div>
 
+  <!-- ── CATÁLOGO DE PREÇOS ── -->
+  <div class="card" style="margin-top:2rem">
+    <div class="card-title"><span class="card-title-bar"></span>Catálogo de Preços</div>
+
+    @if (pricingSavingOk()) { <div class="alert alert-success show">Catálogo salvo com sucesso.</div> }
+    @if (pricingSavingErr()) { <div class="alert alert-error show">{{ pricingSavingErr() }}</div> }
+
+    @if (!isOwner()) {
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Somente o Proprietário pode alterar esta configuração.</p>
+    }
+
+    <div class="form-help" style="margin-bottom:.85rem">
+      Serviços com valor de referência, usados pela calculadora de investimento dentro de cada prospecção. O valor é uma estimativa — o combinado de verdade fica registrado na própria prospecção.
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Serviço</th>
+            <th style="width:160px">Cobrança</th>
+            <th style="width:140px">Valor Base (R$)</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of pricingForm(); track item.key; let i = $index) {
+            <tr>
+              <td data-label="Serviço">
+                <input type="text" class="form-input" [ngModel]="item.name" (ngModelChange)="updatePricingItem(i, 'name', $event)" [disabled]="!isOwner()">
+              </td>
+              <td data-label="Cobrança">
+                <select class="form-select" [ngModel]="item.unit" (ngModelChange)="updatePricingItem(i, 'unit', $event)" [disabled]="!isOwner()">
+                  @for (u of pricingUnits; track u.key) { <option [value]="u.key">{{ u.label }}</option> }
+                </select>
+              </td>
+              <td data-label="Valor Base (R$)">
+                <input type="number" min="0" step="1" class="form-input" [ngModel]="item.baseValue" (ngModelChange)="updatePricingItem(i, 'baseValue', $event)" [disabled]="!isOwner()">
+              </td>
+              @if (isOwner()) {
+                <td><button class="btn btn-danger-ghost btn-sm" (click)="removePricingItem(i)">Excluir</button></td>
+              }
+            </tr>
+          }
+          @if (!pricingForm().length) {
+            <tr><td colspan="4" style="color:var(--muted);font-size:.82rem">Nenhum serviço cadastrado ainda.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (isOwner()) {
+      <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" (click)="addPricingItem()">+ Adicionar serviço</button>
+        <button class="btn btn-primary btn-sm" [disabled]="pricingSaving()" (click)="savePricingSettings()">{{ pricingSaving() ? 'Salvando…' : 'Salvar Catálogo' }}</button>
+      </div>
+    }
+  </div>
+
   <!-- ── ARQUIVOS E ARMAZENAMENTO ── -->
   <div class="card" style="margin-top:2rem">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
