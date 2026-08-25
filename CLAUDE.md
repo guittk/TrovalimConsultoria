@@ -5,19 +5,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm start                  # ng serve, dev server at localhost:4200 (uses environment.ts -> geovana-trovalim-dev)
+npm start                  # ng serve, dev server at localhost:4200 (uses environment.ts + local Firebase Emulator Suite)
+npm run emulators             # firebase emulators:start (Auth/Firestore/Storage/Functions) — run alongside `npm start`
 npm run build               # production build -> dist/trovalim/browser
 npm run watch                # build --watch --configuration development
 npm test                   # karma/jasmine unit tests (Chrome launcher)
-npm run deploy               # ng build --configuration production && firebase deploy --project prod (PROD)
-npm run deploy:dev            # ng build --configuration development && firebase deploy --project dev (DEV)
+npm run deploy               # ng build --configuration production && firebase deploy --project prod (live)
+npm run deploy:preview          # ng build --configuration development && deploy to a Firebase Hosting preview channel on prod (temp URL, expires in 7d)
 ```
 
-Two separate Firebase projects, aliased in `.firebaserc`: `prod` → `geovana-trovalim-prod` (live), `dev` → `geovana-trovalim-dev` (for testing rules/changes safely before they hit prod), plus `legacy` → `ellen-cavalcanti` (old project, kept as a read-only backup after the 2026-08 migration — no longer deployed to). Angular's `environment.ts` (dev) and `environment.prod.ts` (prod) hold each project's `firebaseConfig`, swapped via `fileReplacements` in `angular.json` when building with `--configuration production`. Hosting site is `trovalim` on the old project; the new projects serve on their default `*.web.app` domain (no custom domain configured yet). Deploy targets can be scoped:
+**Single live Firebase project** (`geovana-trovalim-prod`, aliased as `prod`/`default` in `.firebaserc`), plus `legacy` → `ellen-cavalcanti` (old project, kept as a read-only backup after the 2026-08 migration — no longer deployed to). There used to be a second cloud project (`geovana-trovalim-dev`) for testing changes safely; that was replaced by the local **Firebase Emulator Suite** (`npm run emulators`, config in `firebase.json`'s `emulators` block) for day-to-day dev, and by **Hosting preview channels** (`npm run deploy:preview`) for sharing a live-URL preview before merging to prod. Both `environment.ts` and `environment.prod.ts` now point at the same `geovana-trovalim-prod` Firebase config — `environment.ts` additionally sets `useEmulators: true`, which `firebase.providers.ts` only honors when running on `localhost`/`127.0.0.1`, so any deployed build (including preview channels) always talks to the real prod backend. **Important:** a preview-channel deploy is hosting-only isolation — Firestore/Storage/Functions behind it are the real prod data, since it's the same project. Don't use preview channels to test destructive or data-mutating changes; use the emulator for that. Hosting site is `trovalim` on the old legacy project; the current project serves on its default `*.web.app` domain (no custom domain configured yet). Deploy targets can be scoped:
 
 ```bash
 firebase deploy --only hosting --project prod
-firebase deploy --only firestore:rules --project dev   # test a rules change in DEV first
+firebase deploy --only firestore:rules --project prod
 firebase deploy --only functions --project prod   # requires Blaze plan
 ```
 
@@ -63,3 +64,11 @@ Storage usage is maintained as an **incremental counter** (`increment()` on uplo
 - **Best-effort Cloud Function calls**: client code that depends on a Cloud Function (e.g. `AccountsService.deleteAccount` calling `deleteAccountAuth`) treats the function call as best-effort — Firestore state changes proceed even if the function call fails, since Cloud Functions may not be deployed/billable in every environment. Follow this pattern for new Cloud Functions rather than making the client hard-depend on them.
 - **Branding propagation**: a company's `branding` (color/logo) is looked up live and threaded through to whatever it's displayed on (project header, portal, message bubbles) rather than duplicated — see `AuthService.withCompanyData$` and the `ownerAccount`/`empresa` signals in the admin project/client components.
 - **Company/project deletion cascades**: deleting an `Empresa` or a `Project` is destructive and cascades (deletes Storage files, subcollections, etc.) — see `ProjectsService.deleteProject` and the delete flow in `admin-client.component.ts`, which lets the operator choose per-linked-item whether to delete or just unlink before removing the parent.
+
+## Known issues / pitfalls
+
+- **`AccountsService.createAccount()` leaks into real prod Auth even when testing against the emulator.** It opens a *secondary* Firebase app (`initializeApp(environment.firebase, 'Secondary-...')`) so creating a new account doesn't swap out the admin's own session — but that secondary app's `Auth` instance is built with a bare `getAuth(secondaryApp)` and never gets `connectAuthEmulator(...)` called on it, unlike the primary app's `FIREBASE_AUTH` token in `firebase.providers.ts`. Net effect: clicking "Nova Conta" while running `npm start` + `npm run emulators` creates the Firestore `/users` doc in the emulator (fine), but calls `createUserWithEmailAndPassword` against the **real** `geovana-trovalim-prod` Authentication — a real login gets created in production every time this is tested locally.
+  - Confirmed while testing on 2026-08-25: created a `mentorado@trovalim.local` test account through the UI against the emulator, and it could not be found when logging into the emulator afterward — consistent with the account having actually landed in real Auth instead.
+  - **Action needed, not yet done**: check the [Firebase Console → Authentication](https://console.firebase.google.com/project/geovana-trovalim-prod/authentication/users) for stray test accounts (at minimum `mentorado@trovalim.local`) and delete them by hand.
+  - **Fix, not yet applied**: the secondary app's `Auth` instance needs the same `shouldUseEmulators()` / `connectAuthEmulator(...)` treatment as the primary one in `firebase.providers.ts` — pull that emulator-detection logic into a small shared helper both call.
+  - This same secondary-app pattern is also used for anything else in `accounts.service.ts` that spins up a throwaway Firebase app — audit for the same gap before relying on emulator isolation for those paths too.

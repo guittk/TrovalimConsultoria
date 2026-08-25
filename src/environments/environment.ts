@@ -1,11 +1,17 @@
+// Same Firebase project as environment.prod.ts (geovana-trovalim-prod) — local
+// dev no longer talks to a separate cloud "dev" project. `useEmulators` routes
+// Auth/Firestore/Storage/Functions calls to the local Emulator Suite instead
+// (see firebase.providers.ts), which only kicks in when running on localhost,
+// so a deployed build always hits the real prod backend regardless of this flag.
 export const environment = {
   production: false,
+  useEmulators: true,
   firebase: {
-    apiKey: 'AIzaSyCcRJFYF_UO5NGdm-g693yJxGeMHlKBOHQ',
-    authDomain: 'geovana-trovalim-dev.firebaseapp.com',
-    projectId: 'geovana-trovalim-dev',
-    storageBucket: 'geovana-trovalim-dev.firebasestorage.app',
-    messagingSenderId: '819555443666',
-    appId: '1:819555443666:web:2e8d8f9cfb9cdc765f9e0b',
+    apiKey: 'AIzaSyCYfcrQ_XqkFodiphe3NCCCylOe6Y8torg',
+    authDomain: 'geovana-trovalim-prod.firebaseapp.com',
+    projectId: 'geovana-trovalim-prod',
+    storageBucket: 'geovana-trovalim-prod.firebasestorage.app',
+    messagingSenderId: '906128365375',
+    appId: '1:906128365375:web:b4b92616e245cd1158658a',
   },
 };

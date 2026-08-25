@@ -1,5 +1,6 @@
 .firebase/
 node_modules/
+emulator-data/
 *.json.local
 service-account*.json
 *-adminsdk-*.json
