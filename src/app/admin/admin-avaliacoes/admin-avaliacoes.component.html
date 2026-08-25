@@ -1,0 +1,183 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="avaliacoes" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Avaliações</h1>
+    <p class="page-subtitle">Modelos de questionário reutilizáveis, aplicados a candidato ou mentorado, com pontuação registrada no histórico</p>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:1fr 1.3fr;align-items:start">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div class="card-title" style="margin:0"><span class="card-title-bar"></span>Modelos</div>
+        <button class="btn btn-primary btn-sm" (click)="openCreateTemplate()">Novo Modelo</button>
+      </div>
+
+      @if (!templates().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum modelo de avaliação criado ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (t of templates(); track t.id) {
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;padding:.75rem .9rem;background:var(--bg);border:1px solid var(--border)">
+              <div style="min-width:0">
+                <div style="font-weight:600;font-size:.88rem">{{ t.name }}</div>
+                @if (t.description) { <div style="font-size:.78rem;color:var(--muted);margin-top:.15rem">{{ t.description }}</div> }
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">{{ t.questions.length }} pergunta(s)</div>
+              </div>
+              <div style="display:flex;gap:.4rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" (click)="openEditTemplate(t)">Editar</button>
+                <button class="btn btn-danger-ghost btn-sm" (click)="deleteTemplate(t)">Excluir</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div class="card-title" style="margin:0"><span class="card-title-bar"></span>Histórico de Aplicações</div>
+        <button class="btn btn-primary btn-sm" [disabled]="!templates().length" (click)="openApplyModal()">Aplicar Avaliação</button>
+      </div>
+
+      @if (!applied().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhuma avaliação aplicada ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (a of applied(); track a.id) {
+            <div style="border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.75rem .9rem;cursor:pointer" (click)="toggleExpand(a.id)">
+                <div style="min-width:0">
+                  <div style="font-weight:600;font-size:.88rem">{{ a.templateName }} — {{ a.targetName }}</div>
+                  <div style="font-size:.75rem;color:var(--muted);margin-top:.15rem">
+                    {{ a.targetType === 'candidate' ? 'Candidato' : 'Mentorado' }} · {{ toDate(a.createdAt) | date:'dd/MM/yyyy' }} · aplicado por {{ a.appliedByName }}
+                  </div>
+                </div>
+                @if (a.maxScore) {
+                  <span style="font-family:var(--serif);font-size:1.1rem;color:var(--wine);flex-shrink:0">{{ a.totalScore }}/{{ a.maxScore }}</span>
+                }
+              </div>
+              @if (expandedId() === a.id) {
+                <div style="padding:0 .9rem .9rem;display:flex;flex-direction:column;gap:.6rem">
+                  @for (ans of a.answers; track ans.questionId) {
+                    <div style="font-size:.82rem">
+                      <div style="color:var(--muted)">{{ ans.questionText }}</div>
+                      <div style="font-weight:600;margin-top:.1rem">{{ ans.type === 'escala' ? ans.value + '/5' : ans.value }}</div>
+                    </div>
+                  }
+                  <button class="btn btn-danger-ghost btn-sm" style="align-self:flex-start" (click)="deleteApplied(a)">Excluir registro</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE MODELO -->
+<div class="modal-backdrop" [class.show]="templateModalOpen()" (click)="$event.target === $event.currentTarget && closeTemplateModal()">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" (click)="closeTemplateModal()">✕</button>
+    <div class="modal-title">{{ editingTemplate() ? 'Editar Modelo' : 'Novo Modelo de Avaliação' }}</div>
+
+    @if (templateErr()) { <div class="alert alert-error show">{{ templateErr() }}</div> }
+
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input type="text" class="form-input" placeholder="Ex: Perfil Comportamental" [ngModel]="templateForm().name" (ngModelChange)="updateTemplateName($event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descrição (opcional)</label>
+      <textarea class="form-textarea" rows="2" placeholder="Quando usar este modelo…" [ngModel]="templateForm().description" (ngModelChange)="updateTemplateDescription($event)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Perguntas</label>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        @for (q of templateForm().questions; track q.id) {
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" class="form-input" [placeholder]="q.type === 'escala' ? 'Pergunta de escala (1 a 5)…' : 'Pergunta de resposta livre…'" [ngModel]="q.text" (ngModelChange)="updateQuestionText(q.id, $event)">
+            <span class="badge" style="flex-shrink:0">{{ q.type === 'escala' ? 'Escala' : 'Texto' }}</span>
+            <button class="btn btn-outline btn-sm" style="flex-shrink:0" (click)="removeQuestion(q.id)">✕</button>
+          </div>
+        }
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.6rem">
+        <button class="btn btn-outline btn-sm" (click)="addQuestion('escala')">+ Pergunta de Escala</button>
+        <button class="btn btn-outline btn-sm" (click)="addQuestion('texto')">+ Pergunta de Texto</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeTemplateModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="savingTemplate()" (click)="saveTemplate()">{{ savingTemplate() ? 'Salvando…' : 'Salvar Modelo' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE APLICAÇÃO -->
+<div class="modal-backdrop" [class.show]="applyModalOpen()" (click)="$event.target === $event.currentTarget && closeApplyModal()">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" (click)="closeApplyModal()">✕</button>
+    <div class="modal-title">Aplicar Avaliação</div>
+
+    @if (applyErr()) { <div class="alert alert-error show">{{ applyErr() }}</div> }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quem vai ser avaliado</label>
+        <select class="form-select" [ngModel]="applyTargetType()" (ngModelChange)="onApplyTargetTypeChange($event)">
+          <option value="candidate">Candidato</option>
+          <option value="mentorado">Mentorado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pessoa</label>
+        <select class="form-select" [ngModel]="applyTargetId()" (ngModelChange)="applyTargetId.set($event)">
+          <option value="">— Escolha —</option>
+          @for (t of applyTargets(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Modelo de Avaliação</label>
+      <select class="form-select" [ngModel]="applyTemplateId()" (ngModelChange)="onApplyTemplateChange($event)">
+        <option value="">— Escolha —</option>
+        @for (t of templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+      </select>
+    </div>
+
+    @if (applySelectedTemplate(); as tpl) {
+      <div style="display:flex;flex-direction:column;gap:1rem;margin-top:.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+        @for (q of tpl.questions; track q.id) {
+          <div class="form-group" style="margin:0">
+            <label class="form-label">{{ q.text }}</label>
+            @if (q.type === 'escala') {
+              <select class="form-select" (change)="setAnswer(q.id, +$any($event.target).value)">
+                <option value="">— Nota (1 a 5) —</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            } @else {
+              <textarea class="form-textarea" rows="2" (change)="setAnswer(q.id, $any($event.target).value)"></textarea>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeApplyModal()">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="applyingAssessment() || !applySelectedTemplate()" (click)="submitApply()">{{ applyingAssessment() ? 'Registrando…' : 'Registrar Avaliação' }}</button>
+    </div>
+  </div>
+</div>

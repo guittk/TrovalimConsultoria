@@ -67,6 +67,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-lgpd/admin-lgpd.component').then((m) => m.AdminLgpdComponent),
   },
   {
+    path: 'admin/avaliacoes',
+    canActivate: [staffGuard, staffTabGuard('avaliacoes')],
+    loadComponent: () => import('./admin/admin-avaliacoes/admin-avaliacoes.component').then((m) => m.AdminAvaliacoesComponent),
+  },
+  {
     path: 'admin',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-home/admin-home.component').then((m) => m.AdminHomeComponent),

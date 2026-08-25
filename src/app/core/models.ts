@@ -455,6 +455,55 @@ export interface CareerTrack {
   updatedAt?: unknown;
 }
 
+export type AssessmentQuestionType = 'escala' | 'texto';
+
+export interface AssessmentQuestion {
+  id: string;
+  text: string;
+  /** 'escala' = 1 a 5, soma na pontuação. 'texto' = resposta livre, não pontua. */
+  type: AssessmentQuestionType;
+}
+
+/** Modelo reutilizável de avaliação (ex: "Perfil Comportamental", "Teste Técnico Júnior") — a equipe monta uma vez, aplica quantas vezes quiser. */
+export interface AssessmentTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  questions: AssessmentQuestion[];
+  createdAt?: unknown;
+}
+
+export type AssessmentTargetType = 'candidate' | 'mentorado';
+
+export interface AssessmentAnswer {
+  questionId: string;
+  questionText: string;
+  type: AssessmentQuestionType;
+  /** number para 'escala' (1-5), string para 'texto'. */
+  value: number | string;
+}
+
+/**
+ * Uma aplicação de um AssessmentTemplate a uma pessoa específica — nunca
+ * editado depois de criado (corrigir = aplicar de novo), pra manter o
+ * histórico fiel ao que foi respondido naquele momento.
+ */
+export interface AppliedAssessment {
+  id: string;
+  templateId: string;
+  templateName: string;
+  targetType: AssessmentTargetType;
+  targetId: string;
+  targetName: string;
+  answers: AssessmentAnswer[];
+  /** Soma das respostas 'escala' (1-5 cada). */
+  totalScore: number;
+  /** questions do tipo 'escala' × 5 — teto possível daquele modelo. */
+  maxScore: number;
+  appliedByName: string;
+  createdAt?: unknown;
+}
+
 export type AuditAction =
   | 'candidate.delete'
   | 'candidate.retention-extend'

@@ -280,6 +280,17 @@ service cloud.firestore {
       );
     }
 
+    // Avaliações aplicadas: modelo (questionário reutilizável) e as
+    // aplicações em si (candidato ou mentorado). Staff-only nos dois — o
+    // candidato nunca tem conta na plataforma, e o mentorado só vê o
+    // próprio PDI (/mentorships/{uid}), nunca a coleção de avaliações.
+    match /assessmentTemplates/{templateId} {
+      allow read, write: if isStaff();
+    }
+    match /assessments/{assessmentId} {
+      allow read, write: if isStaff();
+    }
+
     // Central de LGPD: registro append-only de ação sensível sobre dado de
     // candidato (excluir por retenção vencida, estender retenção, corrigir
     // consentimento). Sem update/delete pra ninguém — nem owner — porque um
