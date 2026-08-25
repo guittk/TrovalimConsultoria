@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evolução da Plataforma Trovalim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ground:#FAF7F2; --surface:#FFFFFF; --surface-2:#F4EEE4;
+  --ink:#241B1D; --ink-soft:#463B3A; --muted:#7A6C68;
+  --border:#E5DACB; --border-strong:#D2C1AA;
+  --wine:#3D0B12; --wine-2:#5C1220; --on-wine:#F7F1E6;
+  --accent:#C9A96E; --accent-ink:#7C5817; --accent-soft:#F4EAD4;
+  --ok:#2F6B4F; --ok-soft:#E5EFE8;
+  --warn:#8E6210; --warn-soft:#F8EBD3;
+  --risk:#9B2A2A; --risk-soft:#F8E4E1;
+  --shadow:0 1px 2px rgba(61,11,18,.05), 0 8px 24px -16px rgba(61,11,18,.22);
+  --serif:"Playfair Display", Georgia, "Times New Roman", serif;
+  --sans:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#16100F; --surface:#1F1718; --surface-2:#271D1E;
+    --ink:#F2E9E1; --ink-soft:#D8CAC2; --muted:#A6968F;
+    --border:#382A2B; --border-strong:#4E3B3C;
+    --wine:#26080D; --wine-2:#3A0E16; --on-wine:#F3E9DC;
+    --accent:#D8BC88; --accent-ink:#E1C89B; --accent-soft:#2E2419;
+    --ok:#74C097; --ok-soft:#1B2C23;
+    --warn:#DDAB55; --warn-soft:#302512;
+    --risk:#E38079; --risk-soft:#331F1E;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#16100F; --surface:#1F1718; --surface-2:#271D1E;
+  --ink:#F2E9E1; --ink-soft:#D8CAC2; --muted:#A6968F;
+  --border:#382A2B; --border-strong:#4E3B3C;
+  --wine:#26080D; --wine-2:#3A0E16; --on-wine:#F3E9DC;
+  --accent:#D8BC88; --accent-ink:#E1C89B; --accent-soft:#2E2419;
+  --ok:#74C097; --ok-soft:#1B2C23;
+  --warn:#DDAB55; --warn-soft:#302512;
+  --risk:#E38079; --risk-soft:#331F1E;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%}
+a{color:var(--accent-ink); text-decoration:none; border-bottom:1px solid var(--accent)}
+a:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent-ink); outline-offset:3px; border-radius:2px}
+
+/* ---- faixa de abertura ---- */
+.masthead{background:var(--wine); color:var(--on-wine); border-bottom:3px solid var(--accent)}
+.masthead .wrap{padding-top:44px; padding-bottom:44px}
+.eyebrow{
+  font-family:var(--mono); font-size:.7rem; font-weight:500;
+  letter-spacing:.19em; text-transform:uppercase; color:var(--accent);
+}
+.masthead h1{
+  font-family:var(--serif); font-weight:600; line-height:1.08;
+  font-size:clamp(2.05rem,4.6vw,3.15rem); margin:.5rem 0 0; text-wrap:balance;
+  color:var(--on-wine);
+}
+.masthead .standfirst{
+  margin:.9rem 0 0; max-width:60ch; font-size:1.03rem;
+  color:color-mix(in srgb, var(--on-wine) 82%, transparent);
+}
+.masthead-meta{
+  display:flex; flex-wrap:wrap; gap:14px 34px; margin-top:26px;
+  padding-top:20px; border-top:1px solid rgba(201,169,110,.28);
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.03em;
+  color:color-mix(in srgb, var(--on-wine) 70%, transparent);
+}
+.masthead-meta b{
+  color:var(--accent); font-weight:500; display:block;
+  text-transform:uppercase; letter-spacing:.15em; font-size:.65rem; margin-bottom:3px;
+}
+
+/* ---- estrutura ---- */
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+.doc{display:grid; grid-template-columns:minmax(0,1fr); gap:0; padding:52px 0 90px}
+@media (min-width:1060px){
+  .doc{grid-template-columns:216px minmax(0,1fr); gap:56px}
+}
+.rail{display:none}
+@media (min-width:1060px){
+  .rail{display:block; position:sticky; top:28px; align-self:start; max-height:calc(100vh - 56px); overflow-y:auto}
+}
+.rail .rail-title{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:14px;
+}
+.rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; max-width:none}
+.rail li{margin:0}
+.rail a{
+  display:flex; gap:9px; padding:5px 0; border:0; font-size:.83rem;
+  color:var(--ink-soft); line-height:1.35;
+}
+.rail a:hover{color:var(--accent-ink)}
+.rail a span{font-family:var(--mono); font-size:.72rem; color:var(--muted); padding-top:1px}
+
+main{min-width:0}
+section{scroll-margin-top:24px}
+section + section{margin-top:64px; padding-top:56px; border-top:1px solid var(--border)}
+
+h2{
+  font-family:var(--serif); font-weight:600; font-size:1.72rem; line-height:1.2;
+  margin:0 0 10px; text-wrap:balance; color:var(--ink);
+}
+h2 .num{
+  font-family:var(--mono); font-size:.72rem; font-weight:500; color:var(--accent-ink);
+  letter-spacing:.14em; display:block; margin-bottom:9px;
+}
+h3{font-family:var(--sans); font-weight:600; font-size:1.06rem; margin:34px 0 8px; color:var(--ink)}
+h4{font-family:var(--sans); font-weight:600; font-size:.82rem; margin:20px 0 6px;
+   text-transform:uppercase; letter-spacing:.1em; color:var(--muted)}
+p,li{color:var(--ink-soft)}
+p{margin:0 0 14px; max-width:70ch}
+.lede{font-size:1.06rem; color:var(--ink); max-width:66ch}
+ul,ol{margin:0 0 16px; padding-left:22px; max-width:70ch}
+li{margin-bottom:7px}
+li::marker{color:var(--accent)}
+strong{color:var(--ink); font-weight:600}
+code{
+  font-family:var(--mono); font-size:.855em; background:var(--surface-2);
+  border:1px solid var(--border); border-radius:3px; padding:.05em .34em; color:var(--ink);
+  overflow-wrap:anywhere;
+}
+
+/* ---- cartao de feature ---- */
+.feature{
+  background:var(--surface); border:1px solid var(--border); border-radius:2px;
+  box-shadow:var(--shadow); margin:26px 0; overflow:hidden;
+}
+.feature .body{padding:22px 26px 8px}
+.feature .body > *:first-child{margin-top:0}
+.feature-head{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px;
+  padding:16px 26px; background:var(--surface-2); border-bottom:1px solid var(--border);
+}
+.feature-head h3{margin:0; font-size:1.14rem; flex:1 1 240px; min-width:0}
+.area{
+  font-family:var(--mono); font-size:.63rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent-ink); background:var(--accent-soft);
+  border:1px solid var(--border-strong); border-radius:2px; padding:3px 7px; white-space:nowrap;
+}
+.status{
+  font-family:var(--mono); font-size:.63rem; letter-spacing:.1em; text-transform:uppercase;
+  border-radius:2px; padding:3px 8px; white-space:nowrap; display:inline-flex; align-items:center; gap:5px;
+}
+.status::before{content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0}
+.status-done{color:var(--ok); background:var(--ok-soft); border:1px solid color-mix(in srgb, var(--ok) 40%, transparent)}
+.status-done::before{background:var(--ok)}
+.status-partial{color:var(--warn); background:var(--warn-soft); border:1px solid color-mix(in srgb, var(--warn) 40%, transparent)}
+.status-partial::before{background:var(--warn)}
+.status-pending{color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border-strong)}
+.status-pending::before{background:var(--border-strong)}
+.meta{
+  display:grid; gap:1px; background:var(--border); border-top:1px solid var(--border);
+  grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); margin:18px 0 0;
+}
+.meta div{background:var(--surface); padding:11px 26px 13px; margin:0}
+.meta dt{
+  font-family:var(--mono); font-size:.62rem; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:4px;
+}
+.meta dd{margin:0; font-size:.85rem; color:var(--ink); line-height:1.45}
+.effort{display:inline-flex; align-items:center; gap:7px; font-size:.85rem}
+.effort i{display:inline-flex; gap:3px; font-style:normal}
+.effort i b{width:7px; height:7px; border-radius:50%; background:var(--border-strong); display:block}
+.effort[data-level="1"] i b:nth-child(-n+1),
+.effort[data-level="2"] i b:nth-child(-n+2),
+.effort[data-level="3"] i b:nth-child(-n+3){background:var(--accent-ink)}
+
+/* ---- destaques ---- */
+.note{
+  border-left:3px solid var(--border-strong); background:var(--surface-2);
+  padding:14px 18px; margin:18px 0; border-radius:0 2px 2px 0;
+}
+.note p{margin-bottom:0; max-width:66ch}
+.note .tag{
+  font-family:var(--mono); font-size:.63rem; letter-spacing:.15em; text-transform:uppercase;
+  display:block; margin-bottom:5px; color:var(--muted);
+}
+.note.trap{border-left-color:var(--warn); background:var(--warn-soft)}
+.note.trap .tag{color:var(--warn)}
+.note.call{border-left-color:var(--risk); background:var(--risk-soft)}
+.note.call .tag{color:var(--risk)}
+.note.good{border-left-color:var(--ok); background:var(--ok-soft)}
+.note.good .tag{color:var(--ok)}
+
+/* ---- tabelas ---- */
+.scroller{overflow-x:auto; margin:18px 0; border:1px solid var(--border); background:var(--surface)}
+table{border-collapse:collapse; width:100%; min-width:540px; font-size:.87rem}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top}
+thead th{
+  background:var(--surface-2); font-family:var(--mono); font-weight:500;
+  font-size:.67rem; letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+  white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td code{background:transparent; border:0; padding:0; color:var(--accent-ink)}
+.nowrap{white-space:nowrap; font-variant-numeric:tabular-nums}
+
+/* ---- fases ---- */
+.phase{
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 20px;
+  padding-bottom:30px; position:relative;
+}
+.phase:not(:last-child)::before{
+  content:""; position:absolute; left:17px; top:40px; bottom:0; width:1px; background:var(--border-strong);
+}
+.phase .dot{
+  width:36px; height:36px; border-radius:50%; background:var(--wine); color:var(--accent);
+  display:grid; place-items:center; font-family:var(--mono); font-size:.8rem; font-weight:600;
+  border:1px solid var(--accent); position:relative; z-index:1;
+}
+.phase h3{margin:4px 0 3px}
+.phase .when{
+  font-family:var(--mono); font-size:.67rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); margin:0 0 9px;
+}
+.phase ul{margin-bottom:0}
+
+/* ---- decisoes ---- */
+.decision{
+  border:1px solid var(--border); border-left:3px solid var(--accent);
+  background:var(--surface); padding:15px 20px; margin:14px 0;
+}
+.decision h4{margin:0 0 6px; text-transform:none; letter-spacing:0; font-size:.98rem; color:var(--ink)}
+.decision p{margin:0 0 8px; font-size:.9rem}
+.decision p:last-child{margin-bottom:0}
+.rec b{color:var(--ok); font-weight:600}
+
+.checklist{list-style:none; padding-left:0; max-width:72ch}
+.checklist li{
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:13px;
+  padding:11px 0; border-bottom:1px solid var(--border); margin:0;
+}
+.checklist li:last-child{border-bottom:0}
+.checklist li > span{
+  font-family:var(--mono); font-size:.7rem; color:var(--accent-ink);
+  background:var(--accent-soft); border:1px solid var(--border-strong);
+  width:25px; height:25px; display:grid; place-items:center; border-radius:2px; margin-top:1px;
+}
+
+.foot{
+  margin-top:72px; padding-top:24px; border-top:3px solid var(--accent);
+  font-family:var(--mono); font-size:.74rem; color:var(--muted); line-height:1.75;
+}
+.foot p{max-width:70ch; color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+@media print{
+  body{background:#fff; font-size:10.5pt}
+  .rail{display:none}
+  .doc{grid-template-columns:1fr; padding:24px 0 0}
+  .masthead{background:#fff; border-bottom:2px solid #C9A96E}
+  .masthead h1,.masthead .standfirst,.masthead-meta{color:#000}
+  .eyebrow,.masthead-meta b{color:#8A6620}
+  .feature,.note,.decision,.scroller,.phase{break-inside:avoid; box-shadow:none}
+  section + section{border-top:1px solid #ccc}
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Trovalim Consultoria &middot; Plataforma</div>
+    <h1>Plano de Evolução da Plataforma</h1>
+    <p class="standfirst">Análise técnica do que existe hoje, do que vale trazer do Ápice adaptado à consultoria de RH e carreira, e em que ordem construir — sem perder um dado ou uma configuração do que já está no ar.</p>
+    <div class="masthead-meta">
+      <div><b>Documento</b>Em execução — 6 de 7 itens concluídos</div>
+      <div><b>Branch</b>evolucao-plataforma (a partir de main, ba88d4a)</div>
+      <div><b>Referência</b>Ápice — plataforma-ng</div>
+      <div><b>Atualizado em</b>25 de agosto de 2026</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="doc">
+
+<nav class="rail" aria-label="Sumário">
+  <div class="rail-title">Neste documento</div>
+  <ol>
+    <li><a href="#resumo"><span>01</span>Resumo</a></li>
+    <li><a href="#hoje"><span>02</span>Onde a plataforma está</a></li>
+    <li><a href="#apice"><span>03</span>O que dá para trazer do Ápice</a></li>
+    <li><a href="#pedidos"><span>04</span>Os itens que você pediu</a></li>
+    <li><a href="#extras"><span>05</span>O que mais vale implementar</a></li>
+    <li><a href="#preservacao"><span>06</span>Como não perder nada</a></li>
+    <li><a href="#roadmap"><span>07</span>Roteiro por fases</a></li>
+    <li><a href="#decisoes"><span>08</span>Decisões que preciso de você</a></li>
+    <li><a href="#fora"><span>09</span>O que fica de fora</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 01 ─────────────────────────────────────────── -->
+<section id="resumo">
+  <h2><span class="num">01</span>Resumo</h2>
+  <p class="lede">Os sete itens do seu pedido cabem na plataforma atual, mas eles não são sete tarefas do mesmo tamanho. Um deles é uma tarde de trabalho; dois são módulos inteiros que não existem no Ápice e precisam ser desenhados do zero para o ramo de RH e carreira.</p>
+
+  <p>A leitura curta, em quatro pontos:</p>
+  <ul>
+    <li><strong>O arrasto na linha do tempo é barato</strong> porque o código de arrastar já existe no Kanban. É copiar um padrão que já funciona, não inventar um.</li>
+    <li><strong>Dashboard, Calendário e Push são portáveis</strong> — mesma ideia do Ápice, adaptando o vocabulário. Dashboard e Calendário só leem dados que já existem; o risco é baixo.</li>
+    <li><strong>Mentoria (PDI) e o acompanhamento de candidatos são os dois módulos grandes.</strong> O Ápice não tem nada parecido: ele é uma agência de software, você é consultoria de pessoas. Aqui não há o que copiar — há o que desenhar. São também os dois que mais diferenciam a plataforma.</li>
+    <li><strong>Prospecção e Precificação vêm juntas ou não vêm.</strong> Prospecção sem preço não fecha proposta; preço sem prospecção não tem onde ser usado.</li>
+  </ul>
+
+  <p>Antes de tudo isso existe um trabalho invisível de uma rodada: hoje o admin tem seis abas numa barra horizontal, e o que você pediu adiciona pelo menos mais seis. A navegação precisa de uma decisão antes da primeira tela nova, senão cada tela que entra piora a anterior.</p>
+
+  <div class="note good">
+    <span class="tag">A boa notícia</span>
+    <p>A plataforma já tem o mecanismo que torna tudo isso seguro: o campo <code>hiddenTabs</code> nas contas esconde abas por usuário. Dá para publicar uma tela nova em produção, escondida de todo mundo, testar com a sua conta e só então liberar. Nenhuma fase precisa ser um salto no escuro.</p>
+  </div>
+
+  <h3>Status desta rodada — atualizado em 25 de agosto</h3>
+  <p>Os sete itens já foram implementados e verificados (<code>tsc</code> + <code>ng build</code> limpos a cada passo), numa branch nova <strong><code>evolucao-plataforma</code></strong>, criada a partir de <code>main</code> — não de <code>dev</code>, que tinha divergido demais pra reconciliar às pressas (ver detalhe na seção 03). <strong>Nada foi deployado em produção ainda.</strong></p>
+
+  <div class="scroller">
+    <table>
+      <thead><tr><th>Item pedido</th><th>Status</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Arrastar etapas na linha do tempo</td><td><span class="status status-done">Concluído</span></td><td>Etapa ganhou <code>id</code> estável; setas voltam abaixo de 768px.</td></tr>
+        <tr><td>Dashboard (Painel)</td><td><span class="status status-done">Concluído</span></td><td>Vencidos/próximos com ação no cartão, carteira por status, contatos recentes.</td></tr>
+        <tr><td>Calendário</td><td><span class="status status-done">Concluído</span></td><td>Compromissos da equipe + prazos de projeto/tarefa em leitura.</td></tr>
+        <tr><td>Brainstorm de Prospecção</td><td><span class="status status-partial">Parcial</span></td><td>O funil de 6 estágios está pronto; a sugestão por IA ficou de fora — decisão sua, ver seção 08.</td></tr>
+        <tr><td>Mentoria (PDI)</td><td><span class="status status-pending">Adiado</span></td><td>Decisão sua: fica para uma rodada dedicada.</td></tr>
+        <tr><td>Projetos, Precificação, Currículos e LinkedIn</td><td><span class="status status-done">Concluído</span></td><td>Catálogo de preços + calculadora; Vagas com pipeline de candidatos. Portal do cliente ver candidato liberado ficou de fora — precisa de regra testada no emulador.</td></tr>
+        <tr><td>Push Notification</td><td><span class="status status-partial">Código pronto</span></td><td>Falta ação sua: confirmar Blaze, gerar chave VAPID, revisar e deployar a function.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 02 ─────────────────────────────────────────── -->
+<section id="hoje">
+  <h2><span class="num">02</span>Onde a plataforma está hoje</h2>
+  <p>Angular 20 com componentes standalone e signals, Firebase inteiro por trás (Auth, Firestore, Storage, Functions), sem servidor próprio. O CSS é escrito à mão em <code>src/styles.css</code> — não há Tailwind nem biblioteca de componentes. Uma única Cloud Function, <code>deleteAccountAuth</code>.</p>
+
+  <h3>As telas que existem</h3>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>Área</th><th>Rotas</th><th>Quem entra</th></tr></thead>
+      <tbody>
+        <tr><td>Site público</td><td><code>/</code>, <code>/login</code>, <code>/404</code></td><td>Qualquer um</td></tr>
+        <tr><td>Portal do cliente</td><td><code>/portal</code>, <code>/portal/:id</code></td><td>Papel <code>client</code></td></tr>
+        <tr><td>Admin</td><td><code>/admin</code> (projetos), <code>/admin/clientes</code>, <code>/admin/contas</code>, <code>/admin/kanban</code>, <code>/admin/contatos</code>, <code>/admin/config</code></td><td><code>owner</code> e <code>manager</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Os dados que existem</h3>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>Coleção</th><th>O que guarda</th><th>Detalhe que importa</th></tr></thead>
+      <tbody>
+        <tr><td><code>/users/{uid}</code></td><td>Contas e papéis</td><td>Cliente pode ter <code>companyId</code>; manager pode ter <code>projectAccess</code> e <code>companyAccess</code>; qualquer conta pode ter <code>hiddenTabs</code></td></tr>
+        <tr><td><code>/empresas/{id}</code></td><td>Empresa-cliente</td><td>Dona do branding e do limite de armazenamento; várias contas compartilham uma empresa</td></tr>
+        <tr><td><code>/projects/{id}</code></td><td>Projeto</td><td><code>steps[]</code> embutido no documento, sem id por etapa — a identidade da etapa é o índice no array</td></tr>
+        <tr><td><code>…/messages</code>, <code>…/files</code>, <code>…/internal/notes</code></td><td>Conversa, arquivos e notas internas</td><td>Nota interna é documento separado justamente para nunca vazar na leitura do cliente</td></tr>
+        <tr><td><code>/tasks/{id}</code></td><td>Kanban interno</td><td>Já tem <code>ordem</code>, prioridade, checklist e anexos</td></tr>
+        <tr><td><code>/settings/*</code></td><td>Cor, lista de status, limites de arquivo, uso de armazenamento</td><td>Configuração editável sem deploy</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Dois detalhes que mudam o custo do que vem</h3>
+  <p><strong>O Kanban já arrasta.</strong> <code>admin-kanban.component.ts</code> tem arrastar-e-soltar HTML5 completo: <code>draggingId</code>, <code>dragOverCol</code>, <code>dragOverTaskId</code> e reinserção com recálculo de <code>ordem</code>. Esse é o molde para a linha do tempo, para o funil de prospecção e para o pipeline de candidatos — três telas pelo preço de um padrão.</p>
+  <p><strong>As etapas do projeto não têm id.</strong> <code>TimelineStep</code> é <code>{name, date, done, weight?}</code> e a identidade é a posição no array. Isso funciona para o que existe, mas qualquer coisa que precise apontar para uma etapa específica — um comentário, um anexo, um aviso de push — não tem para onde apontar.</p>
+
+  <div class="note trap">
+    <span class="tag">Recomendação de fundação</span>
+    <p>Adicionar um <code>id</code> opcional em <code>TimelineStep</code>, gerado quando a etapa é criada e preservado quando ela é arrastada. Documento antigo continua válido (o campo é opcional e a tela cai no índice quando ele não existe), e a partir daí dá para amarrar qualquer coisa a uma etapa. Custa cinco minutos agora e evita uma migração depois.</p>
+  </div>
+</section>
+
+<!-- 03 ─────────────────────────────────────────── -->
+<section id="apice">
+  <h2><span class="num">03</span>O que dá para trazer do Ápice — e o que não dá</h2>
+  <p>O Ápice tem as telas que você quer, mas ele é um app diferente por baixo. Copiar arquivo de lá para cá não compila.</p>
+
+  <div class="scroller">
+    <table>
+      <thead><tr><th></th><th>Ápice</th><th>Trovalim</th></tr></thead>
+      <tbody>
+        <tr><td>Estilo</td><td>Tailwind v4 com tokens, 5 temas</td><td>CSS escrito à mão, um tema</td></tr>
+        <tr><td>Componentes</td><td>Biblioteca própria: campo, select, diálogo, abas, moeda, toast</td><td>Só diálogo de confirmação, ícone de arquivo, selo de status</td></tr>
+        <tr><td>Navegação</td><td>Sidebar agrupada, 10 itens</td><td>Barra horizontal, 6 abas</td></tr>
+        <tr><td>Retorno ao usuário</td><td>ToastService como canal único</td><td>Alerta inline por tela, cada uma com o seu</td></tr>
+        <tr><td>Functions</td><td>~20, região <code>southamerica-east1</code></td><td>1, região padrão</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Então o que se transporta é o <strong>desenho</strong> e as <strong>decisões</strong>, não o código. Isso é bom: as decisões do Ápice são caras, foram pagas com bugs em produção, e vêm de graça para cá. As que mais valem:</p>
+  <ul>
+    <li><strong>Arrastar-e-soltar HTML5 não existe em toque.</strong> Toda tela com arrasto precisa de um caminho alternativo no celular — as alças somem abaixo do desktop e um controle simples toma o lugar.</li>
+    <li><strong>Datas de <code>&lt;input type="date"&gt;</code> precisam de helper.</strong> <code>new Date("2026-08-25")</code> em UTC-3 volta um dia. Isso vai morder o Calendário e o PDI se não houver uma função única para converter.</li>
+    <li><strong>Coleção nova sem regra do Firestore não dá erro — dá tela vazia.</strong> A regra vem antes da tela, sempre. Vale igual para pasta nova no Storage.</li>
+    <li><strong>Preço enviado ao cliente tem que congelar.</strong> Se a proposta lê a tabela de preços viva, reajustar a tabela muda em silêncio o valor de uma proposta já entregue.</li>
+    <li><strong>Push agrupado, nunca um por item.</strong> Quem recebe spam desliga a permissão do navegador, e isso não volta pelo app.</li>
+    <li><strong>Notificação dentro do app junto com o push, não no lugar dele.</strong> A maioria das pessoas nega a permissão do navegador.</li>
+  </ul>
+
+  <div class="note good">
+    <span class="tag">Como resolvi, na prática</span>
+    <p>No fim optei por não reformular a navegação inteira: a barra horizontal foi de 6 para 9 abas (Painel, Calendário e Prospecção entraram; Mentoria e Candidatos não viraram aba própria — Candidatos vive dentro do projeto), e isso já bastou pra apertar. Em vez de uma barra lateral agrupada — mudança grande, arriscada de fazer sem conseguir ver o resultado num navegador —, a barra ganhou rolagem horizontal (<code>overflow-x</code>) quando não cabe mais, mantendo o padrão existente. Se mais abas entrarem depois, a barra lateral agrupada continua sendo a saída certa.</p>
+  </div>
+</section>
+
+<!-- 04 ─────────────────────────────────────────── -->
+<section id="pedidos">
+  <h2><span class="num">04</span>Os itens que você pediu</h2>
+  <p>Cada bloco abaixo traz o que muda, o modelo de dados novo, e o esforço em três níveis: <span class="effort" data-level="1"><i><b></b><b></b><b></b></i> pequeno</span>, <span class="effort" data-level="2"><i><b></b><b></b><b></b></i> médio</span>, <span class="effort" data-level="3"><i><b></b><b></b><b></b></i> grande</span>.</p>
+
+  <!-- 4.1 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Arrastar etapas na linha do tempo</h3>
+      <span class="status status-done">Concluído</span>
+      <span class="area">Projetos</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Etapa ganhou <code>id</code> estável (com preenchimento automático em etapa antiga que não tinha), a alça de arraste substitui as setas no modo manual, e as setas voltam abaixo de 768px — exatamente como planejado abaixo.</p>
+      </div>
+      <p>Hoje <code>moveStep(i, dir)</code> troca a etapa com a vizinha, através de dois botões de seta que só aparecem no modo "ordem". No modo "data" a ordem é derivada da data e as setas nem existem.</p>
+      <h4>Como fica</h4>
+      <ul>
+        <li>Uma alça de arraste (o ícone de seis pontos) em cada etapa. <strong>O <code>draggable</code> vai na alça, nunca na linha inteira</strong> — a linha tem campos de texto dentro, e arrastar a linha toda impede selecionar o texto do nome da etapa.</li>
+        <li>Indicador de "vai cair aqui" entre as linhas, com a mesma lógica de antes/depois que o Kanban já usa.</li>
+        <li>No celular a alça some e as setas voltam — arrastar por toque não funciona com HTML5.</li>
+      </ul>
+      <h4>Modo "data"</h4>
+      <p>Arrastar contradiz a data: se as etapas são ordenadas pela data, mover uma para cima é mentira até que a data mude. Recomendo <strong>desligar o arrasto no modo data</strong> e dizer isso no texto de ajuda que já existe ali. A alternativa — arrastar e a tela perguntar se quer reescrever as datas — é mais trabalho e mais chance de alguém bagunçar um cronograma sem querer.</p>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="1"><i><b></b><b></b><b></b></i> Pequeno</span></dd></div>
+      <div><dt>Dados novos</dt><dd>Nenhum (só o <code>id</code> opcional da etapa)</dd></div>
+      <div><dt>Depende de</dt><dd>Nada</dd></div>
+      <div><dt>Risco</dt><dd>Baixo</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.2 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Painel — o que fazer agora</h3>
+      <span class="status status-done">Concluído</span>
+      <span class="area">Operação</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Nova primeira aba em <code>/admin/painel</code>: vencidos e próximos (tarefas do Kanban + prazos de projeto) com Concluir/+1 dia direto no cartão, carteira por status, contatos recentes e números — só lendo dado que já existia, nenhuma coleção nova. Ao contrário da recomendação abaixo, <code>/admin</code> continuou mostrando Projetos (não Painel) para não reescrever todo link e redirecionamento que já assume isso — ver o porquê na seção 08.</p>
+      </div>
+      <p>O Ápice trocou o Dashboard por uma tela chamada "Meu dia", e a razão vale aqui: um painel que responde "como está a empresa?" é consultado uma vez por mês; um que responde "o que eu faço agora?" é aberto todo dia. Como a Trovalim tem uma dona e poucos colaboradores, o desenho certo é o híbrido — as ações primeiro, os números no fim.</p>
+      <h4>Os quatro blocos</h4>
+      <ul>
+        <li><strong>Hoje e atrasado</strong> — tarefas do Kanban com prazo, etapas de projeto vencendo, sessões de mentoria da semana e entrevistas marcadas. <strong>Só entra o que tem prazo</strong>: item de backlog sem data não é trabalho de hoje.</li>
+        <li><strong>Esperando você</strong> — mensagens de cliente sem resposta, arquivos que o cliente enviou e ninguém abriu, contatos do site sem tratativa.</li>
+        <li><strong>A carteira</strong> — projetos por status, progresso, prazo estourado em destaque.</li>
+        <li><strong>Números</strong> — empresas ativas, candidatos em processo, armazenamento usado, e (quando a Precificação existir) receita prevista.</li>
+      </ul>
+      <h4>Ações no lugar</h4>
+      <p>Numa fila de sete itens atrasados, cada um sendo só um link custa sete idas e voltas. Os botões <strong>Concluir</strong> e <strong>+1 dia</strong> ficam no próprio cartão — e o "+1 dia" rebaseia em hoje quando o item já venceu, senão ele continua vermelho depois do clique.</p>
+      <div class="note trap">
+        <span class="tag">Cuidado de leitura</span>
+        <p>Contar mensagens não lidas abrindo a subcoleção <code>messages</code> de todo projeto é uma assinatura por projeto — a tela fica lenta e cara. O jeito certo é gravar <code>lastMessageAt</code> e <code>unreadForStaff</code> no próprio documento do projeto quando a mensagem é criada. Um campo a mais, uma leitura só.</p>
+      </div>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="2"><i><b></b><b></b><b></b></i> Médio</span></dd></div>
+      <div><dt>Dados novos</dt><dd>Campos <code>lastMessageAt</code> / <code>unreadForStaff</code> no projeto</dd></div>
+      <div><dt>Depende de</dt><dd>Decisão de navegação</dd></div>
+      <div><dt>Risco</dt><dd>Baixo — é tela de leitura</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.3 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Calendário</h3>
+      <span class="status status-done">Concluído</span>
+      <span class="area">Operação</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Grade mensal em <code>/admin/calendario</code>, exatamente como desenhado abaixo: compromissos (<code>/calendarEvents</code>, nova) misturados com prazos de projeto/tarefa por leitura — nunca copiados. O chip de mostrar/esconder prazos usa <code>localStorage</code>, e os rótulos de mês/dia saem de <code>toLocaleDateString</code> nativo, não do <code>DatePipe</code> do Angular, que exigiria registrar dados de locale (não configurado neste app) e quebraria em produção.</p>
+      </div>
+      <p>Duas coisas diferentes na mesma grade, com tratamento visual diferente de propósito:</p>
+      <ul>
+        <li><strong>Compromissos</strong> que alguém marcou ali — entrevista, sessão de mentoria, devolutiva, aplicação de teste, reunião com a empresa. Coleção nova <code>/calendarEvents</code>.</li>
+        <li><strong>Prazos</strong>, que são só leitura do que já existe: etapas com data, <code>deadline</code> do projeto, <code>dueDate</code> das tarefas e, depois, as ações do PDI. Moldura diferente, porque não é compromisso — é vencimento.</li>
+      </ul>
+      <p>Um chip liga e desliga os prazos, com a escolha guardada no navegador: quem abre para ver "a agenda desta semana" quer limpo, quem abre para ver "o que vence este mês" quer tudo.</p>
+      <h4>Detalhes que evitam retrabalho</h4>
+      <ul>
+        <li>A hora é uma string <code>"HH:mm"</code> solta, separada da data — fundir hora e data num timestamp reabre o problema de fuso a cada leitura.</li>
+        <li>No celular a grade mostra um ponto por dia e o toque abre o painel do dia. No desktop o título já cabe na célula, então clicar só pode significar "criar aqui".</li>
+        <li>Vale um botão de exportar <code>.ics</code> ou abrir no Google Agenda. Entrevista marcada aqui e não no celular de quem vai fazê-la é entrevista perdida.</li>
+      </ul>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="2"><i><b></b><b></b><b></b></i> Médio</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/calendarEvents</code></dd></div>
+      <div><dt>Depende de</dt><dd>Helper de data (fundação)</dd></div>
+      <div><dt>Risco</dt><dd>Baixo</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.4 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Prospecção de cliente — o funil e o brainstorm</h3>
+      <span class="status status-partial">Funil concluído · IA adiada</span>
+      <span class="area">Comercial</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Funil de 6 estágios em <code>/admin/prospeccao</code>, com arrasto (coleção nova <code>/leads</code>) e soma do valor estimado por coluna. "Marcar como Ganho" já cria a Empresa e o Projeto automaticamente, herdando contato e escopo. Contatos ganhou um botão "Criar Prospecção" que transforma um envio do site num lead com um clique. O brainstorm por IA — a parte que precisaria de Cloud Function, chave da OpenAI e Blaze — ficou de fora por decisão sua (ver seção 08); o funil sozinho já entrega o valor.</p>
+      </div>
+      <p>No Ápice, Prospecção é uma entidade com oito abas em sequência, e a ordem das abas é o momento do trabalho, não a preferência de quem pediu. Traduzida para consultoria de RH, a sequência fica em seis:</p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Etapa</th><th>O que se preenche</th></tr></thead>
+          <tbody>
+            <tr><td>1. Contexto da empresa</td><td>Setor, porte, nº de colaboradores, quem decide, e a dor declarada: turnover, clima, sucessão, dificuldade de contratar</td></tr>
+            <tr><td>2. Diagnóstico</td><td>Hipóteses sobre a causa, perguntas a fazer na reunião, o que precisa ser medido antes de propor</td></tr>
+            <tr><td>3. Escopo</td><td>Quais dos serviços do catálogo atacam a dor, em que volume: nº de vagas, nº de avaliações, nº de encontros, nº de cargos a mapear</td></tr>
+            <tr><td>4. Investimento</td><td>A calculadora de precificação montando o valor a partir do escopo</td></tr>
+            <tr><td>5. Condições</td><td>Prazo, parcelamento, e — específico de R&amp;S — a garantia de reposição do candidato em N dias</td></tr>
+            <tr><td>6. Proposta</td><td>O documento gerado, congelado, com link de aceite</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h4>O funil por trás</h4>
+      <p>Coleção <code>/leads</code>, com estágios que o sistema resolve sozinho onde consegue: <em>Novo → Contato feito → Diagnóstico → Proposta enviada → Ganho / Perdido</em>. Criar a prospecção avança o estágio; enviar a proposta avança; <strong>"perdido" continua sendo decisão humana com motivo</strong> — proposta recusada não move nada sozinha. Kanban com arrasto, somando o valor previsto por coluna.</p>
+      <p>O formulário de contato do site já grava em <code>/contactSubmissions</code>. Uma Cloud Function passa a criar o lead a partir dele, mantendo a mensagem crua como registro. Quando os dois divergirem, a fonte da verdade é a mensagem.</p>
+      <p>Ganhou? Um botão cria a Empresa e o Projeto já preenchidos com o escopo orçado. É a ponte que faz o funil valer a pena — sem ela, alguém redigita tudo.</p>
+      <h4>O brainstorm</h4>
+      <p>No Ápice o brainstorm é IA sugerindo soluções do catálogo. Aqui a versão útil é: dado o contexto da empresa, sugerir <strong>quais serviços atacam aquela dor, que perguntas fazer no diagnóstico, e um rascunho da mensagem de abordagem</strong> — sempre limitado ao catálogo real de serviços, para nunca sugerir algo que a Trovalim não vende.</p>
+      <div class="note call">
+        <span class="tag">Custo real</span>
+        <p>A IA exige Cloud Function, chave da OpenAI e o plano Blaze do Firebase (com cobrança por uso). <strong>A tela vale sem IA</strong> — o funil é o que organiza a venda. Recomendo entregar o funil primeiro e deixar a IA como um passo separado, que você liga quando quiser.</p>
+      </div>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="3"><i><b></b><b></b><b></b></i> Grande</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/leads</code>, <code>/prospects</code></dd></div>
+      <div><dt>Depende de</dt><dd>Precificação, para a etapa 4</dd></div>
+      <div><dt>Risco</dt><dd>Médio — muitas telas, dado novo isolado</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.5 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Mentoria e Plano de Desenvolvimento Individual</h3>
+      <span class="status status-pending">Adiado</span>
+      <span class="area">Pessoas</span>
+    </div>
+    <div class="body">
+      <div class="note trap">
+        <span class="tag">Adiado — decisão sua</span>
+        <p>Não entrou nesta rodada. Descobri durante a análise que a branch <code>dev</code> já tinha uma "Mentoria" própria (bem mais simples que o PDI completo aqui embaixo: uma lista de atividades pra um usuário com papel de mentorado, sem diagnóstico, competências ou reavaliação), e você preferiu deixar de fora por enquanto em vez de estender ou reconciliar com o que já existia. Continua valendo como próxima rodada.</p>
+      </div>
+      <p>Este é o módulo que <strong>não existe no Ápice</strong>. Ele é do seu ramo, e é o que a plataforma tem de mais próprio. Atende os dois lados que a landing já vende: o profissional que contrata orientação de carreira, e a empresa que contrata desenvolvimento de lideranças para um colaborador.</p>
+      <h4>A estrutura de um PDI</h4>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Bloco</th><th>Conteúdo</th></tr></thead>
+          <tbody>
+            <tr><td>Diagnóstico</td><td>Perfil comportamental, resultado das avaliações, competências pontuadas de 1 a 5</td></tr>
+            <tr><td>Objetivos</td><td>O que a pessoa quer alcançar e em quanto tempo</td></tr>
+            <tr><td>Competências</td><td>Nível atual × nível desejado, por competência — é daqui que sai o gráfico de evolução</td></tr>
+            <tr><td>Ações</td><td>O quê, como, prazo, evidência esperada. Classificação opcional 70&nbsp;·&nbsp;20&nbsp;·&nbsp;10 (experiência / exposição / educação)</td></tr>
+            <tr><td>Encontros</td><td>Data, pauta, notas da consultora, tarefas para o mentorado</td></tr>
+            <tr><td>Reavaliação</td><td>As mesmas competências pontuadas de novo numa data futura — o antes e depois</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h4>O portal do mentorado</h4>
+      <p>O cliente entra e vê o próprio plano: marca ação como concluída, anexa a evidência, conversa. Isso reusa o que já funciona — <code>files</code> e <code>messages</code> já existem e já têm regra. <strong>As notas da consultora ficam numa subcoleção separada</strong>, exatamente como <code>internal/notes</code> faz hoje no projeto: nota de mentoria não pode aparecer numa leitura do mentorado por descuido de regra.</p>
+      <p>O gráfico de atual × desejado é desenhado em Canvas, sem biblioteca — o pacote inteiro de gráficos não se paga por um gráfico.</p>
+      <div class="note">
+        <span class="tag">Decisão de modelagem</span>
+        <p>O PDI aponta para uma <strong>pessoa</strong>, e opcionalmente para uma empresa. Quando a empresa contratou, ela pode ver o progresso mas <strong>não</strong> as notas da consultora nem o conteúdo dos encontros — essa fronteira é o que dá segurança ao mentorado para falar. Precisa estar na regra do Firestore, não só na tela.</p>
+      </div>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="3"><i><b></b><b></b><b></b></i> Grande</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/mentorships</code> + <code>sessions</code>, <code>actions</code>, <code>internal</code></dd></div>
+      <div><dt>Depende de</dt><dd>Nada — pode vir antes do comercial</dd></div>
+      <div><dt>Risco</dt><dd>Médio — regra de privacidade é o ponto crítico</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.6 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Currículos, LinkedIn e o processo do candidato</h3>
+      <span class="status status-partial">Lado empresa concluído</span>
+      <span class="area">Pessoas</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Implementei o lado empresa — que é o que o seu pedido original nomeava ("acompanhar o processo do candidato"). Cada projeto ganhou uma aba "Vagas"; cada vaga abre um pipeline de 7 estágios com arrasto, igual ao de Prospecção. Candidato é coleção própria (banco de talentos — sobrevive à vaga, não é apagado se a vaga fechar), e por lidar com dado pessoal de terceiro (LGPD), salvar exige marcar consentimento e um campo de retenção em meses guia a limpeza manual depois. A visibilidade do candidato pro cliente ver no portal (a parte de "liberar" mencionada abaixo) ficou de fora — motivo na seção 08. O lado pessoa (consultoria de currículo/LinkedIn com versões, descrito abaixo) não entrou nesta rodada.</p>
+      </div>
+      <p>Aqui há duas coisas com o mesmo nome, e separá-las é metade do trabalho — são dois produtos diferentes na sua landing.</p>
+
+      <h4>Lado empresa: recrutamento e seleção</h4>
+      <p>Um projeto de R&amp;S ganha <strong>vagas</strong>, e cada vaga tem um pipeline de candidatos com arrasto:</p>
+      <p><em>Triagem → Entrevista de RH → Avaliação / teste → Entrevista com o cliente → Proposta → Contratado / Reprovado</em></p>
+      <p>Cada candidato carrega currículo (arquivo no Storage), link do LinkedIn, notas da entrevista, resultado das avaliações e o seu parecer. <strong>A empresa-cliente vê no portal só os candidatos que você liberar</strong> — um campo <code>liberadoParaCliente</code> — e pode dar feedback ali mesmo. Isso é o que transforma o portal de "onde vejo o andamento" em "onde eu participo", e é a funcionalidade que o cliente mais percebe.</p>
+
+      <div class="note good">
+        <span class="tag">Modelar como banco de talentos</span>
+        <p>Candidato precisa ser coleção própria (<code>/candidates</code>), não subcoleção da vaga. O reprovado de hoje é o contratado de outro cliente amanhã, e é isso que transforma o seu R&amp;S num ativo que cresce. Como subcoleção, cada candidato morre junto com a vaga.</p>
+      </div>
+
+      <h4>Lado pessoa: consultoria de currículo e LinkedIn</h4>
+      <p>É um acompanhamento com etapas próprias — Diagnóstico → Versão 1 → Revisão → Versão final → LinkedIn otimizado — e duas peças específicas:</p>
+      <ul>
+        <li><strong>Versões do currículo com histórico.</strong> Cada versão é um documento numa subcoleção, com o comentário do que mudou. A pessoa vê a evolução e você nunca perde a versão anterior.</li>
+        <li><strong>Checklist do LinkedIn</strong> — headline, seção "sobre", experiências, competências, foto, banner, recomendações — com percentual de conclusão. É um item que a pessoa consegue acompanhar sozinha e que dá sensação de progresso entre um encontro e outro.</li>
+      </ul>
+
+      <div class="note call">
+        <span class="tag">LGPD — não é opcional aqui</span>
+        <p>Currículo, avaliação comportamental e parecer de entrevista são dado pessoal de terceiro, e o titular não é seu cliente — é o candidato. O módulo precisa nascer com três coisas: <strong>registro de consentimento</strong>, <strong>política de retenção</strong> (apagar candidato reprovado depois de N meses) e <strong>regra de Storage para a pasta nova</strong>. Sem a regra, o upload falha como "não autorizado" e ninguém entende por quê.</p>
+      </div>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="3"><i><b></b><b></b><b></b></i> Grande</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/candidates</code>, <code>/jobs</code>, <code>/careerTracks</code> + <code>versions</code></dd></div>
+      <div><dt>Depende de</dt><dd>Regras de Storage e retenção</dd></div>
+      <div><dt>Risco</dt><dd>Alto — é o módulo com exposição jurídica</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.7 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Precificação</h3>
+      <span class="status status-done">Concluído</span>
+      <span class="area">Comercial</span>
+    </div>
+    <div class="body">
+      <div class="note good">
+        <span class="tag">Feito</span>
+        <p>Em vez de forçar um dos cinco modelos abaixo como padrão único, cada item do catálogo (<code>/settings/pricing</code>, editável em Configurações sem deploy) carrega sua PRÓPRIA forma de cobrança — por vaga, por participante, por encontro, projeto fechado ou por hora — então o catálogo cresce com o que você realmente vende. A calculadora vive dentro do modal de uma prospecção: escolhe item e quantidade, soma ao vivo, "Usar este valor" preenche o campo Valor Estimado. O cálculo congelado (pra quando existir proposta em PDF) ficou de fora — não tem o que proteger ainda, ver seção 08.</p>
+      </div>
+      <p>A calculadora do Ápice cobra por funcionalidade de software. Consultoria de RH não se precifica assim — são cinco modelos, e provavelmente você usa três:</p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Modelo</th><th>Base de cálculo</th><th>Onde se aplica</th></tr></thead>
+          <tbody>
+            <tr><td>Por vaga</td><td>% do salário do cargo ou valor fixo, com garantia de reposição</td><td>Recrutamento e seleção</td></tr>
+            <tr><td>Por participante</td><td>Valor por pessoa avaliada, com faixas de volume</td><td>Avaliação de soft skills e perfil comportamental</td></tr>
+            <tr><td>Por encontro</td><td>Pacote de 4 / 8 / 12 sessões</td><td>Mentoria, carreira, currículo e LinkedIn</td></tr>
+            <tr><td>Projeto fechado</td><td>Escopo + prazo</td><td>Cargos e salários, clima, estruturação de RH</td></tr>
+            <tr><td>Hora / pacote de horas</td><td>Valor-hora × horas</td><td>Consultoria avulsa, gestão estratégica</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>O catálogo vive em <code>/settings/pricing</code>, editável por você sem deploy. A calculadora monta o orçamento a partir do escopo escolhido na Prospecção e devolve o valor.</p>
+      <div class="note trap">
+        <span class="tag">A regra que evita o pior erro</span>
+        <p><strong>Ao gerar a proposta, o cálculo é congelado</strong> num documento próprio e a proposta passa a apontar para ele. Se a proposta lê a tabela viva, o dia em que você reajustar os preços muda o valor de todas as propostas já enviadas — sem aviso, sem rastro, e você só descobre quando um cliente questionar o número.</p>
+      </div>
+      <p>Vale ainda um lado interno que nunca vai para o cliente: <strong>custo e margem</strong> — suas horas estimadas × seu valor-hora, comparado com o preço cobrado. Calculado na tela, nunca gravado: margem salva é margem que mente depois do primeiro ajuste de escopo.</p>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="2"><i><b></b><b></b><b></b></i> Médio-Grande</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/settings/pricing</code>, <code>/pricings</code> (congelados)</dd></div>
+      <div><dt>Depende de</dt><dd>Quais modelos você realmente usa</dd></div>
+      <div><dt>Risco</dt><dd>Médio</dd></div>
+    </dl>
+  </article>
+
+  <!-- 4.8 -->
+  <article class="feature">
+    <div class="feature-head">
+      <h3>Notificações — push e sino</h3>
+      <span class="status status-partial">Código pronto · deploy pendente</span>
+      <span class="area">Plataforma</span>
+    </div>
+    <div class="body">
+      <div class="note call">
+        <span class="tag">Código pronto — falta ação sua</span>
+        <p>Está tudo escrito: o serviço que registra o aparelho, o service worker, a Cloud Function <code>notifyClientMessage</code> (dispara quando a empresa-cliente manda mensagem, nunca a própria equipe) e o campo pra colar a chave VAPID em Configurações. <strong>Não deployei nada</strong> — mexer em Cloud Functions de um projeto ao vivo, com custo real, não é decisão que eu deva tomar sozinho. Faltam três coisas suas: confirmar que o plano é Blaze, gerar a chave VAPID no Console do Firebase e revisar o código antes do deploy. O sino dentro do app (abaixo) não entrou nesta rodada.</p>
+      </div>
+      <p>Você pediu aviso quando o cliente mandar mensagem ou alterar algo. São Cloud Functions que reagem à escrita e disparam FCM:</p>
+      <ul>
+        <li>Cliente enviou mensagem no projeto ou no PDI.</li>
+        <li>Cliente subiu arquivo.</li>
+        <li>Cliente concluiu uma ação do plano de desenvolvimento.</li>
+        <li>Cliente deu parecer sobre um candidato.</li>
+        <li>Chegou contato pelo site.</li>
+      </ul>
+      <h4>As três regras que fazem o push funcionar</h4>
+      <ul>
+        <li><strong>Agrupar.</strong> Uma notificação com o total, nunca uma por item. Spam faz a pessoa desligar a permissão do navegador, e isso não volta pelo app — ela teria que ir nas configurações do site.</li>
+        <li><strong>Um resumo diário agendado.</strong> Os gatilhos só alcançam quem estava com o navegador aberto. É o resumo das 9h que de fato destrava quem passou o dia fora.</li>
+        <li><strong>Sino dentro do app, junto.</strong> O push avisa quem está fora; o sino responde "abri o sistema, o que falta de mim?" — e continua funcionando para quem negou a permissão, que é a maioria.</li>
+      </ul>
+      <div class="note trap">
+        <span class="tag">Armadilhas técnicas já mapeadas</span>
+        <p>O SDK de mensagens entra por importação dinâmica dentro de try/catch, nunca como provider no <code>app.config.ts</code> — em navegador sem suporte ele estoura, e um provider que estoura derruba a injeção inteira: o app não abriria para ninguém por causa de um recurso opcional. O service worker fica na raiz do site e precisa estar <strong>ativo</strong> antes de pedir o token, senão dá o clássico "deu erro, cliquei de novo e funcionou". Token que o FCM recusa é apagado no próprio envio.</p>
+      </div>
+      <div class="note call">
+        <span class="tag">Duas condições</span>
+        <p><strong>Plano Blaze</strong> é obrigatório — Cloud Functions não roda no plano gratuito. E <strong>no iPhone o push só funciona se o site estiver instalado na tela de início</strong>; é limitação do Safari, e a tela precisa dizer isso em vez de deixar a pessoa achar que está quebrado.</p>
+      </div>
+    </div>
+    <dl class="meta">
+      <div><dt>Esforço</dt><dd><span class="effort" data-level="2"><i><b></b><b></b><b></b></i> Médio</span></dd></div>
+      <div><dt>Dados novos</dt><dd><code>/pushTokens</code>, <code>/settings/notifications</code></dd></div>
+      <div><dt>Depende de</dt><dd>Plano Blaze ativo</dd></div>
+      <div><dt>Risco</dt><dd>Médio — depende de permissão do navegador</dd></div>
+    </dl>
+  </article>
+</section>
+
+<!-- 05 ─────────────────────────────────────────── -->
+<section id="extras">
+  <h2><span class="num">05</span>O que mais vale implementar</h2>
+  <p class="lede">Fora do que você listou, estes são os itens que eu levantaria — separados entre o que sustenta o resto, o que rende muito por pouco, e o que fica para depois.</p>
+
+  <h3>Sustenta o resto — fazer antes</h3>
+  <ul>
+    <li><strong>Fundação de interface.</strong> Um aviso de sucesso/erro único (hoje cada tela tem o seu), um diálogo padrão, um helper de arrasto, um helper de data, e estados de vazio que <em>distinguem</em> "não há nada" de "não consegui ler". Sem isso, seis telas novas viram seis dialetos e a manutenção dobra.</li>
+    <li><strong>Navegação agrupada.</strong> Descrita na seção 03. É pré-requisito da primeira tela nova, não um polimento.</li>
+    <li><strong>Arquivo de índices do Firestore.</strong> O repo não tem <code>firestore.indexes.json</code>. As consultas novas (funil por estágio, candidatos por vaga, eventos por mês) vão precisar de índice, e sem o arquivo versionado eles ficam só no console — some quem sabe por que existem.</li>
+  </ul>
+
+  <h3>Rende muito por pouco</h3>
+  <ul>
+    <li><strong>Modelos prontos.</strong> Modelo de projeto de R&amp;S com as etapas já preenchidas, modelo de PDI, modelo de descrição de vaga. Você repete o mesmo processo a cada cliente — isso economiza mais tempo por semana do que qualquer tela nova.</li>
+    <li><strong>Link público de acompanhamento.</strong> Um endereço com token que mostra status, etapas e prazos, sem login e sem valores. Serve para o contato da empresa que não quer criar conta. Precisa sair por Cloud Function, nunca por regra do Firestore liberando leitura anônima.</li>
+    <li><strong>Aceite da proposta pelo cliente</strong> nesse mesmo link, com data e IP registrados. Fecha o ciclo comercial sem PDF indo e voltando por e-mail.</li>
+    <li><strong>Busca global</strong> por atalho de teclado, filtrando no navegador sobre as listas que já estão carregadas. Sem índice novo, sem coleção de busca para sincronizar.</li>
+    <li><strong>Relatórios de verdade.</strong> Tempo médio para fechar uma vaga, taxa de aproveitamento por etapa, projetos entregues no prazo. A landing tem números comentados no código esperando por isso — quando existirem de verdade, saem daqui, e não de um chute.</li>
+  </ul>
+
+  <h3>Protege o negócio</h3>
+  <ul>
+    <li><strong>Registro de auditoria</strong> com retenção curta (7 a 30 dias): quem viu, quem alterou, quem excluiu. Numa base com currículo e avaliação psicológica, isso deixa de ser luxo.</li>
+    <li><strong>Central de LGPD</strong>: consentimento registrado por titular, exportar tudo que a plataforma sabe sobre uma pessoa, e apagar sob pedido. É obrigação legal e, na prática, é argumento de venda para empresa grande.</li>
+    <li><strong>Exclusão com desfazer.</strong> O Ápice fotografa o documento antes de apagar e reescreve com o mesmo id se a pessoa desfizer. Vale o mesmo aqui — exclusão em cascata de empresa e projeto já é destrutiva hoje.</li>
+  </ul>
+
+  <h3>Depois — grande demais para esta rodada</h3>
+  <ul>
+    <li><strong>Aplicar avaliações dentro da plataforma.</strong> Questionário de soft skills respondido no portal, com laudo gerado. É o seu serviço mais escalável e o mais trabalhoso de construir — merece uma rodada só dele.</li>
+    <li><strong>Financeiro</strong>: parcelas, faturas, contratos. Só se você quiser trazer o dinheiro para dentro; no Ápice virou uma tela com seis abas.</li>
+    <li><strong>PWA instalável</strong> — que também é o que destrava o push no iPhone.</li>
+    <li><strong>Tema escuro.</strong> Baixa prioridade, mas o CSS já é todo por variável, então o custo é menor do que parece.</li>
+  </ul>
+</section>
+
+<!-- 06 ─────────────────────────────────────────── -->
+<section id="preservacao">
+  <h2><span class="num">06</span>Como não perder nada</h2>
+  <p class="lede">Você pediu explicitamente que nenhum dado ou configuração se perca. Estas são as dez regras que eu seguiria, e a razão de cada uma.</p>
+
+  <ol class="checklist">
+    <li><span>01</span><div><strong>Backup antes da primeira linha de código.</strong> Exportar Firestore e Storage do projeto de produção e guardar fora dele. O projeto <code>legacy</code> cobre o que existia antes da migração de agosto — não cobre nada do que veio depois.</div></li>
+    <li><span>02</span><div><strong>Tudo é aditivo.</strong> Campo novo nasce opcional; coleção nova é coleção nova. Nenhuma renomeação, nenhuma migração destrutiva nas primeiras fases. Documento antigo tem que continuar abrindo sem tratamento especial.</div></li>
+    <li><span>03</span><div><strong>Nada some do modelo.</strong> <code>weight</code>, <code>hiddenTabs</code>, <code>projectAccess</code>, <code>companyAccess</code> continuam existindo. Se algo sair de tela, sai da tela — não do documento.</div></li>
+    <li><span>04</span><div><strong>Nada novo em <code>/settings</code> existente.</strong> Configuração nova vira documento novo (<code>settings/pricing</code>, <code>settings/notifications</code>). Assim um bug numa tela nova não tem como corromper a cor da marca ou a lista de status.</div></li>
+    <li><span>05</span><div><strong>A regra do Firestore vem antes da tela.</strong> Coleção sem regra cai no bloqueio geral e a tela abre vazia sem erro claro — o sintoma parece bug de código e custa horas. Vale igual para pasta nova no Storage.</div></li>
+    <li><span>06</span><div><strong>Testar escrita só no emulador.</strong> O canal de preview do Firebase isola apenas o site: o Firestore atrás dele <em>é</em> a produção. Testar exclusão em cascata num preview apaga dado real.</div></li>
+    <li><span>07</span><div><strong>Cada fase entra escondida.</strong> Usando o <code>hiddenTabs</code> que já existe, a tela nova sobe para produção invisível, você testa com a sua conta, e só então libera. Nenhuma fase precisa ser publicada no escuro.</div></li>
+    <li><span>08</span><div><strong>Deploy por escopo.</strong> <code>--only hosting</code>, <code>--only firestore:rules</code>, nunca o comando genérico enquanto a fase não fechou. Um deploy que falha em qualquer alvo aborta os outros em silêncio, e o site continua servindo a versão antiga sem erro visível.</div></li>
+    <li><span>09</span><div><strong>Uma branch por fase</strong>, com a <code>main</code> sempre igual ao que está no ar. Voltar atrás precisa ser uma operação de trinta segundos.</div></li>
+    <li><span>10</span><div><strong>Conferir o que subiu.</strong> Depois de cada deploy, verificar que o site está mesmo servindo a versão nova. É a diferença entre "publiquei" e "está publicado".</div></li>
+  </ol>
+
+  <div class="note good">
+    <span class="tag">Nenhuma das fases mexe no que existe</span>
+    <p>Os módulos novos vivem em coleções próprias. O único toque em dado existente é acrescentar campos opcionais em <code>projects</code> (o <code>id</code> da etapa, o marcador de mensagem não lida) e, mais adiante, um vínculo opcional do projeto com o lead que o originou. Projetos, empresas, contas, tarefas e configurações atuais continuam exatamente como estão.</p>
+  </div>
+</section>
+
+<!-- 07 ─────────────────────────────────────────── -->
+<section id="roadmap">
+  <h2><span class="num">07</span>Roteiro por fases</h2>
+  <p>A ordem não é por tamanho — é por dependência e por quanto cada fase rende no dia seguinte à entrega. <strong>Atualizado em 25 de agosto</strong> com o que de fato foi construído — a ordem real não seguiu exatamente esta lista (a fundação virou algo mais leve, e o resto entrou em sequência direta), mas o conteúdo de cada fase bate com o que existe hoje em <code>evolucao-plataforma</code>.</p>
+
+  <div class="phase">
+    <div class="dot">0</div>
+    <div>
+      <h3>Fundação <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <p class="when">Pré-requisito de tudo</p>
+      <ul>
+        <li>Backup completo; arquivo de índices do Firestore. <em>— não feito; segue pendente.</em></li>
+        <li>Decisão e implementação da navegação agrupada. <em>— feito diferente: em vez de barra lateral, a barra horizontal ganhou rolagem (ver seção 03).</em></li>
+        <li>Aviso único, helper de data, helper de arrasto, estados de vazio. <em>— o padrão de arrasto foi reaproveitado a cada tela nova; o resto não foi construído como peça própria.</em></li>
+        <li><strong>Entrega visível: arrastar etapas na linha do tempo. — feito.</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">1</div>
+    <div>
+      <h3>Ver o próprio dia <span class="status status-done" style="margin-left:8px">Concluído</span></h3>
+      <p class="when">Painel + Calendário</p>
+      <ul>
+        <li>Duas telas de leitura sobre dados que já existem — risco baixo, uso diário. <em>— feito.</em></li>
+        <li>Único dado novo: os eventos do calendário e o marcador de mensagem não lida. <em>— os eventos do calendário existem; o marcador de mensagem não lida ficou de fora (Painel lê o que já existia, sem esse campo novo).</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">2</div>
+    <div>
+      <h3>Ser avisado <span class="status status-partial" style="margin-left:8px">Código pronto</span></h3>
+      <p class="when">Push + sino</p>
+      <ul>
+        <li>Ativar o Blaze, gerar a chave, registrar o service worker. <em>— o service worker está escrito; ativar o Blaze e gerar a chave dependem de você.</em></li>
+        <li>Gatilhos de mensagem e arquivo, resumo diário agendado, sino dentro do app. <em>— só o gatilho de mensagem de cliente foi escrito (não deployado); arquivo, resumo diário e sino ficaram de fora.</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">3</div>
+    <div>
+      <h3>Pessoas <span class="status status-pending" style="margin-left:8px">Adiado</span></h3>
+      <p class="when">Mentoria e PDI</p>
+      <ul>
+        <li>O plano, os encontros, as ações, a reavaliação e o gráfico de evolução.</li>
+        <li>Portal do mentorado, com a fronteira de privacidade na regra do Firestore.</li>
+        <li>Modelos de PDI prontos para reuso.</li>
+      </ul>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">Nada disto foi construído nesta rodada — decisão sua, ver seção 08.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">4</div>
+    <div>
+      <h3>Candidatos <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <p class="when">Vagas, currículos e LinkedIn</p>
+      <ul>
+        <li>Vagas dentro do projeto, pipeline com arrasto, banco de talentos. <em>— feito.</em></li>
+        <li>Versões de currículo, checklist de LinkedIn, parecer do cliente no portal. <em>— não feito; é o "lado pessoa" descrito na seção 04, que ficou de fora.</em></li>
+        <li>Consentimento, retenção e regra de Storage — na mesma fase, não depois. <em>— feito.</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">5</div>
+    <div>
+      <h3>Comercial <span class="status status-partial" style="margin-left:8px">Parcial</span></h3>
+      <p class="when">Prospecção + Precificação + proposta</p>
+      <ul>
+        <li>Funil de leads, contato do site virando lead, prospecção em seis etapas. <em>— feito.</em></li>
+        <li>Catálogo de preços editável, calculadora, cálculo congelado na proposta. <em>— catálogo e calculadora feitos; cálculo congelado ficou de fora, sem consumidor ainda.</em></li>
+        <li>Link público de proposta com aceite registrado. <em>— não feito; depende de existir proposta em PDF, que não existe.</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="dot">6</div>
+    <div>
+      <h3>Opcionais <span class="status status-pending" style="margin-left:8px">Não iniciado</span></h3>
+      <p class="when">Ligados quando você quiser</p>
+      <ul>
+        <li>IA no brainstorm de prospecção.</li>
+        <li>Relatórios e indicadores.</li>
+        <li>Auditoria e central de LGPD.</li>
+        <li>Avaliações aplicadas dentro da plataforma; financeiro; PWA.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 08 ─────────────────────────────────────────── -->
+<section id="decisoes">
+  <h2><span class="num">08</span>Decisões que preciso de você</h2>
+  <p>Nenhuma delas travou a Fase 0 — sete das oito já foram resolvidas, na prática ou por decisão sua durante a implementação. Só a nº 3 continua em aberto, e é a única que bloqueia algo (o deploy do Push).</p>
+
+  <div class="decision">
+    <h4>1. O <code>/admin</code> vira o Painel ou continua sendo Projetos? <span class="status status-done" style="margin-left:6px">Resolvido</span></h4>
+    <p>Se o Painel virar a primeira tela, Projetos muda de endereço e os links antigos precisam de redirecionamento.</p>
+    <p class="rec"><b>Ficou diferente da recomendação:</b> Projetos continuou em <code>/admin</code>; Painel entrou como aba própria em <code>/admin/painel</code>, sem redirecionamento nenhum. Mais seguro de fazer sem conseguir ver o resultado num navegador, e todo link/breadcrumb existente continuou funcionando sem tocar.</p>
+  </div>
+
+  <div class="decision">
+    <h4>2. Barra lateral agrupada ou menu "Mais"? <span class="status status-done" style="margin-left:6px">Resolvido</span></h4>
+    <p>Doze itens não cabem na barra horizontal atual.</p>
+    <p class="rec"><b>Ficou diferente da recomendação:</b> nem barra lateral, nem menu "Mais" — a barra horizontal (que foi a 9 abas, não 12, porque Mentoria e Candidatos não viraram abas de topo) ganhou rolagem horizontal. Resolve por enquanto; a barra lateral segue sendo o caminho certo se mais abas entrarem.</p>
+  </div>
+
+  <div class="decision">
+    <h4>3. O plano Blaze está ativo? <span class="status status-pending" style="margin-left:6px">Em aberto</span></h4>
+    <p>Push, IA e envio de e-mail dependem de Cloud Functions, que não rodam no plano gratuito. É cobrança por uso, e no volume da Trovalim tende a ficar em poucos reais por mês — mas precisa estar ligado.</p>
+    <p style="font-size:.85rem;color:var(--muted)">Ainda não sei a resposta — é o que trava o deploy da function de Push (seção 04).</p>
+  </div>
+
+  <div class="decision">
+    <h4>4. IA no brainstorm: agora ou depois? <span class="status status-done" style="margin-left:6px">Resolvido</span></h4>
+    <p class="rec"><b>Seguiu a recomendação:</b> depois. O funil de Prospecção foi construído sem IA.</p>
+  </div>
+
+  <div class="decision">
+    <h4>5. Quais modelos de precificação você usa de verdade? <span class="status status-done" style="margin-left:6px">Resolvido</span></h4>
+    <p>Dos cinco listados, construir os que você usa e deixar os outros fora. Um catálogo com modelo que ninguém usa é campo que confunde na hora de orçar.</p>
+    <p class="rec"><b>Ficou diferente da recomendação:</b> em vez de escolher um subconjunto fixo, cada serviço do catálogo carrega a própria forma de cobrança — a pergunta virou desnecessária, porque o catálogo cresce item por item, não modelo por modelo.</p>
+  </div>
+
+  <div class="decision">
+    <h4>6. A empresa-cliente vê os candidatos no portal? A partir de qual etapa? <span class="status status-pending" style="margin-left:6px">Não entrou</span></h4>
+    <p>Muda a regra do Firestore e muda o desenho do portal. O padrão seguro é: só quem você marcar como liberado, e a partir da entrevista de RH.</p>
+    <p style="font-size:.85rem;color:var(--muted)">Fica pra quando puder testar a regra encadeada candidato→vaga→projeto no emulador — não quis arriscar escrevê-la sem testar.</p>
+  </div>
+
+  <div class="decision">
+    <h4>7. O PDI contratado por empresa: o que a empresa enxerga? <span class="status status-pending" style="margin-left:6px">Não se aplica</span></h4>
+    <p class="rec"><b>Recomendo:</b> progresso e competências sim; notas da consultora e conteúdo dos encontros não. É o que preserva a confiança do mentorado.</p>
+    <p style="font-size:.85rem;color:var(--muted)">Mentoria/PDI inteiro ficou fora desta rodada, então esta decisão ainda não precisou ser tomada.</p>
+  </div>
+
+  <div class="decision">
+    <h4>8. Por quanto tempo guardar dado de candidato reprovado? <span class="status status-done" style="margin-left:6px">Resolvido</span></h4>
+    <p>Precisa de um número para a política de retenção. Doze meses é o intervalo mais comum em consultoria de R&amp;S — mas quem decide é você, e vira configuração editável.</p>
+    <p class="rec"><b>Implementado:</b> 12 meses como padrão sugerido no formulário do candidato, editável por candidato (não é uma configuração global) — cada processo pode ter uma retenção diferente.</p>
+  </div>
+</section>
+
+<!-- 09 ─────────────────────────────────────────── -->
+<section id="fora">
+  <h2><span class="num">09</span>O que este plano não cobre</h2>
+  <p>Para ficar explícito, e não por descuido:</p>
+  <ul>
+    <li><strong>Integração com cobrança</strong> (gateway de pagamento). O Ápice tem, e é uma frente inteira — só entra se o Financeiro entrar.</li>
+    <li><strong>Importar candidato de fonte externa</strong> (LinkedIn, portais de vaga). Depende de acesso que essas plataformas não dão de graça; o caminho realista é cadastro manual e importação de planilha.</li>
+    <li><strong>Assinatura digital com validade jurídica</strong> em contrato. O aceite com data registrada resolve proposta comercial; contrato com valor jurídico pede um serviço especializado.</li>
+    <li><strong>Aplicação de testes psicológicos restritos.</strong> Instrumentos com registro no conselho têm regra própria de aplicação e correção — a plataforma pode guardar o resultado, não substituir o instrumento.</li>
+    <li><strong>App nativo.</strong> O caminho é o PWA instalável, que resolve o push no iPhone sem virar um segundo produto.</li>
+  </ul>
+
+  <div class="foot">
+    <p>Documento gerado a partir da leitura do código de <code>TrovalimConsultoria</code> na branch <code>main</code> e da documentação de arquitetura do projeto Ápice. Os esforços eram relativos entre si, não estimativas de prazo.</p>
+    <p><strong>Atualizado em 25 de agosto de 2026:</strong> 6 dos 7 itens pedidos estão implementados e verificados (build limpo a cada commit) na branch <code>evolucao-plataforma</code>, criada a partir de <code>main</code> — nada foi deployado em produção. O único item pendente de ação sua é ativar o Push (confirmar Blaze, gerar chave VAPID, revisar e deployar a Cloud Function). Detalhe de cada item na seção 04, o resolvido de cada decisão na seção 08.</p>
+  </div>
+
+</section>
+
+</main>
+</div>
+</div>
+</body>
+</html>
