@@ -54,7 +54,11 @@ export class PushService {
    * o clássico "deu erro, cliquei de novo e funcionou" acontecer aqui.
    */
   private async registerServiceWorker(): Promise<ServiceWorkerRegistration> {
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    // Escopo próprio evita colisão com o service worker do Angular (ngsw-worker.js),
+    // que também registra na raiz ('/') por padrão.
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      scope: '/firebase-cloud-messaging-push-scope',
+    });
     if (registration.active) return registration;
     await new Promise<void>((resolve) => {
       const worker = registration.installing || registration.waiting;
