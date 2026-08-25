@@ -216,3 +216,34 @@ export interface Task {
   ordem?: number;
   createdAt?: unknown;
 }
+
+export type LeadStage = 'novo' | 'contato' | 'diagnostico' | 'proposta-enviada' | 'ganho' | 'perdido';
+
+/**
+ * Prospecção de cliente (empresa ou pessoa física). O funil é NOVO → CONTATO
+ * → DIAGNÓSTICO → PROPOSTA ENVIADA, resolvido em GANHO ou PERDIDO — "perdido"
+ * nunca é automático, é sempre decisão de quem está vendendo, com motivo.
+ * Ao ganhar, `empresaId`/`projectId` guardam pra onde o lead virou (ver
+ * `LeadsService.marcarGanho`) — os dois lados sabem de onde vieram.
+ */
+export interface Lead {
+  id: string;
+  name: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  stage: LeadStage;
+  source?: 'site' | 'manual';
+  /** Estimativa de valor do serviço, em reais — não é preço fechado (isso vem da Precificação). */
+  valorEstimado?: number | null;
+  /** Dor declarada / contexto da prospecção (por que ela procurou a Trovalim). */
+  dor?: string;
+  diagnostico?: string;
+  escopo?: string;
+  condicoes?: string;
+  lostReason?: string;
+  /** Preenchidos só quando o lead vira Empresa + Projeto (estágio "ganho"). */
+  empresaId?: string | null;
+  projectId?: string | null;
+  createdAt?: unknown;
+}

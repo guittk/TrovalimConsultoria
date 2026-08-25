@@ -37,6 +37,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-calendario/admin-calendario.component').then((m) => m.AdminCalendarioComponent),
   },
   {
+    path: 'admin/prospeccao',
+    canActivate: [staffGuard, staffTabGuard('prospeccao')],
+    loadComponent: () => import('./admin/admin-prospeccao/admin-prospeccao.component').then((m) => m.AdminProspeccaoComponent),
+  },
+  {
     path: 'admin/projeto/:id',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-project/admin-project.component').then((m) => m.AdminProjectComponent),

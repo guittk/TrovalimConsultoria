@@ -1,0 +1,133 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="prospeccao" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem">
+    <div>
+      <h1 class="page-title">Prospecção</h1>
+      <p class="page-subtitle">Do primeiro contato até virar projeto</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">+ Nova Prospecção</button>
+  </div>
+
+  <div class="prospect-board">
+    @for (s of stages; track s.key) {
+      <div class="kanban-col prospect-col" [class.kanban-col-over]="dragOverStage() === s.key"
+        (dragover)="onColumnDragOver($event, s.key)" (dragleave)="onColumnDragLeave(s.key)" (drop)="onColumnDrop($event, s.key)">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title">{{ s.label }} <span class="kanban-col-count">({{ leadsFor(s.key).length }})</span></span>
+        </div>
+        @if (totalFor(s.key)) {
+          <div style="font-size:.72rem;color:var(--muted);margin:-.4rem 0 .6rem">{{ formatCurrency(totalFor(s.key)) }}</div>
+        }
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (lead of leadsFor(s.key); track lead.id) {
+            <div class="prospect-card" [class.dragging]="draggingId() === lead.id"
+              draggable="true" (dragstart)="onDragStart(lead)" (dragend)="onDragEnd()" (click)="openEdit(lead)">
+              <div style="font-weight:600;font-size:.85rem">{{ lead.name }}</div>
+              @if (lead.contactName) { <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">{{ lead.contactName }}</div> }
+              @if (lead.valorEstimado) { <div style="font-size:.75rem;color:var(--wine);margin-top:.4rem;font-weight:600">{{ formatCurrency(lead.valorEstimado) }}</div> }
+            </div>
+          }
+          @if (!leadsFor(s.key).length) {
+            <div style="font-size:.72rem;color:var(--muted);padding:.5rem 0">Nenhuma aqui.</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- MODAL DE PROSPECÇÃO -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:640px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">{{ editingLead() ? 'Editar Prospecção' : 'Nova Prospecção' }}</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+    @if (wonResult(); as won) {
+      <div class="alert alert-success show">
+        Empresa e projeto criados.
+        <a (click)="goToProject(won.projectId)" class="link-btn" style="cursor:pointer;margin-left:.4rem">Ver projeto →</a>
+      </div>
+    }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nome (empresa ou pessoa)</label>
+        <input type="text" class="form-input" placeholder="Ex: Empresa XYZ Ltda" [ngModel]="form().name" (ngModelChange)="updateForm('name', $event)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pessoa de contato</label>
+        <input type="text" class="form-input" placeholder="Ex: Maria Silva" [ngModel]="form().contactName" (ngModelChange)="updateForm('contactName', $event)">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input type="email" class="form-input" [ngModel]="form().email" (ngModelChange)="updateForm('email', $event)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telefone</label>
+        <input type="text" class="form-input" [ngModel]="form().phone" (ngModelChange)="updateForm('phone', $event)">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Estágio</label>
+        <select class="form-select" [ngModel]="form().stage" (ngModelChange)="updateForm('stage', $event)">
+          @for (s of stages; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor Estimado (R$)</label>
+        <input type="number" min="0" step="1" class="form-input" placeholder="0" [ngModel]="form().valorEstimado" (ngModelChange)="updateForm('valorEstimado', $event)">
+      </div>
+    </div>
+
+    @if (form().stage === 'perdido') {
+      <div class="form-group">
+        <label class="form-label">Motivo da perda</label>
+        <textarea class="form-textarea" rows="2" placeholder="Por que não fechou…" [ngModel]="form().lostReason" (ngModelChange)="updateForm('lostReason', $event)"></textarea>
+      </div>
+    }
+
+    <div class="form-group">
+      <label class="form-label">Dor Declarada / Contexto</label>
+      <textarea class="form-textarea" rows="2" placeholder="Por que essa empresa/pessoa procurou a Trovalim…" [ngModel]="form().dor" (ngModelChange)="updateForm('dor', $event)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Diagnóstico</label>
+      <textarea class="form-textarea" rows="2" placeholder="O que foi levantado na conversa…" [ngModel]="form().diagnostico" (ngModelChange)="updateForm('diagnostico', $event)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Escopo Proposto</label>
+      <textarea class="form-textarea" rows="2" placeholder="O que entra na proposta…" [ngModel]="form().escopo" (ngModelChange)="updateForm('escopo', $event)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Condições Comerciais</label>
+      <textarea class="form-textarea" rows="2" placeholder="Prazo, parcelamento, garantia…" [ngModel]="form().condicoes" (ngModelChange)="updateForm('condicoes', $event)"></textarea>
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <div style="display:flex;gap:.5rem">
+        @if (editingLead()) {
+          <button class="btn btn-danger-ghost" [disabled]="deleting()" (click)="handleDelete()">{{ deleting() ? 'Excluindo…' : 'Excluir' }}</button>
+        }
+        @if (editingLead() && !wonResult() && form().stage !== 'ganho' && form().stage !== 'perdido') {
+          <button class="btn btn-outline" [disabled]="saving()" (click)="markWon()">Marcar como Ganho →</button>
+        }
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="handleSave()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

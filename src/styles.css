@@ -39,6 +39,7 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  min-width: 0;
 }
 .pnav-logo {
   display: flex;
@@ -75,7 +76,12 @@ img { max-width: 100%; display: block; }
   gap: 1.6rem;
   align-self: stretch;
   align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
+.pnav-tabs::-webkit-scrollbar { height: 3px; }
+.pnav-tabs::-webkit-scrollbar-thumb { background: rgba(201,169,110,.3); }
 .pnav-tab {
   font-size: .68rem;
   letter-spacing: .16em;
@@ -84,6 +90,8 @@ img { max-width: 100%; display: block; }
   padding: .3rem 0;
   border-bottom: 2px solid transparent;
   transition: color .25s, border-color .25s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .pnav-tab:hover { color: var(--gold-light); }
 .pnav-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
@@ -1223,6 +1231,28 @@ img { max-width: 100%; display: block; }
 @media (max-width: 640px) {
   .kanban-board { grid-template-columns: 1fr; }
 }
+
+/* ── PROSPECÇÃO ── */
+.prospect-board {
+  display: flex;
+  gap: 1.1rem;
+  overflow-x: auto;
+  padding-bottom: .75rem;
+  align-items: start;
+}
+.prospect-col {
+  flex: 0 0 240px;
+  min-height: 120px;
+}
+.prospect-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: .75rem;
+  cursor: grab;
+  transition: box-shadow .2s;
+}
+.prospect-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.prospect-card.dragging { opacity: .4; }
 
 /* ── CALENDÁRIO ── */
 .cal-toolbar {

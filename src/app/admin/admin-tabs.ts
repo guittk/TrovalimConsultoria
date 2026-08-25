@@ -10,6 +10,7 @@ export const ADMIN_TABS: PnavTab[] = [
   { key: 'painel', label: 'Painel', path: '/admin/painel' },
   { key: 'projetos', label: 'Projetos', path: '/admin' },
   { key: 'calendario', label: 'Calendário', path: '/admin/calendario' },
+  { key: 'prospeccao', label: 'Prospecção', path: '/admin/prospeccao' },
   { key: 'clientes', label: 'Empresas', path: '/admin/clientes' },
   { key: 'contas', label: 'Contas', path: '/admin/contas' },
   { key: 'kanban', label: 'Kanban', path: '/admin/kanban' },

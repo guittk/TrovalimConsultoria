@@ -165,5 +165,12 @@ service cloud.firestore {
     match /calendarEvents/{eventId} {
       allow read, write: if isStaff();
     }
+
+    // Prospecção (funil de leads): só a equipe — é informação comercial
+    // interna, nunca visível pra empresa-cliente nem antes nem depois de
+    // virar projeto.
+    match /leads/{leadId} {
+      allow read, write: if isStaff();
+    }
   }
 }

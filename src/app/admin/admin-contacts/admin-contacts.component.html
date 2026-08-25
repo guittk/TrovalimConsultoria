@@ -22,7 +22,10 @@
                 <div style="font-weight:600">{{ s.name }}</div>
                 <div style="font-size:.82rem;color:var(--muted);margin-top:.35rem">{{ subjectLabel(s.subject) }}</div>
               </div>
-              <button class="btn btn-danger-ghost btn-sm" (click)="deleteSubmission(s)">Excluir</button>
+              <div style="display:flex;gap:.5rem;flex-shrink:0">
+                <button class="btn btn-outline btn-sm" [disabled]="creatingLeadFor() === s.id" (click)="createLead(s)">{{ creatingLeadFor() === s.id ? 'Criando…' : 'Criar Prospecção' }}</button>
+                <button class="btn btn-danger-ghost btn-sm" (click)="deleteSubmission(s)">Excluir</button>
+              </div>
             </div>
 
             <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;font-size:.82rem;color:var(--muted)">
