@@ -172,5 +172,20 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read, write: if isStaff();
     }
+
+    // Vagas de recrutamento (pertencem a um projeto) e candidatos (banco de
+    // talentos, coleção própria — candidato reprovado numa vaga continua
+    // existindo pra outra). Só a equipe: currículo e parecer de entrevista
+    // são dado pessoal de terceiro (LGPD), o titular não é o cliente da
+    // Trovalim. Exposição pro cliente-empresa (liberar candidato pra ver no
+    // portal) fica pra uma rodada futura — precisa de regra encadeada
+    // candidato→vaga→projeto, testada no emulador antes de valer pra
+    // produção, pra nunca vazar candidato de outra empresa por engano.
+    match /vagas/{vagaId} {
+      allow read, write: if isStaff();
+    }
+    match /candidates/{candidateId} {
+      allow read, write: if isStaff();
+    }
   }
 }

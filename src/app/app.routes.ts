@@ -47,6 +47,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-project/admin-project.component').then((m) => m.AdminProjectComponent),
   },
   {
+    path: 'admin/vaga/:id',
+    canActivate: [staffGuard],
+    loadComponent: () => import('./admin/admin-vaga/admin-vaga.component').then((m) => m.AdminVagaComponent),
+  },
+  {
     path: 'admin/clientes',
     canActivate: [staffGuard, staffTabGuard('clientes')],
     loadComponent: () => import('./admin/admin-clients/admin-clients.component').then((m) => m.AdminClientsComponent),

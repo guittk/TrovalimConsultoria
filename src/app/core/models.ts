@@ -262,3 +262,54 @@ export interface Lead {
   projectId?: string | null;
   createdAt?: unknown;
 }
+
+export type VagaStatus = 'aberta' | 'fechada';
+
+/** Vaga de um projeto de Recrutamento e Seleção. */
+export interface Vaga {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string;
+  status: VagaStatus;
+  createdAt?: unknown;
+}
+
+export type CandidateStage =
+  | 'triagem'
+  | 'entrevista-rh'
+  | 'avaliacao'
+  | 'entrevista-cliente'
+  | 'proposta'
+  | 'contratado'
+  | 'reprovado';
+
+/**
+ * Candidato — coleção própria (banco de talentos), não subcoleção da vaga:
+ * o reprovado de hoje é o contratado de outro cliente amanhã. Currículo e
+ * parecer são dado pessoal de TERCEIRO (LGPD) — `consentGiven` registra que
+ * a pessoa autorizou a Trovalim a guardar isso, e `retentionMonths` é por
+ * quanto tempo depois de reprovado o registro deveria ser mantido antes de
+ * ser revisado/excluído (sem automação ainda — é um número pra guiar
+ * limpeza manual, não uma exclusão programada).
+ */
+export interface Candidate {
+  id: string;
+  vagaId: string | null;
+  name: string;
+  email?: string;
+  phone?: string;
+  linkedinUrl?: string;
+  /** Ausente = nenhum currículo enviado ainda. */
+  resumePath?: string;
+  resumeUrl?: string;
+  stage: CandidateStage;
+  notes?: string;
+  consentGiven: boolean;
+  consentDate?: string | null;
+  retentionMonths?: number | null;
+  /** Reservado para quando o portal do cliente puder ver candidatos liberados — não lido ainda. */
+  clientVisible?: boolean;
+  clientFeedback?: string;
+  createdAt?: unknown;
+}

@@ -15,7 +15,9 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { ProjectFile, TimelineMode, TimelineStep } from '../../core/models';
+import { ProjectFile, TimelineMode, TimelineStep, Vaga, VagaStatus } from '../../core/models';
+import { VagasService, VAGA_STATUSES } from '../../core/vagas.service';
+import { CandidatesService } from '../../core/candidates.service';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
 import { ADMIN_TABS } from '../admin-tabs';
@@ -23,7 +25,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
-type TabKey = 'geral' | 'timeline' | 'arquivos' | 'mensagens';
+type TabKey = 'geral' | 'timeline' | 'vagas' | 'arquivos' | 'mensagens';
 
 @Component({
   selector: 'app-admin-project',
@@ -46,6 +48,8 @@ export class AdminProjectComponent {
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
   private readonly projectsSvc = inject(ProjectsService);
+  private readonly vagasSvc = inject(VagasService);
+  private readonly candidatesSvc = inject(CandidatesService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly platformSettingsSvc = inject(PlatformSettingsService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
@@ -182,6 +186,14 @@ export class AdminProjectComponent {
     const done = items.reduce((sum, x, idx) => sum + (x.s.done ? weights[idx] : 0), 0);
     return Math.round((done / total) * 100);
   });
+
+  /* ── VAGAS ── */
+  readonly vagaStatuses = VAGA_STATUSES;
+  readonly vagas = toSignal(this.vagasSvc.listForProject$(this.pid), { initialValue: [] as Vaga[] });
+  readonly newVagaTitle = signal('');
+  readonly newVagaDesc = signal('');
+  readonly creatingVaga = signal(false);
+  readonly vagaErr = signal('');
 
   /* ── ARQUIVOS ── */
   readonly uploading = signal(false);
@@ -389,6 +401,44 @@ export class AdminProjectComponent {
     } finally {
       this.savingTimeline.set(false);
     }
+  }
+
+  /* ── VAGAS ── */
+  async createVaga(): Promise<void> {
+    const title = this.newVagaTitle().trim();
+    if (!title) return;
+    this.creatingVaga.set(true);
+    this.vagaErr.set('');
+    try {
+      await this.vagasSvc.create({
+        projectId: this.pid,
+        title,
+        description: this.newVagaDesc().trim(),
+        status: 'aberta',
+      });
+      this.newVagaTitle.set('');
+      this.newVagaDesc.set('');
+    } catch {
+      this.vagaErr.set('Erro ao criar vaga. Tente novamente.');
+    } finally {
+      this.creatingVaga.set(false);
+    }
+  }
+
+  setVagaStatus(vaga: Vaga, status: VagaStatus): void {
+    this.vagasSvc.update(vaga.id, { status });
+  }
+
+  async deleteVaga(vaga: Vaga): Promise<void> {
+    const ok = await this.confirmSvc.confirm({
+      title: 'Excluir vaga',
+      message: `Excluir "${vaga.title}" permanentemente? Os candidatos continuam no banco de talentos, só perdem o vínculo com esta vaga.`,
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+    await this.candidatesSvc.unlinkFromVaga(vaga.id);
+    await this.vagasSvc.delete(vaga.id);
   }
 
   /* ── ARQUIVOS ── */

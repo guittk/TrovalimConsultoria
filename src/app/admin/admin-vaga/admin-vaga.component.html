@@ -1,0 +1,131 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+}
+
+@if (vaga(); as v) {
+  <div class="breadcrumb">
+    <a [routerLink]="['/admin/projeto', v.projectId]">Projeto</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ v.title }}</span>
+  </div>
+
+  <div class="page">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 class="page-title">{{ v.title }}</h1>
+        @if (v.description) { <p class="page-subtitle">{{ v.description }}</p> }
+      </div>
+      <button class="btn btn-primary" (click)="openCreate()">+ Novo Candidato</button>
+    </div>
+
+    <div class="prospect-board">
+      @for (s of stages; track s.key) {
+        <div class="kanban-col prospect-col" [class.kanban-col-over]="dragOverStage() === s.key"
+          (dragover)="onColumnDragOver($event, s.key)" (dragleave)="onColumnDragLeave(s.key)" (drop)="onColumnDrop($event, s.key)">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">{{ s.label }} <span class="kanban-col-count">({{ candidatesFor(s.key).length }})</span></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            @for (c of candidatesFor(s.key); track c.id) {
+              <div class="prospect-card" [class.dragging]="draggingId() === c.id"
+                draggable="true" (dragstart)="onDragStart(c)" (dragend)="onDragEnd()" (click)="openEdit(c)">
+                <div style="font-weight:600;font-size:.85rem">{{ c.name }}</div>
+                @if (c.linkedinUrl) { <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">LinkedIn ↗</div> }
+                @if (c.resumeUrl) { <div style="font-size:.72rem;color:var(--wine);margin-top:.2rem">📎 Currículo</div> }
+              </div>
+            }
+            @if (!candidatesFor(s.key).length) {
+              <div style="font-size:.72rem;color:var(--muted);padding:.5rem 0">Nenhum aqui.</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- MODAL DE CANDIDATO -->
+<div class="modal-backdrop" [class.show]="modalOpen()" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" (click)="closeModal()">✕</button>
+    <div class="modal-title">{{ editingCandidate() ? 'Editar Candidato' : 'Novo Candidato' }}</div>
+
+    @if (modalErr()) { <div class="alert alert-error show">{{ modalErr() }}</div> }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input type="text" class="form-input" [ngModel]="form().name" (ngModelChange)="updateForm('name', $event)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estágio</label>
+        <select class="form-select" [ngModel]="form().stage" (ngModelChange)="updateForm('stage', $event)">
+          @for (s of stages; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input type="email" class="form-input" [ngModel]="form().email" (ngModelChange)="updateForm('email', $event)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telefone</label>
+        <input type="text" class="form-input" [ngModel]="form().phone" (ngModelChange)="updateForm('phone', $event)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">LinkedIn</label>
+      <input type="text" class="form-input" placeholder="https://linkedin.com/in/…" [ngModel]="form().linkedinUrl" (ngModelChange)="updateForm('linkedinUrl', $event)">
+    </div>
+
+    @if (editingCandidate(); as c) {
+      <div class="form-group">
+        <label class="form-label">Currículo</label>
+        @if (c.resumeUrl) {
+          <div style="display:flex;align-items:center;gap:.75rem;font-size:.82rem">
+            <a [href]="c.resumeUrl" target="_blank" rel="noopener" class="link-btn">Ver arquivo atual ↗</a>
+            <label class="btn btn-outline btn-sm" style="cursor:pointer">{{ uploadingResume() ? 'Enviando…' : 'Substituir' }}<input type="file" style="display:none" [disabled]="uploadingResume()" (change)="handleUploadResume($event)"></label>
+          </div>
+        } @else {
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-block">{{ uploadingResume() ? 'Enviando…' : 'Enviar currículo' }}<input type="file" style="display:none" [disabled]="uploadingResume()" (change)="handleUploadResume($event)"></label>
+        }
+        @if (uploadErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.4rem">{{ uploadErr() }}</p> }
+      </div>
+    } @else {
+      <div class="form-help" style="margin-bottom:1rem">O envio do currículo fica disponível depois de salvar o candidato pela primeira vez.</div>
+    }
+
+    <div class="form-group">
+      <label class="form-label">Notas / Parecer</label>
+      <textarea class="form-textarea" rows="3" placeholder="Impressões da entrevista, pontos fortes, ressalvas…" [ngModel]="form().notes" (ngModelChange)="updateForm('notes', $event)"></textarea>
+    </div>
+
+    <div class="form-group" style="background:var(--bg);padding:.85rem;border:1px solid var(--border)">
+      <label style="display:flex;align-items:flex-start;gap:.6rem;font-size:.82rem;cursor:pointer">
+        <input type="checkbox" style="margin-top:.15rem" [ngModel]="form().consentGiven" (ngModelChange)="updateForm('consentGiven', $event)">
+        <span>O candidato autorizou a Trovalim a guardar seus dados (currículo, contato, avaliação) para este processo seletivo — LGPD.</span>
+      </label>
+      <div class="form-row" style="margin-top:.75rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Reter por (meses após reprovado)</label>
+          <input type="number" min="0" step="1" class="form-input" [ngModel]="form().retentionMonths" (ngModelChange)="updateForm('retentionMonths', $event)">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between">
+      <div>
+        @if (editingCandidate()) {
+          <button class="btn btn-danger-ghost" [disabled]="deleting()" (click)="handleDelete()">{{ deleting() ? 'Excluindo…' : 'Excluir' }}</button>
+        }
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="handleSave()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

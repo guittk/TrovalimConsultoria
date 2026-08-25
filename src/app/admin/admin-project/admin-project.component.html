@@ -45,6 +45,7 @@
       <div class="tabs">
         <button class="tab" [class.active]="activeTab() === 'geral'" (click)="activeTab.set('geral')">Visão Geral</button>
         <button class="tab" [class.active]="activeTab() === 'timeline'" (click)="activeTab.set('timeline')">Linha do Tempo</button>
+        <button class="tab" [class.active]="activeTab() === 'vagas'" (click)="activeTab.set('vagas')">Vagas</button>
         <button class="tab" [class.active]="activeTab() === 'arquivos'" (click)="activeTab.set('arquivos')">Arquivos</button>
         <button class="tab" [class.active]="activeTab() === 'mensagens'" (click)="activeTab.set('mensagens')">Mensagens</button>
       </div>
@@ -191,6 +192,44 @@
               Adicionar Etapa
             </button>
             <button class="btn btn-primary btn-sm" [disabled]="savingTimeline()" (click)="saveTimeline()">{{ savingTimeline() ? 'Salvando…' : 'Salvar Etapas' }}</button>
+          </div>
+        </div>
+      }
+
+      <!-- VAGAS -->
+      @if (activeTab() === 'vagas') {
+        <div class="tab-panel active">
+          @if (vagaErr()) { <div class="alert alert-error show">{{ vagaErr() }}</div> }
+
+          @if (!vagas().length) {
+            <div style="font-size:.82rem;color:var(--muted);padding:.5rem 0 1rem">Nenhuma vaga cadastrada ainda.</div>
+          } @else {
+            <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem">
+              @for (vaga of vagas(); track vaga.id) {
+                <div class="card" style="padding:1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+                  <div style="min-width:0">
+                    <a [routerLink]="['/admin/vaga', vaga.id]" style="font-weight:600;color:var(--wine)">{{ vaga.title }}</a>
+                    @if (vaga.description) { <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">{{ vaga.description }}</div> }
+                  </div>
+                  <div style="display:flex;align-items:center;gap:.6rem;flex-shrink:0">
+                    <select class="form-select" style="width:auto" [ngModel]="vaga.status" (ngModelChange)="setVagaStatus(vaga, $event)">
+                      @for (s of vagaStatuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+                    </select>
+                    <a [routerLink]="['/admin/vaga', vaga.id]" class="btn btn-outline btn-sm">Ver Candidatos →</a>
+                    <button class="btn btn-danger-ghost btn-sm" (click)="deleteVaga(vaga)">Excluir</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="card" style="padding:1rem;background:var(--bg)">
+            <div style="font-size:.78rem;font-weight:600;margin-bottom:.6rem">Nova Vaga</div>
+            <div class="form-row">
+              <input type="text" class="form-input" placeholder="Ex: Analista de RH Pleno" [ngModel]="newVagaTitle()" (ngModelChange)="newVagaTitle.set($event)">
+              <input type="text" class="form-input" placeholder="Descrição (opcional)" [ngModel]="newVagaDesc()" (ngModelChange)="newVagaDesc.set($event)">
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-top:.75rem" [disabled]="creatingVaga() || !newVagaTitle().trim()" (click)="createVaga()">{{ creatingVaga() ? 'Criando…' : '+ Adicionar Vaga' }}</button>
           </div>
         </div>
       }

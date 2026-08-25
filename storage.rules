@@ -66,5 +66,13 @@ service firebase.storage {
     match /tasks/{taskId}/{allPaths=**} {
       allow read, write, delete: if isStaff();
     }
+
+    // Currículo do candidato — dado pessoal de terceiro (LGPD), só a
+    // equipe. Exposição pro cliente-empresa fica para uma rodada futura,
+    // que exige uma regra encadeada candidato→vaga→projeto testada no
+    // emulador antes de valer pra produção.
+    match /candidates/{candidateId}/{allPaths=**} {
+      allow read, write, delete: if isStaff();
+    }
   }
 }
