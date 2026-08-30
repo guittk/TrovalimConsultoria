@@ -9,7 +9,7 @@ export const environment = {
   // Chave VAPID pública (Web Push) — Console do Firebase → Configurações do
   // Projeto → Cloud Messaging → Certificados Web Push. É pública, pode ficar
   // no repo. Enquanto estiver vazia, o botão "Ativar Notificações" some.
-  vapidPublicKey: '',
+  vapidPublicKey: 'BMGAJqod0ctwavGslUIZqGjlFCJ4n70AxcEU3z0mbTrKXRQ6NY5kbX_k_oaeVBUk2ZVu5P0gPwtWuiQOU6Kbzgc',
   firebase: {
     apiKey: 'AIzaSyCYfcrQ_XqkFodiphe3NCCCylOe6Y8torg',
     authDomain: 'geovana-trovalim-prod.firebaseapp.com',

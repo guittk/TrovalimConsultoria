@@ -1,9 +1,7 @@
 export const environment = {
   production: true,
   useEmulators: false,
-  // Chave VAPID pública (Web Push) — ver environment.ts. Cole aqui a chave
-  // gerada no Console do Firebase pra habilitar o "Ativar Notificações".
-  vapidPublicKey: '',
+  vapidPublicKey: 'BMGAJqod0ctwavGslUIZqGjlFCJ4n70AxcEU3z0mbTrKXRQ6NY5kbX_k_oaeVBUk2ZVu5P0gPwtWuiQOU6Kbzgc',
   firebase: {
     apiKey: 'AIzaSyCYfcrQ_XqkFodiphe3NCCCylOe6Y8torg',
     authDomain: 'geovana-trovalim-prod.firebaseapp.com',
