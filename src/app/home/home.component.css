@@ -375,7 +375,7 @@
 .svc.open .svc-d { padding-top: .9rem; }
 
 /* ── DIFERENCIAIS ── */
-.diferenciais { background: var(--cream-warm); }
+.diferenciais { background: var(--cream); }
 .diffs { display: grid; grid-template-columns: repeat(3,1fr); gap: 2.5rem; }
 .diff { border-top: 1px solid rgba(201,160,106,.3); padding-top: 1.5rem; }
 .diff-t {
