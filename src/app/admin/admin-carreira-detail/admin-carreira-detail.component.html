@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="carreira" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="carreira" [userName]="userData.name || userData.email || ''" />
 }
 
 @if (client(); as c) {
@@ -27,9 +27,9 @@
 
         <div class="form-group">
           <label class="form-label">Estágio</label>
-          <select class="form-select" [ngModel]="stage()" (ngModelChange)="stage.set($event)">
+          <app-select [ngModel]="stage()" (ngModelChange)="stage.set($event)">
             @for (s of stages; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
-          </select>
+          </app-select>
         </div>
 
         <div class="form-group">

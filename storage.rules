@@ -67,6 +67,12 @@ service firebase.storage {
       allow read, write, delete: if isStaff();
     }
 
+    // Anexos de itens do quadro de Planejamento (interno da equipe, sistema
+    // separado do Kanban).
+    match /planning/{itemId}/{allPaths=**} {
+      allow read, write, delete: if isStaff();
+    }
+
     // Currículo do candidato — dado pessoal de terceiro (LGPD), só a
     // equipe. Exposição pro cliente-empresa fica para uma rodada futura,
     // que exige uma regra encadeada candidato→vaga→projeto testada no

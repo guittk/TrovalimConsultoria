@@ -15,13 +15,14 @@ import {
 import { Project, UserAccount } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-admin-client',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-client.component.html',
 })
 export class AdminClientComponent {

@@ -1,0 +1,102 @@
+<div style="min-height:100vh;background:var(--bg);padding:2rem 1rem">
+  <div style="max-width:720px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:2rem">
+      <img src="logo_gt.png" alt="Trovalim" style="height:36px" />
+      <span style="font-family:var(--serif);font-size:1.1rem;color:var(--wine)">Trovalim Consultoria</span>
+    </div>
+
+    @if (proposta(); as p) {
+      @if (p.status === 'rascunho') {
+        <div class="card"><div class="empty-state"><div class="empty-state-sub">Esta proposta ainda não foi enviada.</div></div></div>
+      } @else {
+        <div class="card" style="margin-bottom:1.25rem">
+          <h1 style="font-family:var(--serif);font-size:1.6rem;color:var(--wine);margin:0 0 .25rem">Proposta Comercial</h1>
+          <p style="color:var(--muted);font-size:.9rem;margin:0">Para {{ p.clientName }}@if (p.contactName) { , A/C {{ p.contactName }} }</p>
+
+          @if (p.escopo) {
+            <div style="margin-top:1.25rem">
+              <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Escopo</div>
+              <p style="white-space:pre-wrap;font-size:.9rem">{{ p.escopo }}</p>
+            </div>
+          }
+
+          <div style="margin-top:1.25rem">
+            <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Itens</div>
+            <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+              <tbody>
+                @for (item of p.items; track item.key) {
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:.5rem 0">{{ item.name }} <span style="color:var(--muted)">× {{ item.qty }}</span></td>
+                    <td style="padding:.5rem 0;text-align:right">{{ formatCurrency(item.baseValue * item.qty) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div style="display:flex;justify-content:flex-end;margin-top:1rem;font-family:var(--serif);font-size:1.4rem;color:var(--wine)">
+              Total: {{ formatCurrency(total()) }}
+            </div>
+          </div>
+
+          @if (p.condicoes) {
+            <div style="margin-top:1.25rem">
+              <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Condições</div>
+              <p style="white-space:pre-wrap;font-size:.9rem">{{ p.condicoes }}</p>
+            </div>
+          }
+
+          <button class="btn btn-outline" style="margin-top:1.5rem" (click)="downloadPdf()">Baixar PDF</button>
+        </div>
+
+        @if (p.status === 'enviada') {
+          <div class="card">
+            @if (!showAccept() && !showDecline()) {
+              <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                <button class="btn btn-primary" (click)="showAccept.set(true)">Aceitar Proposta</button>
+                <button class="btn btn-outline" (click)="showDecline.set(true)">Recusar</button>
+              </div>
+            }
+            @if (showAccept()) {
+              <div class="form-group">
+                <label>Seu nome</label>
+                <input class="form-input" [ngModel]="acceptName()" (ngModelChange)="acceptName.set($event)" />
+              </div>
+              <div class="form-group">
+                <label>Seu e-mail (opcional)</label>
+                <input class="form-input" [ngModel]="acceptEmail()" (ngModelChange)="acceptEmail.set($event)" />
+              </div>
+              @if (err()) { <div style="color:var(--danger);font-size:.85rem;margin-bottom:.75rem">{{ err() }}</div> }
+              <div style="display:flex;gap:.75rem">
+                <button class="btn btn-primary" (click)="confirmAccept()" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Confirmar Aceite' }}</button>
+                <button class="btn btn-outline" (click)="showAccept.set(false)">Cancelar</button>
+              </div>
+            }
+            @if (showDecline()) {
+              <div class="form-group">
+                <label>Motivo (opcional)</label>
+                <textarea class="form-textarea" [ngModel]="declineReason()" (ngModelChange)="declineReason.set($event)"></textarea>
+              </div>
+              @if (err()) { <div style="color:var(--danger);font-size:.85rem;margin-bottom:.75rem">{{ err() }}</div> }
+              <div style="display:flex;gap:.75rem">
+                <button class="btn btn-primary" (click)="confirmDecline()" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Confirmar Recusa' }}</button>
+                <button class="btn btn-outline" (click)="showDecline.set(false)">Cancelar</button>
+              </div>
+            }
+          </div>
+        }
+
+        @if (p.status === 'aceita') {
+          <div class="card" style="background:var(--success-soft);border-color:var(--success-border)">
+            <p style="margin:0;color:var(--success);font-weight:600">Proposta aceita por {{ p.acceptedByName }}@if (p.respondedAt) { em {{ toDate(p.respondedAt) | date:'dd/MM/yyyy' }} }.</p>
+          </div>
+        }
+        @if (p.status === 'recusada') {
+          <div class="card" style="background:var(--danger-soft);border-color:var(--danger-border)">
+            <p style="margin:0;color:var(--danger);font-weight:600">Proposta recusada.</p>
+          </div>
+        }
+      }
+    } @else {
+      <div class="card"><div class="empty-state"><div class="empty-state-sub">Proposta não encontrada.</div></div></div>
+    }
+  </div>
+</div>

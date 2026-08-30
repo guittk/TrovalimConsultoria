@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="avaliacoes" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="avaliacoes" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -20,7 +20,7 @@
       } @else {
         <div style="display:flex;flex-direction:column;gap:.6rem">
           @for (t of templates(); track t.id) {
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;padding:.75rem .9rem;background:var(--bg);border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;padding:.75rem .9rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px">
               <div style="min-width:0">
                 <div style="font-weight:600;font-size:.88rem">{{ t.name }}</div>
                 @if (t.description) { <div style="font-size:.78rem;color:var(--muted);margin-top:.15rem">{{ t.description }}</div> }
@@ -56,7 +56,7 @@
                   </div>
                 </div>
                 @if (a.maxScore) {
-                  <span style="font-family:var(--serif);font-size:1.1rem;color:var(--wine);flex-shrink:0">{{ a.totalScore }}/{{ a.maxScore }}</span>
+                  <span style="font-family:var(--serif);font-size:1.1rem;color:var(--gold);flex-shrink:0">{{ a.totalScore }}/{{ a.maxScore }}</span>
                 }
               </div>
               @if (expandedId() === a.id) {
@@ -131,26 +131,26 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Quem vai ser avaliado</label>
-        <select class="form-select" [ngModel]="applyTargetType()" (ngModelChange)="onApplyTargetTypeChange($event)">
+        <app-select [ngModel]="applyTargetType()" (ngModelChange)="onApplyTargetTypeChange($event)">
           <option value="candidate">Candidato</option>
           <option value="mentorado">Mentorado</option>
-        </select>
+        </app-select>
       </div>
       <div class="form-group">
         <label class="form-label">Pessoa</label>
-        <select class="form-select" [ngModel]="applyTargetId()" (ngModelChange)="applyTargetId.set($event)">
+        <app-select [ngModel]="applyTargetId()" (ngModelChange)="applyTargetId.set($event)">
           <option value="">— Escolha —</option>
           @for (t of applyTargets(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
-        </select>
+        </app-select>
       </div>
     </div>
 
     <div class="form-group">
       <label class="form-label">Modelo de Avaliação</label>
-      <select class="form-select" [ngModel]="applyTemplateId()" (ngModelChange)="onApplyTemplateChange($event)">
+      <app-select [ngModel]="applyTemplateId()" (ngModelChange)="onApplyTemplateChange($event)">
         <option value="">— Escolha —</option>
         @for (t of templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
-      </select>
+      </app-select>
     </div>
 
     @if (applySelectedTemplate(); as tpl) {
@@ -159,14 +159,14 @@
           <div class="form-group" style="margin:0">
             <label class="form-label">{{ q.text }}</label>
             @if (q.type === 'escala') {
-              <select class="form-select" (change)="setAnswer(q.id, +$any($event.target).value)">
+              <app-select (valueChange)="setAnswer(q.id, +$event)">
                 <option value="">— Nota (1 a 5) —</option>
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
                 <option value="4">4</option>
                 <option value="5">5</option>
-              </select>
+              </app-select>
             } @else {
               <textarea class="form-textarea" rows="2" (change)="setAnswer(q.id, $any($event.target).value)"></textarea>
             }

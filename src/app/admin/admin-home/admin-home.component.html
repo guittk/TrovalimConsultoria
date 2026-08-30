@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -17,12 +17,12 @@
   <div class="toolbar">
     <input type="text" class="toolbar-search" placeholder="Buscar por projeto ou empresa…"
       [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
-    <select class="toolbar-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+    <app-select class="sel-toolbar" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
       <option value="">Todos os status</option>
       @for (s of statusSettings().statuses; track s.key) {
         <option [value]="s.key">{{ s.label }}</option>
       }
-    </select>
+    </app-select>
   </div>
 
   <div class="card" style="padding:0">
@@ -30,17 +30,18 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Empresa</th>
+            <th class="th-sort" [class.th-active]="sortKey() === 'empresa'" (click)="toggleSort('empresa')">Empresa<span class="th-arrow">{{ sortArrow('empresa') }}</span></th>
             <th>Projeto</th>
             <th>Descrição</th>
-            <th>Status</th>
-            <th style="width:130px">Progresso</th>
+            <th class="th-sort" [class.th-active]="sortKey() === 'status'" (click)="toggleSort('status')">Status<span class="th-arrow">{{ sortArrow('status') }}</span></th>
+            <th class="th-sort" [class.th-active]="sortKey() === 'inicio'" (click)="toggleSort('inicio')" style="width:110px">Início<span class="th-arrow">{{ sortArrow('inicio') }}</span></th>
+            <th class="th-sort" [class.th-active]="sortKey() === 'progresso'" (click)="toggleSort('progresso')" style="width:130px">Progresso<span class="th-arrow">{{ sortArrow('progresso') }}</span></th>
             <th style="width:90px"></th>
           </tr>
         </thead>
         <tbody>
           @if (!projectsWithCompany().length) {
-            <tr><td colspan="6"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>
+            <tr><td colspan="7"><div class="empty-state"><div class="empty-state-emoji">📋</div><div class="empty-state-text">Nenhum projeto encontrado</div></div></td></tr>
           }
           @for (p of projectsWithCompany(); track p.id) {
             <tr>
@@ -60,7 +61,7 @@
               </td>
               <td data-label="Projeto" style="font-weight:500;max-width:200px">
                 {{ p.name }}
-                @if (p.hidden) { <span class="badge" style="margin-left:.4rem;background:rgba(0,0,0,.08)" title="Oculto para a empresa">Oculto</span> }
+                @if (p.hidden) { <span class="badge" style="margin-left:.4rem;background:var(--surface-2)" title="Oculto para a empresa">Oculto</span> }
               </td>
               <td data-label="Descrição" style="max-width:220px">
                 <div style="font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="p.description || ''">
@@ -68,6 +69,7 @@
                 </div>
               </td>
               <td data-label="Status"><app-status-badge [status]="p.status" /></td>
+              <td data-label="Início" style="font-size:.8rem;color:var(--muted);white-space:nowrap">{{ fmtDate(p.startDate) }}</td>
               <td data-label="Progresso">
                 <div style="display:flex;align-items:center;gap:.5rem">
                   <div class="progress-bar" style="flex:1">
@@ -96,8 +98,9 @@
             <tr>
               <th>Projeto</th>
               <th>Descrição</th>
-              <th>Status</th>
-              <th style="width:130px">Progresso</th>
+              <th class="th-sort" [class.th-active]="sortKey() === 'status'" (click)="toggleSort('status')">Status<span class="th-arrow">{{ sortArrow('status') }}</span></th>
+              <th class="th-sort" [class.th-active]="sortKey() === 'inicio'" (click)="toggleSort('inicio')" style="width:110px">Início<span class="th-arrow">{{ sortArrow('inicio') }}</span></th>
+              <th class="th-sort" [class.th-active]="sortKey() === 'progresso'" (click)="toggleSort('progresso')" style="width:130px">Progresso<span class="th-arrow">{{ sortArrow('progresso') }}</span></th>
               <th style="width:90px"></th>
             </tr>
           </thead>
@@ -106,7 +109,7 @@
               <tr>
                 <td data-label="Projeto">
                   <div style="display:flex;align-items:center;gap:.6rem">
-                    <div title="Sem empresa vinculada" style="width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.08);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <div title="Sem empresa vinculada" style="width:28px;height:28px;border-radius:50%;background:var(--surface-2);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
                     </div>
                     <span style="font-weight:500">{{ p.name }}</span>
@@ -118,6 +121,7 @@
                   </div>
                 </td>
                 <td data-label="Status"><app-status-badge [status]="p.status" /></td>
+                <td data-label="Início" style="font-size:.8rem;color:var(--muted);white-space:nowrap">{{ fmtDate(p.startDate) }}</td>
                 <td data-label="Progresso">
                   <div style="display:flex;align-items:center;gap:.5rem">
                     <div class="progress-bar" style="flex:1">
@@ -161,13 +165,13 @@
 
     <div class="form-group">
       <label class="form-label">Status Inicial</label>
-      <select class="form-select" [ngModel]="npStatus()" (ngModelChange)="npStatus.set($event)">
+      <app-select [ngModel]="npStatus()" (ngModelChange)="npStatus.set($event)">
         <option value="em-andamento">Em Andamento</option>
         <option value="aguardando-cliente">Aguardando Empresa</option>
         <option value="em-revisao">Em Revisão</option>
         <option value="concluido">Concluído</option>
         <option value="pausado">Pausado</option>
-      </select>
+      </app-select>
     </div>
 
     <div class="form-group">
@@ -179,12 +183,12 @@
       @if (clientsLoading()) {
         <div style="text-align:center;padding:.6rem;font-size:.78rem;color:var(--muted)">Carregando empresas…</div>
       } @else {
-        <select class="form-select" [ngModel]="npClientUid()" (ngModelChange)="npClientUid.set($event)">
+        <app-select [ngModel]="npClientUid()" (ngModelChange)="npClientUid.set($event)">
           <option value="">— Sem empresa (atribuir depois) —</option>
           @for (u of clients(); track u.id) {
             <option [value]="u.id">{{ companyLabel(u) }}</option>
           }
-        </select>
+        </app-select>
       }
 
       @if (selectedClient(); as c) {

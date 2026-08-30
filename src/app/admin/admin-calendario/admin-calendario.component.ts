@@ -9,6 +9,7 @@ import { ProjectsService } from '../../core/projects.service';
 import { TasksService } from '../../core/tasks.service';
 import { CalendarEvent, CalendarEventType, Project, Task } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -48,7 +49,7 @@ function emptyForm(date: string): FormState {
 @Component({
   selector: 'app-admin-calendario',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-calendario.component.html',
 })
 export class AdminCalendarioComponent {

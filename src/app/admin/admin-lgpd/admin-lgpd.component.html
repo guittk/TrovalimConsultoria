@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="lgpd" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="lgpd" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -8,18 +8,46 @@
     <p class="page-subtitle">Retenção de dado de candidato e trilha de auditoria — sem exclusão automática, é sempre decisão de quem está vendo aqui</p>
   </div>
 
-  <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:1.5rem">
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Candidatos Monitorados</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ monitoredCount() }}</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Candidatos Monitorados</div>
+          <div class="kpi-value">{{ monitoredCount() }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Sem Consentimento</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="withoutConsent().length ? '#DC2626' : 'var(--wine)'">{{ withoutConsent().length }}</div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 8v4" /><path d="M12 16h.01" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Sem Consentimento</div>
+          <div class="kpi-value" [class.is-alert]="withoutConsent().length">{{ withoutConsent().length }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Retenção Vencida</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="overdueRetention().length ? '#DC2626' : 'var(--wine)'">{{ overdueRetention().length }}</div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" /><path d="M12 7v5l3 2" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Retenção Vencida</div>
+          <div class="kpi-value" [class.is-alert]="overdueRetention().length">{{ overdueRetention().length }}</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -41,7 +69,7 @@
                 <td style="font-weight:600">{{ row.candidate.name }}</td>
                 <td>{{ row.createdDate | date:'dd/MM/yyyy' }}</td>
                 <td>{{ row.candidate.retentionMonths }} meses</td>
-                <td style="color:#DC2626">{{ row.overdueDays }} dia(s)</td>
+                <td style="color:var(--danger)">{{ row.overdueDays }} dia(s)</td>
                 <td>
                   <div style="display:flex;gap:.5rem;justify-content:flex-end">
                     <button class="btn btn-outline btn-sm" [disabled]="extendingId() === row.candidate.id" (click)="extendRetention(row)">Estender</button>
@@ -62,7 +90,7 @@
       <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Sem <code>consentGiven</code> marcado — confirme com a pessoa e atualize o cadastro do candidato.</p>
       <div style="display:flex;flex-direction:column;gap:.5rem">
         @for (c of withoutConsent(); track c.id) {
-          <div style="display:flex;justify-content:space-between;padding:.6rem .9rem;background:var(--bg);border:1px solid var(--border);font-size:.85rem">
+          <div style="display:flex;justify-content:space-between;padding:.6rem .9rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:.85rem">
             <span style="font-weight:600">{{ c.name }}</span>
             <span style="color:var(--muted)">{{ c.stage }}</span>
           </div>

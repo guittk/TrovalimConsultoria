@@ -1,3 +1,8 @@
+/*
+  O login é sempre a "capa" escura da marca — não acompanha o tema
+  claro/escuro do conteúdo (que só existe depois de entrar), pelo mesmo
+  motivo da sidebar: é a superfície que carrega a identidade.
+*/
 :host {
   font-family: var(--sans);
   background: var(--wine-dark);
@@ -12,7 +17,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, rgba(201,169,110,.07) 0%, transparent 65%);
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(201,160,106,.1) 0%, transparent 62%),
+    radial-gradient(ellipse at 50% 100%, rgba(91,15,22,.6) 0%, transparent 60%);
   pointer-events: none;
 }
 .login-wrap {
@@ -20,6 +27,8 @@
   width: 100%;
   max-width: 420px;
   padding: 3rem 2.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
   position: relative;
 }
 
@@ -31,7 +40,8 @@
   content: '';
   position: absolute;
   top: 14px; left: 14px; right: -14px; bottom: -14px;
-  border: 1px solid rgba(201,169,110,.28);
+  border: 1px solid rgba(201,160,106,.28);
+  border-radius: var(--radius-lg);
   z-index: -1;
   pointer-events: none;
 }
@@ -43,23 +53,24 @@
 }
 .login-logo img {
   width: 72px; height: 72px;
-  object-fit: cover;
-  border-radius: 50%;
+  object-fit: contain;
   margin-bottom: 1rem;
 }
 .login-logo-name {
   font-family: var(--serif);
+  font-weight: 400;
   font-size: 1.45rem;
   color: var(--wine);
-  letter-spacing: .15em;
+  letter-spacing: .28em;
   text-transform: uppercase;
 }
 .login-logo-sub {
-  font-size: .63rem;
-  letter-spacing: .32em;
+  font-size: .58rem;
+  letter-spacing: .3em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-top: .35rem;
+  /* Cartão sempre creme: os tons aqui são fixos, não os tokens de tema. */
+  color: rgba(91,15,22,.55);
+  margin-top: .5rem;
 }
 .divider {
   height: 1px;
@@ -71,18 +82,19 @@ label {
   font-size: .7rem;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(91,15,22,.6);
   margin-bottom: .45rem;
   font-weight: 500;
 }
 input[type="email"], input[type="password"] {
   width: 100%;
   padding: .82rem 1rem;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid rgba(91,15,22,.16);
+  border-radius: var(--radius-md);
   background: #fff;
   font-family: var(--sans);
   font-size: .9rem;
-  color: var(--graphite);
+  color: #2F2A28;
   margin-bottom: 1.2rem;
   outline: none;
   transition: border-color .2s;
@@ -101,16 +113,18 @@ input[type="email"]:focus, input[type="password"]:focus {
   text-transform: uppercase;
   padding: 1rem;
   border: none;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background .3s;
+  transition: background .22s ease-out, transform .22s ease-out;
   margin-top: .35rem;
 }
-.btn-login:hover { background: var(--wine-dark); }
-.btn-login:disabled { opacity: .55; cursor: not-allowed; }
+.btn-login:hover { background: var(--wine-dark); transform: translateY(-1px); }
+.btn-login:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .error-msg {
-  background: #FEE2E2;
-  border: 1px solid #FCA5A5;
-  color: #DC2626;
+  background: rgba(168,31,38,.1);
+  border: 1px solid rgba(168,31,38,.3);
+  border-radius: var(--radius-md);
+  color: #A81F26;
   padding: .72rem 1rem;
   font-size: .8rem;
   margin-bottom: 1rem;
@@ -121,7 +135,7 @@ input[type="email"]:focus, input[type="password"]:focus {
   margin-top: 1.85rem;
   font-size: .72rem;
   letter-spacing: .1em;
-  color: var(--muted);
+  color: rgba(91,15,22,.55);
   text-decoration: none;
   transition: color .2s;
 }

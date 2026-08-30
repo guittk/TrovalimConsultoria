@@ -1,14 +1,46 @@
-<nav class="pnav">
+<nav class="pnav" [class.pnav-sidebar]="visibleTabs.length > 0">
   <div class="pnav-left">
     <a [routerLink]="logoLink" class="pnav-logo">
       <img src="logo_gt.png" alt="Trovalim">
-      <span class="pnav-logo-text">Trovalim</span>
+      <span class="pnav-logo-lockup">
+        <span class="pnav-logo-eyebrow">Consultoria</span>
+        <span class="pnav-logo-text">Trovalim</span>
+        <span class="pnav-logo-tagline">Inteligência · Estratégia · Resultados</span>
+      </span>
     </a>
     <div class="pnav-sep"></div>
     @if (visibleTabs.length) {
-      <div class="pnav-tabs">
-        @for (tab of visibleTabs; track tab.key) {
-          <a [routerLink]="tab.path" class="pnav-tab" [class.active]="tab.key === activeSection">{{ tab.label }}</a>
+      <button
+        type="button"
+        class="pnav-collapse-btn"
+        (click)="toggleCollapsed()"
+        [attr.aria-pressed]="collapsed()"
+        [title]="collapsed() ? 'Expandir menu' : 'Recolher menu'"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          @if (collapsed()) { <path d="m9 18 6-6-6-6" /> } @else { <path d="m15 18-6-6 6-6" /> }
+        </svg>
+      </button>
+      <div class="pnav-tabs" #tabsScroll (scroll)="onTabsScroll()">
+        @for (grp of groupedVisibleTabs; track grp.label) {
+          @if (grp.label) {
+            <span class="pnav-group-label">{{ grp.label }}</span>
+          }
+          @for (tab of grp.tabs; track tab.key) {
+            <a [routerLink]="tab.path" class="pnav-tab" [class.active]="tab.key === activeSection" [title]="collapsed() ? tab.label : null">
+              @if (tab.icon) {
+                <svg class="pnav-tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  @for (d of tab.icon; track $index) { <path [attr.d]="d" /> }
+                </svg>
+              }
+              <span class="pnav-tab-label">{{ tab.label }}</span>
+              @if (tab.isNew) {
+                <span class="pnav-tab-new" title="Tela ainda em refinamento visual"></span>
+              }
+            </a>
+          }
         }
       </div>
     } @else {
@@ -16,10 +48,54 @@
     }
   </div>
   <div class="pnav-right">
-    <div class="pnav-user">
-      <span class="pnav-name">{{ userName }}</span>
-      <button class="btn-logout" (click)="logout()">Sair</button>
+    <div class="pnav-user-card">
+      <span class="pnav-avatar" aria-hidden="true">{{ userInitials }}</span>
+      <span class="pnav-user-meta">
+        <span class="pnav-name">{{ userName }}</span>
+        @if (userRole()) { <span class="pnav-role">{{ userRole() }}</span> }
+      </span>
+      @if (showBell) {
+        <div class="pnav-bell">
+          <button class="pnav-bell-btn" (click)="toggleBell()" [attr.aria-expanded]="bellOpen()" aria-label="Notificações">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            @if (unreadProjects().length) {
+              <span class="pnav-bell-badge">{{ unreadProjects().length }}</span>
+            }
+          </button>
+          @if (bellOpen()) {
+            <div class="pnav-bell-backdrop" (click)="closeBell()"></div>
+            <div class="pnav-bell-menu">
+              <div class="pnav-bell-menu-title">Notificações</div>
+              @if (!unreadProjects().length) {
+                <div class="pnav-bell-empty">Nenhuma mensagem nova.</div>
+              } @else {
+                @for (p of unreadProjects(); track p.id) {
+                  <a
+                    [routerLink]="['/admin/projeto', p.id]"
+                    [queryParams]="{ tab: 'mensagens' }"
+                    (click)="closeBell()"
+                    class="pnav-bell-item"
+                  >Nova mensagem — {{ p.name }}</a>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
+    <button class="btn-logout" (click)="logout()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <path d="m16 17 5-5-5-5" />
+        <path d="M21 12H9" />
+      </svg>
+      Sair
+    </button>
     @if (visibleTabs.length) {
       <button
         class="pnav-menu-btn"
@@ -37,13 +113,29 @@
 @if (mobileMenuOpen()) {
   <div class="pnav-mobile-backdrop" (click)="closeMobileMenu()"></div>
   <div class="pnav-mobile-menu">
-    @for (tab of visibleTabs; track tab.key) {
-      <a
-        [routerLink]="tab.path"
-        class="pnav-mobile-link"
-        [class.active]="tab.key === activeSection"
-        (click)="closeMobileMenu()"
-      >{{ tab.label }}</a>
+    @for (grp of groupedVisibleTabs; track grp.label) {
+      @if (grp.label) {
+        <span class="pnav-group-label pnav-group-label-mobile">{{ grp.label }}</span>
+      }
+      @for (tab of grp.tabs; track tab.key) {
+        <a
+          [routerLink]="tab.path"
+          class="pnav-mobile-link"
+          [class.active]="tab.key === activeSection"
+          (click)="closeMobileMenu()"
+        >
+          @if (tab.icon) {
+            <svg class="pnav-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @for (d of tab.icon; track $index) { <path [attr.d]="d" /> }
+            </svg>
+          }
+          {{ tab.label }}
+          @if (tab.isNew) {
+            <span class="pnav-tab-new" title="Tela ainda em refinamento visual"></span>
+          }
+        </a>
+      }
     }
   </div>
 }

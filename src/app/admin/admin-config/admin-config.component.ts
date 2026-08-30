@@ -2,23 +2,32 @@ import { AsyncPipe } from '@angular/common';
 import { Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth.service';
+import { map } from 'rxjs';
+import { AuthService, normRole } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
-import { PlatformSettingsService, DEFAULT_PLATFORM_COLOR } from '../../core/platform-settings.service';
 import { StorageSettingsService, DEFAULT_STORAGE_SETTINGS } from '../../core/storage-settings.service';
 import { StorageUsageService } from '../../core/storage-usage.service';
 import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
+  DEFAULT_STATUS_COLORS,
+  statusColorFor,
 } from '../../core/project-status-settings.service';
-import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
-import { NotificationSettingsService, DEFAULT_NOTIFICATION_SETTINGS } from '../../core/notification-settings.service';
+import { CatalogSettingsService, PRICING_UNITS, DEFAULT_CATALOG_SETTINGS } from '../../core/catalog-settings.service';
 import { PushService } from '../../core/push.service';
-import { OpenAiSettingsService, DEFAULT_OPENAI_SETTINGS } from '../../core/openai-settings.service';
-import { of, switchMap } from 'rxjs';
-import { Empresa, FileTypeLimit, PricingItem, ProjectStatusOption } from '../../core/models';
+import { ThemeService, ThemeMode } from '../../core/theme.service';
+import { Functions, httpsCallable } from 'firebase/functions';
+import { FIREBASE_FUNCTIONS } from '../../core/firebase.providers';
+import { CatalogExtraction, CatalogItem, Empresa, FileTypeLimit, ProjectStatusOption } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
+import { ToastService } from '../../shared/toast/toast.service';
+import { AdminAccountsComponent } from '../admin-accounts/admin-accounts.component';
+import { PlatformGuideComponent } from './platform-guide.component';
 import { ADMIN_TABS } from '../admin-tabs';
+
+let catKeySeq = 0;
+const newCatKey = () => `cat-${Date.now()}-${catKeySeq++}`;
 
 function formatMb(mb: number): string {
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
@@ -33,47 +42,45 @@ const PRICE_PER_GB_MONTH_USD = 0.026;
 @Component({
   selector: 'app-admin-config',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, PnavComponent],
+  imports: [AsyncPipe, FormsModule, PnavComponent, SelectComponent, AdminAccountsComponent, PlatformGuideComponent],
   templateUrl: './admin-config.component.html',
 })
 export class AdminConfigComponent {
   private readonly auth = inject(AuthService);
-  private readonly settingsSvc = inject(PlatformSettingsService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly storageSettingsSvc = inject(StorageSettingsService);
   private readonly storageUsageSvc = inject(StorageUsageService);
   private readonly statusSettingsSvc = inject(ProjectStatusSettingsService);
-  private readonly pricingSettingsSvc = inject(PricingSettingsService);
-  private readonly notificationSettingsSvc = inject(NotificationSettingsService);
+  private readonly catalogSvc = inject(CatalogSettingsService);
   private readonly pushSvc = inject(PushService);
-  private readonly openaiSettingsSvc = inject(OpenAiSettingsService);
+  private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
+  private readonly themeSvc = inject(ThemeService);
+  private readonly toast = inject(ToastService);
+
+  /** Tema da área de conteúdo — preferência deste navegador, ver ThemeService. */
+  readonly theme = this.themeSvc.theme;
+
+  setTheme(mode: ThemeMode): void {
+    this.themeSvc.set(mode);
+  }
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
   readonly isOwner = toSignal(this.auth.isOwner$, { initialValue: false });
 
-  readonly settings = toSignal(this.settingsSvc.get$(), {
-    initialValue: null,
-  });
+  /** Abas da tela: ajustes, contas de acesso e o Guia da plataforma. */
+  readonly activeTab = signal<'config' | 'contas' | 'guia'>('config');
 
-  readonly color = signal(DEFAULT_PLATFORM_COLOR);
-  private syncedOnce = false;
-
-  readonly savingOk = signal(false);
-  readonly savingErr = signal('');
-  readonly saving = signal(false);
+  /** Aba "Contas" some pra um manager que teve essa aba escondida (era o
+   *  papel do antigo `staffTabGuard('contas')`, que sumiu com a rota). */
+  readonly canSeeContas = toSignal(
+    this.auth.userData$.pipe(
+      map((d) => normRole(d?.role) !== 'manager' || !(d?.hiddenTabs || []).includes('contas')),
+    ),
+    { initialValue: true },
+  );
 
   constructor() {
-    // Sincroniza o color picker com o valor salvo assim que ele chega do
-    // Firestore, mas só uma vez — depois disso o usuário controla o valor.
-    effect(() => {
-      const s = this.settings();
-      if (s && !this.syncedOnce) {
-        this.syncedOnce = true;
-        this.color.set(s.primaryColor);
-      }
-    });
-
     effect(() => {
       const s = this.storageSettings();
       if (s && !this.storageSyncedOnce) {
@@ -93,48 +100,12 @@ export class AdminConfigComponent {
     });
 
     effect(() => {
-      const s = this.pricingSettingsSig();
-      if (s && !this.pricingSyncedOnce) {
-        this.pricingSyncedOnce = true;
-        this.pricingForm.set(s.items.map((it) => ({ ...it })));
+      const s = this.catalogSettingsSig();
+      if (s && !this.catalogSyncedOnce) {
+        this.catalogSyncedOnce = true;
+        this.catalogForm.set(s.items.map((it) => ({ ...it })));
       }
     });
-
-    effect(() => {
-      const s = this.notificationSettingsSig();
-      if (s && !this.notifSyncedOnce) {
-        this.notifSyncedOnce = true;
-        this.vapidKeyForm.set(s.vapidKey);
-      }
-    });
-
-    effect(() => {
-      const s = this.openaiSettingsSig();
-      if (s && !this.openaiSyncedOnce && this.isOwner()) {
-        this.openaiSyncedOnce = true;
-        this.openaiKeyForm.set(s.apiKey);
-      }
-    });
-  }
-
-  onColorChange(value: string): void {
-    this.color.set(value);
-  }
-
-  async save(): Promise<void> {
-    this.savingOk.set(false);
-    this.savingErr.set('');
-    this.saving.set(true);
-    try {
-      await this.settingsSvc.updateColor(this.color());
-      this.savingOk.set(true);
-      setTimeout(() => this.savingOk.set(false), 3000);
-    } catch (e) {
-      const err = e as { code?: string; message?: string };
-      this.savingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
-    } finally {
-      this.saving.set(false);
-    }
   }
 
   /* ── ARQUIVOS E ARMAZENAMENTO ── */
@@ -145,13 +116,10 @@ export class AdminConfigComponent {
   readonly defaultClientLimitMb = signal(DEFAULT_STORAGE_SETTINGS.defaultClientLimitMb);
   readonly typeLimitsForm = signal<(FileTypeLimit & { extensionsText: string })[]>([]);
 
-  readonly storageSavingOk = signal(false);
-  readonly storageSavingErr = signal('');
   readonly storageSaving = signal(false);
 
   readonly totalUsageBytes = toSignal(this.storageUsageSvc.totalUsage$(), { initialValue: 0 });
   readonly recalculating = signal(false);
-  readonly recalculateMsg = signal('');
 
   readonly clients = toSignal(this.empresasSvc.listAll$(), { initialValue: [] as Empresa[] });
   readonly pendingLimits = signal<Record<string, string>>({});
@@ -194,8 +162,6 @@ export class AdminConfigComponent {
   }
 
   async saveStorageSettings(): Promise<void> {
-    this.storageSavingOk.set(false);
-    this.storageSavingErr.set('');
     this.storageSaving.set(true);
     try {
       const typeLimits: FileTypeLimit[] = this.typeLimitsForm().map((t) => ({
@@ -212,11 +178,10 @@ export class AdminConfigComponent {
         defaultClientLimitMb: Number(this.defaultClientLimitMb()) || DEFAULT_STORAGE_SETTINGS.defaultClientLimitMb,
         typeLimits,
       });
-      this.storageSavingOk.set(true);
-      setTimeout(() => this.storageSavingOk.set(false), 3000);
+      this.toast.success('Configuração de armazenamento salva.');
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      this.storageSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+      this.toast.error('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
       this.storageSaving.set(false);
     }
@@ -224,13 +189,11 @@ export class AdminConfigComponent {
 
   async recalculateUsage(): Promise<void> {
     this.recalculating.set(true);
-    this.recalculateMsg.set('');
     try {
       await this.storageUsageSvc.recalculate();
-      this.recalculateMsg.set('Uso recalculado com sucesso.');
-      setTimeout(() => this.recalculateMsg.set(''), 4000);
+      this.toast.success('Uso de armazenamento recalculado.');
     } catch {
-      this.recalculateMsg.set('Erro ao recalcular o uso.');
+      this.toast.error('Erro ao recalcular o uso.');
     } finally {
       this.recalculating.set(false);
     }
@@ -272,125 +235,117 @@ export class AdminConfigComponent {
   private statusSyncedOnce = false;
 
   readonly statusForm = signal<ProjectStatusOption[]>([]);
-  readonly statusSavingOk = signal(false);
-  readonly statusSavingErr = signal('');
   readonly statusSaving = signal(false);
 
   addStatus(): void {
-    this.statusForm.update((rows) => [...rows, { key: `status-${Date.now()}`, label: 'Novo Status' }]);
+    this.statusForm.update((rows) => [
+      ...rows,
+      { key: `status-${Date.now()}`, label: 'Novo Status', color: statusColorFor(null, rows.length) },
+    ]);
   }
 
   removeStatus(index: number): void {
     this.statusForm.update((rows) => rows.filter((_, i) => i !== index));
   }
 
-  updateStatus(index: number, field: 'label', value: string): void {
+  updateStatus(index: number, field: 'label' | 'color', value: string): void {
     this.statusForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   }
 
+  /** Cor efetiva mostrada no seletor (a explícita, senão a padrão da chave/paleta). */
+  statusColor(row: ProjectStatusOption, index: number): string {
+    return statusColorFor(row, index);
+  }
+
+  /** Volta todas as cores ao padrão da marca (por chave, ou paleta pra status personalizado). */
+  resetStatusColors(): void {
+    this.statusForm.update((rows) =>
+      rows.map((r, i) => ({ ...r, color: DEFAULT_STATUS_COLORS[r.key] || statusColorFor({ ...r, color: undefined }, i) })),
+    );
+  }
+
   async saveStatusSettings(): Promise<void> {
-    this.statusSavingOk.set(false);
-    this.statusSavingErr.set('');
     this.statusSaving.set(true);
     try {
       await this.statusSettingsSvc.update(this.statusForm());
-      this.statusSavingOk.set(true);
-      setTimeout(() => this.statusSavingOk.set(false), 3000);
+      this.toast.success('Status do projeto salvos.');
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      this.statusSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+      this.toast.error('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
       this.statusSaving.set(false);
     }
   }
 
-  /* ── CATÁLOGO DE PREÇOS ── */
-  private readonly pricingSettingsSig = toSignal(this.pricingSettingsSvc.get$(), {
-    initialValue: DEFAULT_PRICING_SETTINGS,
-  });
-  private pricingSyncedOnce = false;
+  /* ── CATÁLOGO (Serviços + Preços num doc só) ── */
+  private readonly catalogSettingsSig = toSignal(this.catalogSvc.get$(), { initialValue: DEFAULT_CATALOG_SETTINGS });
+  private catalogSyncedOnce = false;
 
-  readonly pricingUnits = PRICING_UNITS;
-  readonly pricingForm = signal<PricingItem[]>([]);
-  readonly pricingSavingOk = signal(false);
-  readonly pricingSavingErr = signal('');
-  readonly pricingSaving = signal(false);
+  readonly catalogUnits = PRICING_UNITS;
+  readonly catalogForm = signal<CatalogItem[]>([]);
+  readonly catalogSaving = signal(false);
 
-  unitLabel(unit: PricingItem['unit']): string {
-    return this.pricingUnits.find((u) => u.key === unit)?.label || unit;
+  unitLabel(unit: string | null): string {
+    if (!unit) return 'Só descrição';
+    return this.catalogUnits.find((u) => u.key === unit)?.label || unit;
   }
 
-  addPricingItem(): void {
-    this.pricingForm.update((rows) => [
+  addCatalogItem(): void {
+    this.catalogForm.update((rows) => [
       ...rows,
-      { key: `item-${Date.now()}`, name: 'Novo serviço', unit: 'projeto', baseValue: 0 },
+      { key: newCatKey(), name: '', description: '', unit: null, baseValue: null },
     ]);
   }
 
-  removePricingItem(index: number): void {
-    this.pricingForm.update((rows) => rows.filter((_, i) => i !== index));
+  removeCatalogItem(index: number): void {
+    this.catalogForm.update((rows) => rows.filter((_, i) => i !== index));
   }
 
-  updatePricingItem<K extends keyof PricingItem>(index: number, field: K, value: PricingItem[K]): void {
-    this.pricingForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  updateCatalogItem<K extends keyof CatalogItem>(index: number, field: K, value: CatalogItem[K]): void {
+    this.catalogForm.update((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   }
 
-  async savePricingSettings(): Promise<void> {
-    this.pricingSavingOk.set(false);
-    this.pricingSavingErr.set('');
-    this.pricingSaving.set(true);
+  /** Alterna entre "tem preço" (unidade = projeto por padrão) e "só descrição". */
+  toggleCatalogPriced(index: number, priced: boolean): void {
+    this.catalogForm.update((rows) =>
+      rows.map((r, i) =>
+        i === index
+          ? priced
+            ? { ...r, unit: r.unit ?? 'projeto', baseValue: r.baseValue ?? 0 }
+            : { ...r, unit: null, baseValue: null }
+          : r,
+      ),
+    );
+  }
+
+  async saveCatalog(): Promise<void> {
+    this.catalogSaving.set(true);
     try {
-      await this.pricingSettingsSvc.update(this.pricingForm());
-      this.pricingSavingOk.set(true);
-      setTimeout(() => this.pricingSavingOk.set(false), 3000);
+      await this.catalogSvc.update(this.catalogForm());
+      this.toast.success('Catálogo salvo.');
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      this.pricingSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+      this.toast.error('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
     } finally {
-      this.pricingSaving.set(false);
+      this.catalogSaving.set(false);
     }
   }
 
   /* ── NOTIFICAÇÕES PUSH ── */
-  private readonly notificationSettingsSig = toSignal(this.notificationSettingsSvc.get$(), {
-    initialValue: DEFAULT_NOTIFICATION_SETTINGS,
-  });
-  private notifSyncedOnce = false;
-
-  readonly vapidKeyForm = signal('');
-  readonly notifSavingOk = signal(false);
-  readonly notifSavingErr = signal('');
-  readonly notifSaving = signal(false);
-
+  // A chave VAPID não é mais colada aqui: virou constante em environment.ts.
   readonly pushSupported = this.pushSvc.supported;
+  readonly pushConfigured = this.pushSvc.configured;
   readonly pushStatus = this.pushSvc.status;
   readonly activatingPush = signal(false);
   readonly pushErr = signal('');
 
-  async saveNotificationSettings(): Promise<void> {
-    this.notifSavingOk.set(false);
-    this.notifSavingErr.set('');
-    this.notifSaving.set(true);
-    try {
-      await this.notificationSettingsSvc.update(this.vapidKeyForm().trim());
-      this.notifSavingOk.set(true);
-      setTimeout(() => this.notifSavingOk.set(false), 3000);
-    } catch (e) {
-      const err = e as { code?: string; message?: string };
-      this.notifSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
-    } finally {
-      this.notifSaving.set(false);
-    }
-  }
-
   async activatePush(): Promise<void> {
     const uid = this.auth.currentUser?.uid;
-    const vapidKey = this.vapidKeyForm().trim();
-    if (!uid || !vapidKey) return;
+    if (!uid || !this.pushSvc.configured) return;
     this.activatingPush.set(true);
     this.pushErr.set('');
     try {
-      await this.pushSvc.register(uid, vapidKey);
+      await this.pushSvc.register(uid);
       if (this.pushSvc.status() !== 'granted') {
         this.pushErr.set('Permissão não concedida — o navegador pode ter bloqueado o pedido.');
       }
@@ -401,36 +356,77 @@ export class AdminConfigComponent {
     }
   }
 
-  /* ── INTEGRAÇÃO COM IA (OPENAI) ── */
-  /**
-   * Regra do Firestore restringe /settings/openai a owner — pra um manager
-   * não estourar permission-denied ao simplesmente abrir esta tela, só
-   * chama get$() quando isOwner$ já confirmou; senão fica no padrão vazio.
-   */
-  private readonly openaiSettingsSig = toSignal(
-    this.auth.isOwner$.pipe(switchMap((owner) => (owner ? this.openaiSettingsSvc.get$() : of(DEFAULT_OPENAI_SETTINGS)))),
-    { initialValue: DEFAULT_OPENAI_SETTINGS },
-  );
-  private openaiSyncedOnce = false;
+  /* ── CATÁLOGO VIA IA ──
+   * Cola-se um texto; a Cloud Function `fillCatalogsFromContext` devolve
+   * uma PROPOSTA de catálogo. A tela mostra o antes (o que já está salvo) e
+   * o depois (editável) lado a lado; só ao "Aplicar" é que `catalogForm`
+   * recebe a proposta — e mesmo aí nada vai pro Firestore até "Salvar
+   * Catálogo". */
+  readonly aiContext = signal('');
+  readonly aiRunning = signal(false);
+  /** `null` = sem proposta pendente; array = proposta editável ("depois"). */
+  readonly aiProposal = signal<CatalogItem[] | null>(null);
 
-  readonly openaiKeyForm = signal('');
-  readonly openaiSavingOk = signal(false);
-  readonly openaiSavingErr = signal('');
-  readonly openaiSaving = signal(false);
-
-  async saveOpenAiSettings(): Promise<void> {
-    this.openaiSavingOk.set(false);
-    this.openaiSavingErr.set('');
-    this.openaiSaving.set(true);
+  async analyzeCatalog(): Promise<void> {
+    const context = this.aiContext().trim();
+    if (context.length < 20 || this.aiRunning()) return;
+    this.aiRunning.set(true);
+    this.aiProposal.set(null);
     try {
-      await this.openaiSettingsSvc.update(this.openaiKeyForm().trim());
-      this.openaiSavingOk.set(true);
-      setTimeout(() => this.openaiSavingOk.set(false), 3000);
+      const fn = httpsCallable<{ context: string }, CatalogExtraction>(this.functions, 'fillCatalogsFromContext');
+      const { data } = await fn({ context });
+      const items = (data.items || []).map((it) => ({
+        key: newCatKey(),
+        name: it.name,
+        description: it.description || '',
+        unit: it.unit ?? null,
+        baseValue: it.unit ? it.baseValue ?? 0 : null,
+      }));
+      if (!items.length) {
+        this.toast.error('A IA não encontrou serviços no texto. Tente detalhar mais.');
+        return;
+      }
+      this.aiProposal.set(items);
     } catch (e) {
-      const err = e as { code?: string; message?: string };
-      this.openaiSavingErr.set('Erro ao salvar: ' + (err.code || err.message || 'desconhecido'));
+      const err = e as { message?: string };
+      this.toast.error(err.message || 'Não consegui analisar o texto agora. Tente novamente.');
     } finally {
-      this.openaiSaving.set(false);
+      this.aiRunning.set(false);
     }
+  }
+
+  updateAiItem<K extends keyof CatalogItem>(index: number, field: K, value: CatalogItem[K]): void {
+    this.aiProposal.update((rows) => (rows ? rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)) : rows));
+  }
+
+  toggleAiPriced(index: number, priced: boolean): void {
+    this.aiProposal.update((rows) =>
+      rows
+        ? rows.map((r, i) =>
+            i === index
+              ? priced
+                ? { ...r, unit: r.unit ?? 'projeto', baseValue: r.baseValue ?? 0 }
+                : { ...r, unit: null, baseValue: null }
+              : r,
+          )
+        : rows,
+    );
+  }
+
+  removeAiItem(index: number): void {
+    this.aiProposal.update((rows) => (rows ? rows.filter((_, i) => i !== index) : rows));
+  }
+
+  applyAiProposal(): void {
+    const p = this.aiProposal();
+    if (!p) return;
+    this.catalogForm.set(p.map((it) => ({ ...it })));
+    this.aiProposal.set(null);
+    this.aiContext.set('');
+    this.toast.success('Proposta aplicada ao catálogo. Revise e clique em “Salvar Catálogo”.');
+  }
+
+  cancelAiProposal(): void {
+    this.aiProposal.set(null);
   }
 }

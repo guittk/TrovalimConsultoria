@@ -1,34 +1,34 @@
 import { Injectable, inject } from '@angular/core';
-import { DocumentData, Firestore, doc, setDoc } from 'firebase/firestore';
 import { Observable, map } from 'rxjs';
-import { FIRESTORE } from './firebase.providers';
-import { docData$ } from './firestore-rx';
-import { PricingItem, PricingSettings } from './models';
+import { PricingItem, PricingSettings, PricingUnit } from './models';
+import { CatalogSettingsService, PRICING_UNITS } from './catalog-settings.service';
 
-export const PRICING_UNITS: { key: PricingItem['unit']; label: string }[] = [
-  { key: 'vaga', label: 'Por vaga' },
-  { key: 'participante', label: 'Por participante' },
-  { key: 'encontro', label: 'Por encontro' },
-  { key: 'projeto', label: 'Projeto fechado' },
-  { key: 'hora', label: 'Por hora' },
-];
-
+// Reexport pra não quebrar quem importava PRICING_UNITS daqui.
+export { PRICING_UNITS };
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = { items: [] };
 
+/**
+ * View derivada do catálogo único (`CatalogSettingsService`): expõe só os
+ * itens que têm preço, no formato antigo `{ key, name, unit, baseValue }`.
+ * A calculadora de investimento da Prospecção e a geração de proposta
+ * continuam consumindo isto sem mudança.
+ */
 @Injectable({ providedIn: 'root' })
 export class PricingSettingsService {
-  private readonly db: Firestore = inject(FIRESTORE);
+  private readonly catalog = inject(CatalogSettingsService);
 
   get$(): Observable<PricingSettings> {
-    return docData$<DocumentData>(doc(this.db, 'settings', 'pricing')).pipe(map((d) => this.normalize(d)));
-  }
-
-  update(items: PricingItem[]): Promise<void> {
-    return setDoc(doc(this.db, 'settings', 'pricing'), { items }, { merge: true });
-  }
-
-  private normalize(d: DocumentData | null): PricingSettings {
-    if (!d || !Array.isArray(d['items'])) return DEFAULT_PRICING_SETTINGS;
-    return { items: d['items'] as PricingItem[] };
+    return this.catalog.get$().pipe(
+      map((c) => ({
+        items: c.items
+          .filter((it) => it.unit && it.baseValue != null)
+          .map((it) => ({
+            key: it.key,
+            name: it.name,
+            unit: it.unit as PricingUnit,
+            baseValue: it.baseValue as number,
+          })) as PricingItem[],
+      })),
+    );
   }
 }

@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
 }
 
 @if (project(); as p) {
@@ -23,7 +23,7 @@
         <div class="proj-header-name">{{ p.name }}</div>
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <app-status-badge [status]="p.status" />
-          @if (isOverdue()) { <span class="badge" style="background:#FEE2E2;color:#DC2626">Prazo Vencido</span> }
+          @if (isOverdue()) { <span class="badge" style="background:var(--danger-soft);color:var(--danger)">Prazo Vencido</span> }
           @if (p.ownerId) {
             <a [routerLink]="['/admin/clientes', p.ownerId]" class="link-btn">Ver Empresa →</a>
           }
@@ -64,20 +64,20 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Status do Projeto</label>
-              <select class="form-select" [ngModel]="status()" (ngModelChange)="status.set($event)">
+              <app-select [ngModel]="status()" (ngModelChange)="status.set($event)">
                 @for (s of statusSettings().statuses; track s.key) {
                   <option [value]="s.key">{{ s.label }}</option>
                 }
-              </select>
+              </app-select>
             </div>
             <div class="form-group">
               <label class="form-label">Responsável pelo Projeto</label>
-              <select class="form-select" [ngModel]="responsibleUid()" (ngModelChange)="responsibleUid.set($event)">
+              <app-select [ngModel]="responsibleUid()" (ngModelChange)="responsibleUid.set($event)">
                 <option value="">— Sem responsável definido —</option>
                 @for (u of staffAccounts(); track u.uid) {
                   <option [value]="u.uid">{{ u.name || u.email }}</option>
                 }
-              </select>
+              </app-select>
             </div>
           </div>
 
@@ -102,7 +102,7 @@
           <div class="form-group">
             <label class="form-label">Progresso — <span>{{ progress() }}</span>%</label>
             <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="progress()" [style.background]="ownerAccount()?.branding?.primaryColor || '#C9A96E'"></div>
+              <div class="progress-fill" [style.width.%]="progress()" [style.background]="ownerAccount()?.branding?.primaryColor || '#C9A06A'"></div>
             </div>
             <div class="form-help">Calculado automaticamente a partir do peso das etapas concluídas na Linha do Tempo.</div>
           </div>
@@ -128,10 +128,10 @@
 
           <div class="form-group" style="max-width:360px">
             <label class="form-label">Ordenação das Etapas</label>
-            <select class="form-select" [ngModel]="timelineMode()" (ngModelChange)="setTimelineMode($event)">
+            <app-select [ngModel]="timelineMode()" (ngModelChange)="setTimelineMode($event)">
               <option value="data">Por Data (cronológica)</option>
               <option value="ordem">Manual (ordem + peso)</option>
-            </select>
+            </app-select>
             <div class="form-help">
               @if (timelineMode() === 'data') {
                 As etapas são ordenadas automaticamente pela data, com as sem data no final. O peso de cada etapa é o intervalo de dias até a etapa (ou grupo de mesma data) anterior, contado a partir da Data de Início do projeto.
@@ -181,7 +181,7 @@
             <div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">
               Peso total considerado: {{ totalWeight() | number:'1.0-1' }}{{ timelineMode() === 'data' ? ' dias' : '' }}.
               @if (!totalWeight()) {
-                <span style="color:#DC2626"> — {{ timelineMode() === 'data' ? 'defina a Data de Início do projeto e datas nas etapas' : 'defina pesos nas etapas' }} para calcular o progresso.</span>
+                <span style="color:var(--danger)"> — {{ timelineMode() === 'data' ? 'defina a Data de Início do projeto e datas nas etapas' : 'defina pesos nas etapas' }} para calcular o progresso.</span>
               }
             </div>
           }
@@ -208,13 +208,13 @@
               @for (vaga of vagas(); track vaga.id) {
                 <div class="card" style="padding:1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
                   <div style="min-width:0">
-                    <a [routerLink]="['/admin/vaga', vaga.id]" style="font-weight:600;color:var(--wine)">{{ vaga.title }}</a>
+                    <a [routerLink]="['/admin/vaga', vaga.id]" style="font-weight:600;color:var(--gold)">{{ vaga.title }}</a>
                     @if (vaga.description) { <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">{{ vaga.description }}</div> }
                   </div>
                   <div style="display:flex;align-items:center;gap:.6rem;flex-shrink:0">
-                    <select class="form-select" style="width:auto" [ngModel]="vaga.status" (ngModelChange)="setVagaStatus(vaga, $event)">
+                    <app-select style="width:auto" [ngModel]="vaga.status" (ngModelChange)="setVagaStatus(vaga, $event)">
                       @for (s of vagaStatuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
-                    </select>
+                    </app-select>
                     <a [routerLink]="['/admin/vaga', vaga.id]" class="btn btn-outline btn-sm">Ver Candidatos →</a>
                     <button class="btn btn-danger-ghost btn-sm" (click)="deleteVaga(vaga)">Excluir</button>
                   </div>
@@ -303,7 +303,7 @@
               Adicionar Link
             </button>
           } @else {
-            <div class="card" style="padding:1rem;margin-top:.75rem;background:var(--cream, #FAF8F5)">
+            <div class="card" style="padding:1rem;margin-top:.75rem;background:var(--accent-soft)">
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Nome</label>

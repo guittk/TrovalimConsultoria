@@ -8,6 +8,7 @@ import { VagasService } from '../../core/vagas.service';
 import { CandidatesService, CANDIDATE_STAGES } from '../../core/candidates.service';
 import { Candidate, CandidateStage, Vaga } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -40,7 +41,7 @@ function emptyForm(): FormState {
 @Component({
   selector: 'app-admin-vaga',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-vaga.component.html',
 })
 export class AdminVagaComponent {

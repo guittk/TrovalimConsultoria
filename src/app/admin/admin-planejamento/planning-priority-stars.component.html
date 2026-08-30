@@ -1,0 +1,11 @@
+<span class="plan-stars" [class.readonly]="readonly">
+  @for (n of stars; track n) {
+    <button
+      type="button"
+      class="plan-star"
+      [class.filled]="(value ?? 0) >= n"
+      (click)="pick(n, $event)"
+      [attr.aria-label]="'Prioridade ' + n"
+    >★</button>
+  }
+</span>

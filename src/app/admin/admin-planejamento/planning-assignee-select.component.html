@@ -1,0 +1,29 @@
+<button type="button" class="plan-assignees-trigger" [title]="fullNames()" (click)="toggle($event)">
+  @if (assignedStaff().length) {
+    <span class="kanban-assignees plan-assignees-stack">
+      @for (u of visibleStaff(); track u.uid) {
+        <span class="kanban-avatar" [title]="u.name || u.email">{{ initials(u.name || u.email || '?') }}</span>
+      }
+    </span>
+    <span class="plan-assignees-label">{{ label() }}</span>
+  } @else {
+    <span class="plan-assignees-label plan-assignees-empty">+ Responsável</span>
+  }
+  <svg class="plan-assignees-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+</button>
+
+@if (open()) {
+  <div class="plan-popover" [style.top.px]="pos().top" [style.left.px]="pos().left">
+    @for (u of staff; track u.uid) {
+      <button
+        type="button"
+        class="plan-popover-option plan-popover-option-assignee"
+        [class.active]="isAssigned(u.uid)"
+        (click)="toggleAssignee(u.uid, $event)"
+      >
+        <span class="kanban-avatar">{{ initials(u.name || u.email || '?') }}</span>
+        <span>{{ u.name || u.email }}</span>
+      </button>
+    }
+  </div>
+}

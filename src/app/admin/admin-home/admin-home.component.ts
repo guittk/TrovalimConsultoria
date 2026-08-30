@@ -11,15 +11,40 @@ import {
   ProjectStatusSettingsService,
   DEFAULT_PROJECT_STATUS_SETTINGS,
 } from '../../core/project-status-settings.service';
-import { Empresa } from '../../core/models';
+import { Empresa, Project } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+
+const SORT_KEYS = ['default', 'empresa', 'status', 'progresso', 'inicio'] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+type SortDir = 'asc' | 'desc';
+const SORT_STORAGE_KEY = 'trovalim.projects.sort';
+const SORT_DIR_STORAGE_KEY = 'trovalim.projects.sortDir';
+
+/** Direção "natural" no 1º clique de cada coluna: progresso/início mostram o maior/mais recente primeiro. */
+const FIRST_CLICK_DIR: Record<Exclude<SortKey, 'default'>, SortDir> = {
+  empresa: 'asc',
+  status: 'asc',
+  progresso: 'desc',
+  inicio: 'desc',
+};
+
+function readStored<T extends string>(key: string, allowed: readonly string[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key);
+    if (v && allowed.includes(v)) return v as T;
+  } catch {
+    /* storage bloqueado */
+  }
+  return fallback;
+}
 
 @Component({
   selector: 'app-admin-home',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, StatusBadgeComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, StatusBadgeComponent, SelectComponent],
   templateUrl: './admin-home.component.html',
 })
 export class AdminHomeComponent {
@@ -66,6 +91,36 @@ export class AdminHomeComponent {
   readonly searchTerm = signal('');
   readonly statusFilter = signal('');
 
+  /**
+   * Ordenação da lista, controlada clicando no cabeçalho de cada coluna.
+   * `default` (nenhum cabeçalho ativo) = por empresa, depois status (na ordem
+   * configurada em Configurações), depois progresso. Guardada por navegador.
+   */
+  readonly sortKey = signal<SortKey>(readStored<SortKey>(SORT_STORAGE_KEY, SORT_KEYS, 'default'));
+  readonly sortDir = signal<SortDir>(readStored<SortDir>(SORT_DIR_STORAGE_KEY, ['asc', 'desc'], 'asc'));
+
+  /** Clique no cabeçalho: 1ª vez ativa a coluna na direção natural; de novo, inverte. */
+  toggleSort(key: Exclude<SortKey, 'default'>): void {
+    if (this.sortKey() === key) {
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set(FIRST_CLICK_DIR[key]);
+    }
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, this.sortKey());
+      localStorage.setItem(SORT_DIR_STORAGE_KEY, this.sortDir());
+    } catch {
+      /* modo privado / storage bloqueado — segue sem persistir */
+    }
+  }
+
+  /** Setinha mostrada no cabeçalho: só na coluna ativa. */
+  sortArrow(key: Exclude<SortKey, 'default'>): string {
+    if (this.sortKey() !== key) return '';
+    return this.sortDir() === 'asc' ? ' ↑' : ' ↓';
+  }
+
   readonly filteredProjects = computed(() => {
     const q = this.searchTerm().trim().toLowerCase();
     const st = this.statusFilter();
@@ -83,8 +138,62 @@ export class AdminHomeComponent {
     return list;
   });
 
-  readonly projectsWithCompany = computed(() => this.filteredProjects().filter((p) => !!p.ownerId));
-  readonly projectsWithoutCompany = computed(() => this.filteredProjects().filter((p) => !p.ownerId));
+  private companyNameOf(p: Project): string {
+    return (
+      this.empresasById().get(p.ownerId || '')?.branding?.companyName ||
+      p.branding?.companyName ||
+      p.clientName ||
+      ''
+    );
+  }
+
+  /** Posição de cada status na ordem configurada — status desconhecido vai pro fim. */
+  private readonly statusRank = computed(() => {
+    const map = new Map<string, number>();
+    this.statusSettings().statuses.forEach((s, i) => map.set(s.key, i));
+    return map;
+  });
+
+  private comparator(): (a: Project, b: Project) => number {
+    const rank = this.statusRank();
+    // Primárias sempre ASCENDENTES; a direção é aplicada depois pelo `dir`.
+    const byName = (a: Project, b: Project) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    const byEmpresa = (a: Project, b: Project) =>
+      this.companyNameOf(a).localeCompare(this.companyNameOf(b), 'pt-BR', { sensitivity: 'base' });
+    const byStatus = (a: Project, b: Project) =>
+      (rank.get(String(a.status)) ?? 999) - (rank.get(String(b.status)) ?? 999);
+    const byProgresso = (a: Project, b: Project) => (a.progress || 0) - (b.progress || 0);
+    const byInicioValue = (a: Project, b: Project) => (a.startDate || '').localeCompare(b.startDate || '');
+
+    if (this.sortKey() === 'default') {
+      // por empresa › status › progresso (maior primeiro) › nome
+      return (a, b) => byEmpresa(a, b) || byStatus(a, b) || -byProgresso(a, b) || byName(a, b);
+    }
+
+    const dir = this.sortDir() === 'desc' ? -1 : 1;
+    const key = this.sortKey() as Exclude<SortKey, 'default'>;
+    const primary: Record<Exclude<SortKey, 'default'>, (a: Project, b: Project) => number> = {
+      empresa: (a, b) => dir * byEmpresa(a, b),
+      status: (a, b) => dir * byStatus(a, b),
+      progresso: (a, b) => dir * byProgresso(a, b),
+      // Projeto sem data de início fica sempre no fim, seja asc ou desc.
+      inicio: (a, b) => {
+        if (!a.startDate && !b.startDate) return 0;
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        return dir * byInicioValue(a, b);
+      },
+    };
+    const fn = primary[key];
+    return (a, b) => fn(a, b) || byEmpresa(a, b) || byName(a, b);
+  }
+
+  readonly projectsWithCompany = computed(() =>
+    this.filteredProjects().filter((p) => !!p.ownerId).slice().sort(this.comparator()),
+  );
+  readonly projectsWithoutCompany = computed(() =>
+    this.filteredProjects().filter((p) => !p.ownerId).slice().sort(this.comparator()),
+  );
 
   /* ── MODAL ── */
   readonly modalOpen = signal(false);
@@ -138,6 +247,13 @@ export class AdminHomeComponent {
 
   companyLabel(e: Empresa): string {
     return e.branding?.companyName || 'Sem nome';
+  }
+
+  /** `yyyy-mm-dd` → `dd/mm/aaaa` sem passar por Date (evita deslocar um dia no fuso -03). */
+  fmtDate(value?: string | null): string {
+    if (!value) return '—';
+    const [y, m, d] = value.split('-');
+    return y && m && d ? `${d}/${m}/${y}` : value;
   }
 
   initials(name: string): string {

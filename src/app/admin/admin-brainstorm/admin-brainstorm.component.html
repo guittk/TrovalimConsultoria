@@ -1,0 +1,82 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="brainstorm" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Brainstorm</h1>
+    <p class="page-subtitle">Descreva a dor do cliente — a IA cruza com o catálogo de Serviços e Preços pra sugerir a abordagem</p>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Vincular a uma prospecção</label>
+      <app-select [ngModel]="linkedLeadId()" (ngModelChange)="onLinkedLeadChange($event)">
+        <option value="">Nenhuma (avulso)</option>
+        @for (l of linkableLeads(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+      </app-select>
+      @if (linkedLead()) {
+        <div class="form-help" style="margin-top:.5rem">Nome e dor pré-preenchidos a partir desta prospecção — o que você gerar aqui não muda nada nela até você clicar em "Usar".</div>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nome do cliente / contexto</label>
+        <input class="form-input" placeholder="Ex: Empresa XYZ Ltda" [ngModel]="name()" (ngModelChange)="name.set($event)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Dor Declarada / Contexto</label>
+      <textarea class="form-textarea" rows="3" placeholder="Por que essa empresa/pessoa procurou a Trovalim…" [ngModel]="dor()" (ngModelChange)="dor.set($event)"></textarea>
+    </div>
+
+    <button type="button" class="btn btn-primary" [disabled]="suggesting()" (click)="generateSuggestion()">{{ suggesting() ? 'Pensando…' : '✨ Gerar Sugestões' }}</button>
+    @if (suggestErr()) { <p style="font-size:.82rem;color:var(--danger);margin-top:.75rem">{{ suggestErr() }}</p> }
+  </div>
+
+  @if (suggestion(); as s) {
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Sugestão da IA</div>
+
+      @if (s.perguntasDiagnostico.length) {
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">Perguntas de diagnóstico</div>
+          <ul style="margin:0 0 .6rem 1.1rem;font-size:.85rem">
+            @for (p of s.perguntasDiagnostico; track p) { <li>{{ p }}</li> }
+          </ul>
+          @if (linkedLead()) {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!linkedLead()!.diagnostico?.trim()" (click)="useInDiagnostico()">{{ linkedLead()!.diagnostico?.trim() ? 'Diagnóstico já preenchido' : 'Usar no Diagnóstico' }}</button>
+          } @else {
+            <button type="button" class="btn btn-outline btn-sm" (click)="copy('perguntas', s.perguntasDiagnostico.join('\n'))">{{ copiedKey() === 'perguntas' ? 'Copiado!' : 'Copiar' }}</button>
+          }
+        </div>
+      }
+
+      @if (s.servicosRecomendados.length) {
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">Serviços recomendados</div>
+          <p style="font-size:.85rem;margin-bottom:.6rem">{{ s.servicosRecomendados.join(', ') }}</p>
+          @if (linkedLead()) {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!linkedLead()!.escopo?.trim()" (click)="useInEscopo()">{{ linkedLead()!.escopo?.trim() ? 'Escopo já preenchido' : 'Usar no Escopo' }}</button>
+          } @else {
+            <button type="button" class="btn btn-outline btn-sm" (click)="copy('servicos', s.servicosRecomendados.join(', '))">{{ copiedKey() === 'servicos' ? 'Copiado!' : 'Copiar' }}</button>
+          }
+        </div>
+      }
+
+      @if (s.mensagemAbordagem) {
+        <div>
+          <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">Rascunho de mensagem</div>
+          <p style="font-size:.85rem;white-space:pre-wrap;margin-bottom:.6rem">{{ s.mensagemAbordagem }}</p>
+          @if (linkedLead()) {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!!linkedLead()!.mensagemAbordagem?.trim()" (click)="useInMensagem()">{{ linkedLead()!.mensagemAbordagem?.trim() ? 'Mensagem já preenchida' : 'Usar como Mensagem de Abordagem' }}</button>
+          } @else {
+            <button type="button" class="btn btn-outline btn-sm" (click)="copy('mensagem', s.mensagemAbordagem)">{{ copiedKey() === 'mensagem' ? 'Copiado!' : 'Copiar' }}</button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="projetos" [userName]="userData.name || userData.email || ''" />
 }
 
 @if (vaga(); as v) {
@@ -31,8 +31,8 @@
                 draggable="true" (dragstart)="onDragStart(c)" (dragend)="onDragEnd()" (click)="openEdit(c)">
                 <div style="font-weight:600;font-size:.85rem">{{ c.name }}</div>
                 @if (c.linkedinUrl) { <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">LinkedIn ↗</div> }
-                @if (c.resumeUrl) { <div style="font-size:.72rem;color:var(--wine);margin-top:.2rem">📎 Currículo</div> }
-                @if (c.clientVisible) { <div style="font-size:.68rem;color:#166534;margin-top:.2rem">👁 Visível ao cliente</div> }
+                @if (c.resumeUrl) { <div style="font-size:.72rem;color:var(--gold);margin-top:.2rem">📎 Currículo</div> }
+                @if (c.clientVisible) { <div style="font-size:.68rem;color:var(--success);margin-top:.2rem">👁 Visível ao cliente</div> }
               </div>
             }
             @if (!candidatesFor(s.key).length) {
@@ -60,9 +60,9 @@
       </div>
       <div class="form-group">
         <label class="form-label">Estágio</label>
-        <select class="form-select" [ngModel]="form().stage" (ngModelChange)="updateForm('stage', $event)">
+        <app-select [ngModel]="form().stage" (ngModelChange)="updateForm('stage', $event)">
           @for (s of stages; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
-        </select>
+        </app-select>
       </div>
     </div>
 
@@ -93,7 +93,7 @@
         } @else {
           <label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-block">{{ uploadingResume() ? 'Enviando…' : 'Enviar currículo' }}<input type="file" style="display:none" [disabled]="uploadingResume()" (change)="handleUploadResume($event)"></label>
         }
-        @if (uploadErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.4rem">{{ uploadErr() }}</p> }
+        @if (uploadErr()) { <p style="font-size:.75rem;color:var(--danger);margin-top:.4rem">{{ uploadErr() }}</p> }
       </div>
     } @else {
       <div class="form-help" style="margin-bottom:1rem">O envio do currículo fica disponível depois de salvar o candidato pela primeira vez.</div>
@@ -104,7 +104,7 @@
       <textarea class="form-textarea" rows="3" placeholder="Impressões da entrevista, pontos fortes, ressalvas…" [ngModel]="form().notes" (ngModelChange)="updateForm('notes', $event)"></textarea>
     </div>
 
-    <div class="form-group" style="background:var(--bg);padding:.85rem;border:1px solid var(--border)">
+    <div class="form-group" style="background:var(--surface-2);padding:.85rem;border:1px solid var(--border);border-radius:12px">
       <label style="display:flex;align-items:flex-start;gap:.6rem;font-size:.82rem;cursor:pointer">
         <input type="checkbox" style="margin-top:.15rem" [ngModel]="form().clientVisible" (ngModelChange)="updateForm('clientVisible', $event)">
         <span>Liberar para a empresa-cliente ver este candidato no portal do projeto. Ela nunca vê currículo, notas nem contato — só nome, LinkedIn, estágio e pode deixar um parecer.</span>
@@ -116,7 +116,7 @@
       }
     </div>
 
-    <div class="form-group" style="background:var(--bg);padding:.85rem;border:1px solid var(--border)">
+    <div class="form-group" style="background:var(--surface-2);padding:.85rem;border:1px solid var(--border);border-radius:12px">
       <label style="display:flex;align-items:flex-start;gap:.6rem;font-size:.82rem;cursor:pointer">
         <input type="checkbox" style="margin-top:.15rem" [ngModel]="form().consentGiven" (ngModelChange)="updateForm('consentGiven', $event)">
         <span>O candidato autorizou a Trovalim a guardar seus dados (currículo, contato, avaliação) para este processo seletivo — LGPD.</span>

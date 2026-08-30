@@ -142,13 +142,25 @@ export class ProjectsService {
     ) as Observable<ProjectMessage[]>;
   }
 
-  sendMessage(projectId: string, author: string, authorRole: string, text: string) {
-    return addDoc(collection(this.db, 'projects', projectId, 'messages'), {
+  async sendMessage(projectId: string, author: string, authorRole: string, text: string) {
+    const result = await addDoc(collection(this.db, 'projects', projectId, 'messages'), {
       author,
       authorRole,
       text,
       date: serverTimestamp(),
     });
+    // Campo denormalizado no doc do projeto: evita ler a subcoleção messages
+    // inteira só pra badge de "não lida" no Painel (ver docs/plano-evolucao-plataforma.html).
+    await updateDoc(doc(this.db, 'projects', projectId), {
+      lastMessageAt: serverTimestamp(),
+      unreadForStaff: authorRole === 'client',
+    }).catch(() => undefined);
+    return result;
+  }
+
+  /** Chamado ao abrir a aba Mensagens de um projeto como staff. */
+  markMessagesRead(projectId: string): Promise<void> {
+    return updateDoc(doc(this.db, 'projects', projectId), { unreadForStaff: false }).catch(() => undefined);
   }
 
   /* ── ARQUIVOS ── */

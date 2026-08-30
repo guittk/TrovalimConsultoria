@@ -1,8 +1,8 @@
-@if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="contas" [userName]="userData.name || userData.email || ''" />
+@if (!embedded && (userData$ | async); as userData) {
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="contas" [userName]="userData.name || userData.email || ''" />
 }
 
-<div class="page">
+<div [class.page]="!embedded">
   <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div>
       <h1 class="page-title">Contas</h1>
@@ -49,7 +49,7 @@
                   <div style="display:flex;gap:1rem;justify-content:flex-end">
                     <a href="#" class="link-btn" (click)="openEdit(u); $event.preventDefault()">Editar</a>
                     @if (u.uid !== currentUid()) {
-                      <a href="#" class="link-btn" style="color:#DC2626" (click)="deleteAccount(u); $event.preventDefault()">Excluir</a>
+                      <a href="#" class="link-btn" style="color:var(--danger)" (click)="deleteAccount(u); $event.preventDefault()">Excluir</a>
                     }
                   </div>
                 }
@@ -120,11 +120,11 @@
     } @else {
       <div class="form-group">
         <label class="form-label">Papel</label>
-        <select class="form-select" [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
+        <app-select [ngModel]="accRole()" (ngModelChange)="accRole.set($event)">
           <option value="client">Cliente — acesso apenas ao próprio projeto</option>
           <option value="manager">Gerente — acesso total ao admin, exceto contas</option>
           <option value="mentorado">Mentorado — acesso só ao próprio plano de desenvolvimento</option>
-        </select>
+        </app-select>
         <div class="form-help">Para promover alguém a Proprietário, isso deve ser feito manualmente por segurança.</div>
       </div>
     }

@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -70,7 +70,7 @@
       <div class="form-group">
         <label class="form-label">Cor Primária</label>
         <div class="color-row">
-          <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+          <input type="color" class="color-picker"
             [value]="newBrandingColor()" (input)="onColorChange($any($event.target).value)" (click)="openColorPicker($event)">
           <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="newBrandingColor()" (ngModelChange)="onColorChange($event)">
         </div>
@@ -124,12 +124,12 @@
         <div style="border:1px solid var(--border);padding:.85rem">
           <div class="form-group">
             <label class="form-label">Conta</label>
-            <select class="form-select" [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
+            <app-select [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
               <option value="">— Selecione —</option>
               @for (a of availableAccounts(); track a.uid) {
                 <option [value]="a.uid">{{ a.name || a.email }}{{ a.name && a.email ? ' — ' + a.email : '' }}</option>
               }
-            </select>
+            </app-select>
           </div>
           <div class="form-help" style="margin-bottom:.75rem">Foto e cargo do colaborador são editados em "Contas".</div>
           <button class="btn btn-outline btn-sm" [disabled]="!tmSelectedUid()" (click)="addStagedCollaborator()">+ Adicionar à lista</button>

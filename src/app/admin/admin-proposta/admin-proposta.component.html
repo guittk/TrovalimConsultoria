@@ -1,0 +1,107 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="prospeccao" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page">
+  @if (proposta(); as p) {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <div>
+        <button class="link-btn" style="font-size:.8rem;margin-bottom:.35rem" (click)="backToLead()">← Voltar</button>
+        <h1 class="page-title">Proposta — {{ p.clientName }}</h1>
+        <p class="page-subtitle">
+          @if (p.status === 'rascunho') { Rascunho — ainda não enviada }
+          @else if (p.status === 'enviada') { Enviada @if (p.sentAt) { em {{ toDate(p.sentAt) | date:'dd/MM/yyyy' }} } — aguardando resposta }
+          @else if (p.status === 'aceita') { Aceita por {{ p.acceptedByName }} @if (p.respondedAt) { em {{ toDate(p.respondedAt) | date:'dd/MM/yyyy' }} } }
+          @else { Recusada @if (p.declineReason) { — "{{ p.declineReason }}" } }
+        </p>
+      </div>
+      <span class="badge" [style.background]="p.status === 'aceita' ? 'var(--success-soft)' : p.status === 'recusada' ? 'var(--danger-soft)' : p.status === 'enviada' ? 'var(--accent-soft)' : 'var(--surface-2)'" [style.color]="p.status === 'aceita' ? 'var(--success)' : p.status === 'recusada' ? 'var(--danger)' : p.status === 'enviada' ? 'var(--gold)' : 'var(--muted)'">{{ p.status }}</span>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Dados do Cliente</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
+        <div class="form-group">
+          <label>Empresa / Cliente</label>
+          <input class="form-input" [ngModel]="clientName()" (ngModelChange)="clientName.set($event)" [disabled]="!isDraft()" />
+        </div>
+        <div class="form-group">
+          <label>Contato</label>
+          <input class="form-input" [ngModel]="contactName()" (ngModelChange)="contactName.set($event)" [disabled]="!isDraft()" />
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input class="form-input" [ngModel]="email()" (ngModelChange)="email.set($event)" [disabled]="!isDraft()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Itens</div>
+      @if (isDraft()) {
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          @for (item of pricingSettings().items; track item.key) {
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--border)">
+              <span style="flex:1">{{ item.name }} <span style="color:var(--muted);font-size:.78rem">({{ formatCurrency(item.baseValue) }} / {{ item.unit }})</span></span>
+              <input type="number" min="0" class="form-input" style="width:80px" [ngModel]="qtyFor(item.key)" (ngModelChange)="setQty(item.key, +$event)" />
+            </div>
+          }
+        </div>
+      } @else {
+        <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+          <thead>
+            <tr style="text-align:left;border-bottom:1px solid var(--border);color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em">
+              <th style="padding:.4rem 0">Item</th>
+              <th style="padding:.4rem 0">Qtd.</th>
+              <th style="padding:.4rem 0;text-align:right">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of p.items; track item.key) {
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:.5rem 0">{{ item.name }}</td>
+                <td style="padding:.5rem 0">{{ item.qty }}</td>
+                <td style="padding:.5rem 0;text-align:right">{{ formatCurrency(item.baseValue * item.qty) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      <div style="display:flex;justify-content:flex-end;margin-top:1rem;font-family:var(--serif);font-size:1.3rem;color:var(--gold)">
+        Total: {{ formatCurrency(isDraft() ? total() : p.total) }}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title"><span class="card-title-bar"></span>Escopo e Condições</div>
+      <div class="form-group">
+        <label>Escopo</label>
+        <textarea class="form-textarea" [ngModel]="escopo()" (ngModelChange)="escopo.set($event)" [disabled]="!isDraft()"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Condições (pagamento, prazo, validade da proposta...)</label>
+        <textarea class="form-textarea" [ngModel]="condicoes()" (ngModelChange)="condicoes.set($event)" [disabled]="!isDraft()"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Ações</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center">
+        @if (isDraft()) {
+          <button class="btn btn-outline" (click)="saveDraft()" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar Rascunho' }}</button>
+          <button class="btn btn-primary" (click)="sendProposta()" [disabled]="sending() || !total()">{{ sending() ? 'Enviando…' : 'Marcar como Enviada e Gerar Link' }}</button>
+          @if (savedOk()) { <span style="color:var(--success);font-size:.85rem">Salvo.</span> }
+        } @else {
+          <button class="btn btn-outline" (click)="copyLink()">{{ linkCopied() ? 'Link copiado!' : 'Copiar Link Público' }}</button>
+          <a [href]="publicUrl()" target="_blank" class="btn btn-outline">Abrir Link Público</a>
+        }
+        <button class="btn btn-outline" (click)="downloadPdf()">Baixar PDF</button>
+      </div>
+      @if (!isDraft()) {
+        <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted);word-break:break-all">{{ publicUrl() }}</div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state"><div class="empty-state-sub">Carregando…</div></div>
+  }
+</div>

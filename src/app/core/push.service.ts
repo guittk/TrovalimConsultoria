@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Firestore, deleteDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { FIREBASE_APP, FIRESTORE } from './firebase.providers';
+import { environment } from '../../environments/environment';
 
 export type PushStatus = 'unsupported' | 'default' | 'granted' | 'denied';
 
@@ -23,8 +24,16 @@ export class PushService {
     return Notification.permission as PushStatus;
   }
 
+  /** Chave VAPID pública, agora fixa no environment (antes vinha de /settings/notifications). */
+  readonly vapidKey = environment.vapidPublicKey;
+
   get supported(): boolean {
     return typeof Notification !== 'undefined' && 'serviceWorker' in navigator;
+  }
+
+  /** Só dá pra ativar push se a chave VAPID estiver preenchida no environment. */
+  get configured(): boolean {
+    return this.supported && !!this.vapidKey;
   }
 
   /**
@@ -32,7 +41,8 @@ export class PushService {
    * /pushTokens/{token} — o id do documento É o token, então registrar de
    * novo o mesmo aparelho nunca duplica linha (setDoc com merge).
    */
-  async register(uid: string, vapidKey: string): Promise<void> {
+  async register(uid: string): Promise<void> {
+    const vapidKey = this.vapidKey;
     if (!this.supported || !vapidKey) return;
     const permission = await Notification.requestPermission();
     this.status.set(permission as PushStatus);

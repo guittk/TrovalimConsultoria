@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, NgZone, computed, inject, signal } from '@angular/core';
+import { Component, Input, NgZone, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
@@ -8,33 +8,35 @@ import { AccountsService } from '../../core/accounts.service';
 import { ProjectsService } from '../../core/projects.service';
 import { Role, UserAccount } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { RoleBadgeComponent } from '../../shared/role-badge/role-badge.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 const ROLE_ORDER: Record<string, number> = { owner: 0, manager: 1, client: 2, mentorado: 3 };
 
-/** Abas que podem ser escondidas de um manager (Projetos fica sempre visível — é a página inicial do admin). */
+/**
+ * Abas que podem ser escondidas de um manager — derivado de `ADMIN_TABS`
+ * (menos "Projetos", que é a home do admin e fica sempre visível), pra não
+ * ter uma segunda lista de abas pra manter em dia.
+ */
 const HIDEABLE_TABS: { key: string; label: string }[] = [
-  { key: 'painel', label: 'Painel' },
-  { key: 'calendario', label: 'Calendário' },
-  { key: 'prospeccao', label: 'Prospecção' },
-  { key: 'mentoria', label: 'Mentoria' },
-  { key: 'carreira', label: 'Carreira' },
-  { key: 'clientes', label: 'Empresas' },
+  ...ADMIN_TABS.filter((t) => t.key !== 'projetos').map((t) => ({ key: t.key, label: t.label })),
+  // "contas" saiu de ADMIN_TABS (virou aba de Configurações), mas escondê-la
+  // de um manager ainda faz sentido.
   { key: 'contas', label: 'Contas' },
-  { key: 'kanban', label: 'Kanban' },
-  { key: 'contatos', label: 'Contatos' },
-  { key: 'config', label: 'Configurações' },
 ];
 
 @Component({
   selector: 'app-admin-accounts',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, PnavComponent, RoleBadgeComponent],
+  imports: [AsyncPipe, FormsModule, PnavComponent, RoleBadgeComponent, SelectComponent],
   templateUrl: './admin-accounts.component.html',
 })
 export class AdminAccountsComponent {
+  /** Quando embutida como aba de Configurações: sem `<app-pnav>` e sem o wrapper `.page`. */
+  @Input() embedded = false;
+
   private readonly auth = inject(AuthService);
   private readonly accountsSvc = inject(AccountsService);
   private readonly projectsSvc = inject(ProjectsService);

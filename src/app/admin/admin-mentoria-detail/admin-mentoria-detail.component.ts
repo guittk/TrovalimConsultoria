@@ -17,6 +17,7 @@ import {
 } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -37,7 +38,7 @@ function emptyActionForm(): ActionFormState {
 @Component({
   selector: 'app-admin-mentoria-detail',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, PnavComponent],
+  imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-mentoria-detail.component.html',
 })
 export class AdminMentoriaDetailComponent {

@@ -1,0 +1,213 @@
+@if (userData$ | async; as userData) {
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="planejamento" [userName]="userData.name || userData.email || ''" />
+}
+
+<div class="page" style="max-width:none">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem">
+    <div>
+      <h1 class="page-title">Planejamento</h1>
+      <p class="page-subtitle">Quadro de grupos, itens e sub-itens — arraste pra reordenar</p>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;min-width:0">
+      <app-select class="sel-toolbar" style="max-width:100%" [ngModel]="boardValue()" (ngModelChange)="onBoardChange($event)">
+        <option value="global">Quadro Global</option>
+        @for (p of projects(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </app-select>
+      <button type="button" class="btn btn-primary btn-sm" (click)="addGroup()">+ Novo Grupo</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input class="toolbar-search" placeholder="Buscar por nome..." [ngModel]="filterQuery()" (ngModelChange)="filterQuery.set($event)">
+    <app-select class="sel-toolbar" [ngModel]="filterAssigneeId()" (ngModelChange)="filterAssigneeId.set($event)">
+      <option value="">Responsável: todos</option>
+      @for (u of staff(); track u.uid) { <option [value]="u.uid">{{ u.name || u.email }}</option> }
+    </app-select>
+    <app-select class="sel-toolbar" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+      <option value="">Status: todos</option>
+      @for (s of statuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+    </app-select>
+    <app-select class="sel-toolbar" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)">
+      <option value="">Prioridade: todas</option>
+      @for (n of [1, 2, 3, 4, 5]; track n) { <option [value]="n">{{ n }} estrela(s)</option> }
+    </app-select>
+    @if (hasActiveFilters()) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="clearFilters()">Limpar filtros</button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+  } @else if (!sortedGroups().length) {
+    <div class="empty-state">
+      <div class="empty-state-text">Nenhum grupo ainda</div>
+      <div class="empty-state-sub">Crie o primeiro grupo pra começar a organizar este quadro.</div>
+    </div>
+  } @else {
+    <div class="plan-board">
+      @for (group of sortedGroups(); track group.id) {
+        <div class="plan-group" [class.plan-group-over]="dragOverGroupHeaderId() === group.id && draggingGroupId() !== group.id">
+          <div
+            class="plan-group-header"
+            [style.borderLeftColor]="group.cor"
+            draggable="true"
+            (dragstart)="onGroupDragStart($event, group)"
+            (dragover)="onGroupDragOver($event, group)"
+            (drop)="onGroupDrop($event, group)"
+            (dragend)="onGroupDragEnd()"
+          >
+            <span class="plan-drag-handle">⠿</span>
+            <button type="button" class="plan-disclosure" (click)="toggleCollapse(group)">{{ group.colapsado ? '▸' : '▾' }}</button>
+            <input type="color" class="color-picker plan-group-color" [value]="group.cor" (change)="setGroupColor(group, $any($event.target).value)">
+            <input class="plan-group-name" [value]="group.nome" (blur)="renameGroup(group, $any($event.target).value)">
+            <span class="plan-group-count">{{ rootItemsOf(group.id).length }}</span>
+            <button type="button" class="btn-icon danger" (click)="removeGroup(group)" title="Excluir grupo">✕</button>
+          </div>
+
+          @if (!group.colapsado) {
+            <div class="plan-group-body" (dragover)="onGroupBodyDragOver($event)" (drop)="onGroupBodyDrop($event, group.id)">
+              @if (rootItemsOf(group.id).length) {
+                <div class="plan-row-head">
+                  <span class="plan-row-head-name">Elemento</span>
+                  <span class="plan-row-fields plan-row-fields-head">
+                    <span class="plan-col plan-col-assignee">Responsável</span>
+                    <span class="plan-col plan-col-status">Status</span>
+                    <span class="plan-col plan-col-priority">Prioridade</span>
+                    <span class="plan-col plan-col-date">Prazo</span>
+                  </span>
+                  <span class="plan-row-head-actions"></span>
+                </div>
+              }
+              @for (item of rootItemsOf(group.id); track item.id) {
+                @if (dragOverItemId() === item.id && draggingItemId() !== item.id) {
+                  <div class="plan-drop-indicator"></div>
+                }
+                <div
+                  class="plan-row"
+                  [class.plan-row-dragging]="draggingItemId() === item.id"
+                  draggable="true"
+                  (dragstart)="onRowDragStart($event, item)"
+                  (dragover)="onRowDragOver($event, item)"
+                  (drop)="onRowDrop($event, item)"
+                  (dragend)="onRowDragEnd()"
+                >
+                  <button type="button" class="plan-disclosure" [class.on]="isExpanded(item.id)" (click)="toggleExpand(item.id, $event)" [title]="isExpanded(item.id) ? 'Recolher sub-itens' : (subitemsOf(item.id).length ? 'Ver sub-itens' : 'Adicionar sub-item')">{{ isExpanded(item.id) ? '▾' : '▸' }}</button>
+                  <span class="plan-drag-handle">⠿</span>
+                  <input type="checkbox" class="step-check" [checked]="isSelected(item.id)" (click)="toggleSelect(item.id, $event)">
+                  <button type="button" class="btn-icon plan-row-open" (click)="openItemPanel(item.id)" title="Abrir">⤢</button>
+                  <input class="plan-row-name" [value]="item.nome" (blur)="renameItem(item, $any($event.target).value)">
+                  @if (item.descricao) { <span [title]="item.descricao" class="plan-row-icon">📝</span> }
+                  @if (item.anexos?.length) { <span class="plan-row-icon">📎 {{ item.anexos?.length }}</span> }
+
+                  @if (camposVisiveis(item)) {
+                    <span class="plan-row-fields">
+                      <app-planning-assignee-select class="plan-col-assignee" [value]="item.assigneeIds || []" [staff]="staff()" (valueChange)="updateItem(item.id, { assigneeIds: $event })" />
+                      <app-planning-status-select class="plan-col-status" [value]="item.status" (valueChange)="updateItem(item.id, { status: $event })" />
+                      <app-planning-priority-stars class="plan-col-priority" [value]="item.prioridade" (valueChange)="updateItem(item.id, { prioridade: $event })" />
+                      <input type="date" class="plan-row-date plan-col-date" [class.overdue]="isOverdue(item)" [value]="item.dueDate || ''" (change)="updateItem(item.id, { dueDate: $any($event.target).value || null })">
+                    </span>
+                  } @else {
+                    <span class="plan-row-fields plan-row-fields-section"></span>
+                  }
+
+                  <button type="button" class="btn-icon plan-row-eye" [class.off]="!camposVisiveis(item)" (click)="toggleMostrarCampos(item, $event)" [title]="camposVisiveis(item) ? 'Esconder campos' : 'Mostrar campos'">
+                    @if (camposVisiveis(item)) {
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" />
+                      </svg>
+                    } @else {
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m2 2 20 20" /><path d="M6.7 6.7C3.9 8.3 2 12 2 12s3.5 7 10 7c2 0 3.8-.6 5.3-1.5" /><path d="M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.4 3.3" />
+                      </svg>
+                    }
+                  </button>
+                  <button type="button" class="btn-icon danger" (click)="removeItem(item)" title="Excluir">✕</button>
+                </div>
+
+                @if (isExpanded(item.id)) {
+                  @for (sub of subitemsOf(item.id); track sub.id) {
+                    @if (dragOverItemId() === sub.id && draggingItemId() !== sub.id) {
+                      <div class="plan-drop-indicator plan-drop-indicator-sub"></div>
+                    }
+                    <div
+                      class="plan-row plan-row-sub"
+                      [class.plan-row-dragging]="draggingItemId() === sub.id"
+                      [style.boxShadow]="'inset 3px 0 0 ' + group.cor"
+                      draggable="true"
+                      (dragstart)="onRowDragStart($event, sub)"
+                      (dragover)="onRowDragOver($event, sub)"
+                      (drop)="onRowDrop($event, sub)"
+                      (dragend)="onRowDragEnd()"
+                    >
+                      <span class="plan-disclosure-spacer"></span>
+                      <span class="plan-drag-handle">⠿</span>
+                      <input type="checkbox" class="step-check" [checked]="isSelected(sub.id)" (click)="toggleSelect(sub.id, $event)">
+                      <button type="button" class="btn-icon plan-row-open" (click)="openItemPanel(sub.id)" title="Abrir">⤢</button>
+                      <input class="plan-row-name" [value]="sub.nome" (blur)="renameItem(sub, $any($event.target).value)">
+                      @if (sub.descricao) { <span [title]="sub.descricao" class="plan-row-icon">📝</span> }
+                      @if (sub.anexos?.length) { <span class="plan-row-icon">📎 {{ sub.anexos?.length }}</span> }
+                      <span class="plan-row-fields">
+                        <app-planning-assignee-select class="plan-col-assignee" [value]="sub.assigneeIds || []" [staff]="staff()" (valueChange)="updateItem(sub.id, { assigneeIds: $event })" />
+                        <app-planning-status-select class="plan-col-status" [value]="sub.status" (valueChange)="updateItem(sub.id, { status: $event })" />
+                        <app-planning-priority-stars class="plan-col-priority" [value]="sub.prioridade" (valueChange)="updateItem(sub.id, { prioridade: $event })" />
+                        <input type="date" class="plan-row-date plan-col-date" [class.overdue]="isOverdue(sub)" [value]="sub.dueDate || ''" (change)="updateItem(sub.id, { dueDate: $any($event.target).value || null })">
+                      </span>
+                      <span class="plan-row-eye-spacer"></span>
+                      <button type="button" class="btn-icon danger" (click)="removeItem(sub)" title="Excluir">✕</button>
+                    </div>
+                  }
+                  <div class="plan-add-row plan-add-row-sub" [style.borderLeftColor]="group.cor">
+                    <span class="plan-add-plus">+</span>
+                    <input
+                      class="plan-add-input"
+                      placeholder="Adicionar sub-item"
+                      [ngModel]="newItemDraft[item.id] || ''"
+                      (ngModelChange)="newItemDraft[item.id] = $event"
+                      (keydown.enter)="addSubitem(item)"
+                    >
+                  </div>
+                }
+              }
+              <div class="plan-add-row plan-add-row-root">
+                <span class="plan-add-plus">+</span>
+                <input
+                  class="plan-add-input"
+                  placeholder="Adicionar elemento"
+                  [ngModel]="newItemDraft[group.id] || ''"
+                  (ngModelChange)="newItemDraft[group.id] = $event"
+                  (keydown.enter)="addRootItem(group)"
+                >
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (currentOpenItem(); as openItem) {
+  <app-planning-item-panel
+    [item]="openItem"
+    [subitems]="currentOpenSubitems()"
+    [staff]="staff()"
+    (closed)="closeItemPanel()"
+    (deleted)="closeItemPanel()"
+  />
+}
+
+@if (selectedIds().size) {
+  <div class="plan-bulk-bar">
+    <span class="plan-bulk-count">{{ selectedIds().size }} selecionado(s)</span>
+    <app-select class="sel-toolbar" [resetAfterPick]="true" placeholder="Mudar status para..." (valueChange)="$event && bulkSetStatus($any($event))">
+      @for (s of statuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
+    </app-select>
+    <app-select class="sel-toolbar" [resetAfterPick]="true" placeholder="Mover para grupo..." (valueChange)="$event && bulkMoveToGroup($event)">
+      @for (g of sortedGroups(); track g.id) { <option [value]="g.id">{{ g.nome }}</option> }
+    </app-select>
+    <button type="button" class="btn btn-danger btn-sm" (click)="bulkDeleteSelected()">Excluir selecionados</button>
+    <button type="button" class="btn-icon" (click)="clearSelection()" title="Cancelar seleção">✕</button>
+  </div>
+}

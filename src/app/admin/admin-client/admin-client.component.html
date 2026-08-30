@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="clientes" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="breadcrumb">
@@ -43,7 +43,7 @@
             <div class="form-group">
               <label class="form-label">Cor Primária</label>
               <div class="color-row">
-                <input type="color" style="width:46px;height:46px;border:1px solid var(--border);padding:2px;cursor:pointer;background:none"
+                <input type="color" class="color-picker"
                   [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
                 <input type="text" class="form-input" maxlength="7" style="flex:1" [ngModel]="brandingColor()" (ngModelChange)="onColorChange($event)">
               </div>
@@ -155,12 +155,12 @@
       @if (!availableAccounts().length) {
         <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhuma conta disponível. Crie uma em "Contas" (papel Cliente) primeiro.</div>
       } @else {
-        <select class="form-select" [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
+        <app-select [ngModel]="tmSelectedUid()" (ngModelChange)="tmSelectedUid.set($event)">
           <option value="">— Selecione —</option>
           @for (a of availableAccounts(); track a.uid) {
             <option [value]="a.uid">{{ a.name || a.email }}{{ a.name && a.email ? ' — ' + a.email : '' }}</option>
           }
-        </select>
+        </app-select>
       }
     </div>
     <div class="form-help" style="margin-bottom:.5rem">Foto e cargo do colaborador são editados em "Contas".</div>
@@ -185,12 +185,12 @@
       @if (!unlinkedProjects().length) {
         <div style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Nenhum projeto sem empresa disponível.</div>
       } @else {
-        <select class="form-select" [ngModel]="apSelectedProjectId()" (ngModelChange)="apSelectedProjectId.set($event)">
+        <app-select [ngModel]="apSelectedProjectId()" (ngModelChange)="apSelectedProjectId.set($event)">
           <option value="">— Selecione —</option>
           @for (p of unlinkedProjects(); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
           }
-        </select>
+        </app-select>
       }
     </div>
 
@@ -222,7 +222,7 @@
           @for (p of projects(); track p.id) {
             <label style="display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;font-size:.85rem;cursor:pointer;border-bottom:1px solid var(--border)"
               (click)="$event.preventDefault(); toggleDeleteProject(p.id, !deleteProjectIds().has(p.id))">
-              <input type="checkbox" [checked]="deleteProjectIds().has(p.id)" tabindex="-1" style="accent-color:#DC2626;pointer-events:none">
+              <input type="checkbox" [checked]="deleteProjectIds().has(p.id)" tabindex="-1" style="accent-color:var(--danger);pointer-events:none">
               <span style="flex:1">{{ p.name }}</span>
               <span style="font-size:.72rem;color:var(--muted)">{{ deleteProjectIds().has(p.id) ? 'Excluir' : 'Desvincular' }}</span>
             </label>
@@ -238,7 +238,7 @@
           @for (m of teamMembers(); track m.uid) {
             <label style="display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;font-size:.85rem;cursor:pointer;border-bottom:1px solid var(--border)"
               (click)="$event.preventDefault(); toggleDeleteAccount(m.uid, !deleteAccountUids().has(m.uid))">
-              <input type="checkbox" [checked]="deleteAccountUids().has(m.uid)" tabindex="-1" style="accent-color:#DC2626;pointer-events:none">
+              <input type="checkbox" [checked]="deleteAccountUids().has(m.uid)" tabindex="-1" style="accent-color:var(--danger);pointer-events:none">
               <span style="flex:1">{{ m.name || m.email }}</span>
               <span style="font-size:.72rem;color:var(--muted)">{{ deleteAccountUids().has(m.uid) ? 'Excluir' : 'Desvincular' }}</span>
             </label>

@@ -20,6 +20,7 @@ import {
 } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 
 interface TemplateFormState {
@@ -39,7 +40,7 @@ function toDate(value: unknown): Date {
 @Component({
   selector: 'app-admin-avaliacoes',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, FormsModule, PnavComponent],
+  imports: [AsyncPipe, DatePipe, FormsModule, PnavComponent, SelectComponent],
   templateUrl: './admin-avaliacoes.component.html',
 })
 export class AdminAvaliacoesComponent {

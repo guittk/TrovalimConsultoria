@@ -1,0 +1,21 @@
+<button
+  type="button"
+  class="plan-chip"
+  [style.background]="current().cor"
+  (click)="toggle($event)"
+>{{ current().label }}</button>
+
+@if (open()) {
+  <div class="plan-popover" [style.top.px]="pos().top" [style.left.px]="pos().left">
+    @for (s of statuses; track s.key) {
+      <button
+        type="button"
+        class="plan-popover-option"
+        [class.active]="s.key === value"
+        (click)="pick(s.key, $event)"
+      >
+        <span class="plan-chip plan-chip-sm" [style.background]="s.cor">{{ s.label }}</span>
+      </button>
+    }
+  </div>
+}

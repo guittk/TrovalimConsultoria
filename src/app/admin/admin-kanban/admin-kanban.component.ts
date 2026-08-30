@@ -9,6 +9,7 @@ import { TasksService, TASK_STATUSES, TASK_PRIORITIES } from '../../core/tasks.s
 import { Task, TaskAttachment, TaskChecklistItem, TaskPriority, TaskStatus } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -43,7 +44,7 @@ function emptyForm(status: TaskStatus): FormState {
 @Component({
   selector: 'app-admin-kanban',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, FormsModule, PnavComponent],
+  imports: [AsyncPipe, DatePipe, FormsModule, PnavComponent, SelectComponent],
   templateUrl: './admin-kanban.component.html',
 })
 export class AdminKanbanComponent {

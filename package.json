@@ -9,8 +9,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "deploy": "ng build --configuration production && firebase deploy --project prod --only hosting:prod,firestore,storage,functions",
-    "deploy:preview": "ng build --configuration development && firebase hosting:channel:deploy preview --project prod --only prod --expires 7d",
-    "emulators": "firebase emulators:start --only auth,firestore,storage,functions --import=./emulator-data --export-on-exit=./emulator-data"
+    "deploy:preview": "ng build --configuration production && firebase hosting:channel:deploy preview --project prod --only prod --expires 7d",
+    "emulators": "firebase emulators:start --only auth,firestore,storage,functions --import=./emulator-data --export-on-exit=./emulator-data",
+    "seed:emulator": "node scripts/seed-emulator.js"
   },
   "prettier": {
     "printWidth": 100,
@@ -33,6 +34,7 @@
     "@angular/router": "^20.3.0",
     "@angular/service-worker": "^20.3.0",
     "firebase": "^12.4.0",
+    "jspdf": "^4.2.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

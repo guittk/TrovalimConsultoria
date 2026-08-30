@@ -2,16 +2,16 @@ import { AsyncPipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Functions, httpsCallable } from 'firebase/functions';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { EmpresasService } from '../../core/empresas.service';
 import { ProjectsService } from '../../core/projects.service';
 import { LeadsService, LEAD_STAGES } from '../../core/leads.service';
+import { PropostasService } from '../../core/propostas.service';
 import { PricingSettingsService, PRICING_UNITS, DEFAULT_PRICING_SETTINGS } from '../../core/pricing-settings.service';
-import { FIREBASE_FUNCTIONS } from '../../core/firebase.providers';
-import { Lead, LeadStage, ProspectSuggestion } from '../../core/models';
+import { Lead, LeadStage } from '../../core/models';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 
@@ -50,19 +50,19 @@ function emptyForm(): FormState {
 @Component({
   selector: 'app-admin-prospeccao',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, PnavComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-prospeccao.component.html',
 })
 export class AdminProspeccaoComponent {
   private readonly auth = inject(AuthService);
   private readonly leadsSvc = inject(LeadsService);
+  private readonly propostasSvc = inject(PropostasService);
   private readonly pricingSettingsSvc = inject(PricingSettingsService);
   private readonly empresasSvc = inject(EmpresasService);
   private readonly projectsSvc = inject(ProjectsService);
   private readonly confirmSvc = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly functions: Functions = inject(FIREBASE_FUNCTIONS);
 
   readonly tabs = ADMIN_TABS;
   readonly userData$ = this.auth.userData$;
@@ -173,52 +173,35 @@ export class AdminProspeccaoComponent {
     this.showCalc.set(false);
   }
 
-  /* ── BRAINSTORM COM IA ── */
-  readonly suggesting = signal(false);
-  readonly suggestErr = signal('');
-  readonly suggestion = signal<ProspectSuggestion | null>(null);
-
-  async suggestApproach(): Promise<void> {
-    const f = this.form();
-    if (!f.dor.trim()) {
-      this.suggestErr.set('Preencha a Dor Declarada / Contexto antes de pedir sugestão.');
-      return;
-    }
-    this.suggesting.set(true);
-    this.suggestErr.set('');
-    this.suggestion.set(null);
+  /**
+   * Congela os itens/quantidades marcados na calculadora numa Proposta
+   * (rascunho), vinculada a este lead. A partir daí o valor não se move mais
+   * sozinho mesmo que o catálogo mude — só editando o rascunho na tela da
+   * proposta (ver AdminPropostaComponent).
+   */
+  readonly generatingProposta = signal(false);
+  async generateProposta(): Promise<void> {
+    const lead = this.editingLead();
+    if (!lead || !this.calcTotal()) return;
+    this.generatingProposta.set(true);
     try {
-      const suggestProspectApproach = httpsCallable<{ name: string; dor: string }, ProspectSuggestion>(
-        this.functions,
-        'suggestProspectApproach',
-      );
-      const result = await suggestProspectApproach({ name: f.name.trim() || 'este lead', dor: f.dor.trim() });
-      this.suggestion.set(result.data);
-    } catch (e) {
-      const err = e as { message?: string };
-      this.suggestErr.set(err.message || 'Erro ao pedir sugestão. Tente novamente.');
+      const items = this.pricingSettings()
+        .items.filter((it) => this.calcQtyFor(it.key) > 0)
+        .map((it) => ({ key: it.key, name: it.name, unit: it.unit, baseValue: it.baseValue, qty: this.calcQtyFor(it.key) }));
+      const propostaId = await this.propostasSvc.create({
+        leadId: lead.id,
+        clientName: lead.name,
+        contactName: lead.contactName || '',
+        email: lead.email || '',
+        items,
+        escopo: lead.escopo || this.form().escopo || '',
+        condicoes: lead.condicoes || this.form().condicoes || '',
+      });
+      await this.leadsSvc.update(lead.id, { propostaId });
+      this.router.navigate(['/admin/proposta', propostaId]);
     } finally {
-      this.suggesting.set(false);
+      this.generatingProposta.set(false);
     }
-  }
-
-  /** Preenche só o que está vazio — nunca sobrescreve o que já foi digitado à mão. */
-  applySuggestedQuestions(): void {
-    const s = this.suggestion();
-    if (!s || this.form().diagnostico.trim()) return;
-    this.updateForm('diagnostico', s.perguntasDiagnostico.map((p) => `• ${p}`).join('\n'));
-  }
-
-  applySuggestedServices(): void {
-    const s = this.suggestion();
-    if (!s || this.form().escopo.trim()) return;
-    this.updateForm('escopo', s.servicosRecomendados.join(', '));
-  }
-
-  applySuggestedMessage(): void {
-    const s = this.suggestion();
-    if (!s || this.form().mensagemAbordagem.trim()) return;
-    this.updateForm('mensagemAbordagem', s.mensagemAbordagem);
   }
 
   openCreate(): void {
@@ -228,8 +211,6 @@ export class AdminProspeccaoComponent {
     this.wonResult.set(null);
     this.showCalc.set(false);
     this.calcQty.set({});
-    this.suggestion.set(null);
-    this.suggestErr.set('');
     this.modalOpen.set(true);
   }
 
@@ -253,8 +234,6 @@ export class AdminProspeccaoComponent {
     this.wonResult.set(lead.empresaId && lead.projectId ? { empresaId: lead.empresaId, projectId: lead.projectId } : null);
     this.showCalc.set(false);
     this.calcQty.set({});
-    this.suggestion.set(null);
-    this.suggestErr.set('');
     this.modalOpen.set(true);
   }
 

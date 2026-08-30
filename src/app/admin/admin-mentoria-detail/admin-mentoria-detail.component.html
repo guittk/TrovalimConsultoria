@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="mentoria" [userName]="userData.name || userData.email || ''" />
 }
 
 @if (mentee(); as mentee) {
@@ -125,7 +125,7 @@
                       <div style="font-weight:600;font-size:.88rem">{{ a.titulo }}</div>
                       @if (a.evidenciaEsperada) { <div style="font-size:.76rem;color:var(--muted);margin-top:.25rem">Evidência: {{ a.evidenciaEsperada }}</div> }
                     </div>
-                    <span class="badge" [style.background]="a.status === 'concluida' ? '#DCFCE7' : '#F3F4F6'" [style.color]="a.status === 'concluida' ? '#166534' : '#374151'">{{ a.status === 'concluida' ? 'Concluída' : 'Pendente' }}</span>
+                    <span class="badge" [style.background]="a.status === 'concluida' ? 'var(--success-soft)' : 'var(--surface-2)'" [style.color]="a.status === 'concluida' ? 'var(--success)' : 'var(--muted)'">{{ a.status === 'concluida' ? 'Concluída' : 'Pendente' }}</span>
                   </div>
                   <div style="display:flex;gap:1rem;margin-top:.5rem;font-size:.75rem;color:var(--muted)">
                     @if (a.prazo) { <span>Prazo: {{ a.prazo }}</span> }
@@ -210,12 +210,12 @@
       </div>
       <div class="form-group">
         <label class="form-label">Categoria (opcional)</label>
-        <select class="form-select" [ngModel]="form().categoria" (ngModelChange)="updateForm('categoria', $event)">
+        <app-select [ngModel]="form().categoria" (ngModelChange)="updateForm('categoria', $event)">
           <option value="">— Sem categoria —</option>
           <option value="70">70% — Experiência</option>
           <option value="20">20% — Exposição</option>
           <option value="10">10% — Educação formal</option>
-        </select>
+        </app-select>
       </div>
     </div>
 

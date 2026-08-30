@@ -27,6 +27,10 @@ export const routes: Routes = [
     loadComponent: () => import('./portal/portal-carreira/portal-carreira.component').then((m) => m.PortalCarreiraComponent),
   },
   {
+    path: 'proposta/:id',
+    loadComponent: () => import('./proposta-publica/proposta-publica.component').then((m) => m.PropostaPublicaComponent),
+  },
+  {
     path: 'mentoria',
     canActivate: [mentoriaGuard],
     loadComponent: () => import('./mentoria/mentoria-home/mentoria-home.component').then((m) => m.MentoriaHomeComponent),
@@ -57,9 +61,11 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-painel/admin-painel.component').then((m) => m.AdminPainelComponent),
   },
   {
+    // "Relatórios" foi absorvida pelo Dashboard (seção "Indicadores da
+    // Operação" em /admin/painel); a rota antiga redireciona pra lá.
     path: 'admin/relatorios',
-    canActivate: [staffGuard, staffTabGuard('relatorios')],
-    loadComponent: () => import('./admin/admin-relatorios/admin-relatorios.component').then((m) => m.AdminRelatoriosComponent),
+    redirectTo: 'admin/painel',
+    pathMatch: 'full',
   },
   {
     path: 'admin/lgpd',
@@ -87,6 +93,16 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-prospeccao/admin-prospeccao.component').then((m) => m.AdminProspeccaoComponent),
   },
   {
+    path: 'admin/brainstorm',
+    canActivate: [staffGuard, staffTabGuard('brainstorm')],
+    loadComponent: () => import('./admin/admin-brainstorm/admin-brainstorm.component').then((m) => m.AdminBrainstormComponent),
+  },
+  {
+    path: 'admin/proposta/:id',
+    canActivate: [staffGuard, staffTabGuard('prospeccao')],
+    loadComponent: () => import('./admin/admin-proposta/admin-proposta.component').then((m) => m.AdminPropostaComponent),
+  },
+  {
     path: 'admin/projeto/:id',
     canActivate: [staffGuard],
     loadComponent: () => import('./admin/admin-project/admin-project.component').then((m) => m.AdminProjectComponent),
@@ -106,15 +122,17 @@ export const routes: Routes = [
     canActivate: [staffGuard, staffTabGuard('clientes')],
     loadComponent: () => import('./admin/admin-client/admin-client.component').then((m) => m.AdminClientComponent),
   },
-  {
-    path: 'admin/contas',
-    canActivate: [staffGuard, staffTabGuard('contas')],
-    loadComponent: () => import('./admin/admin-accounts/admin-accounts.component').then((m) => m.AdminAccountsComponent),
-  },
+  // "Contas" virou aba de /admin/config — bookmarks antigos caem lá.
+  { path: 'admin/contas', redirectTo: 'admin/config', pathMatch: 'full' },
   {
     path: 'admin/kanban',
     canActivate: [staffGuard, staffTabGuard('kanban')],
     loadComponent: () => import('./admin/admin-kanban/admin-kanban.component').then((m) => m.AdminKanbanComponent),
+  },
+  {
+    path: 'admin/planejamento',
+    canActivate: [staffGuard, staffTabGuard('planejamento')],
+    loadComponent: () => import('./admin/admin-planejamento/admin-planejamento.component').then((m) => m.AdminPlanejamentoComponent),
   },
   {
     path: 'admin/contatos',

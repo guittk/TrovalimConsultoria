@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Consultoria de RH: recrutamento por competência, desenvolvimento de liderança e orientação de carreira.">
   <link rel="icon" type="image/png" href="favicon.png">
-  <meta name="theme-color" content="#3D0B12">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#2E070C">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&amp;family=Montserrat:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
 
   <!-- Pré-visualização de link (WhatsApp, iMessage, Facebook, LinkedIn...) -->
   <meta property="og:type" content="website">
@@ -26,6 +26,22 @@
   <meta name="twitter:description" content="Consultoria de RH: recrutamento por competência, desenvolvimento de liderança e orientação de carreira.">
   <meta name="twitter:image" content="https://geovana-trovalim-prod.web.app/og-image.png">
   <link rel="manifest" href="manifest.webmanifest">
+
+  <!--
+    Aplica o tema guardado ANTES do primeiro paint. Sem isto, a página
+    nasceria no tema claro e piscaria pro escuro só quando o Angular
+    subisse. Mantém a mesma chave do ThemeService (core/theme.service.ts).
+  -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('trovalim.theme');
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

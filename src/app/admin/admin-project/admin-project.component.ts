@@ -20,6 +20,7 @@ import { VagasService, VAGA_STATUSES } from '../../core/vagas.service';
 import { CandidatesService } from '../../core/candidates.service';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { FileIconComponent } from '../../shared/file-icon/file-icon.component';
@@ -37,6 +38,7 @@ type TabKey = 'geral' | 'timeline' | 'vagas' | 'arquivos' | 'mensagens';
     FormsModule,
     RouterLink,
     PnavComponent,
+    SelectComponent,
     StatusBadgeComponent,
     FileIconComponent,
   ],
@@ -81,7 +83,9 @@ export class AdminProjectComponent {
   readonly staffAccounts = toSignal(this.accountsSvc.listStaff$(), { initialValue: [] });
   readonly internalNotesSaved = toSignal(this.projectsSvc.internalNotes$(this.pid), { initialValue: '' });
 
-  readonly activeTab = signal<TabKey>('geral');
+  readonly activeTab = signal<TabKey>(
+    this.route.snapshot.queryParamMap.get('tab') === 'mensagens' ? 'mensagens' : 'geral',
+  );
 
   /* ── VISÃO GERAL ── */
   readonly name = signal('');
@@ -223,6 +227,11 @@ export class AdminProjectComponent {
       this.stepsData.set((p.steps || []).map((s) => ({ ...s, id: s.id || crypto.randomUUID() })));
     });
     effect(() => this.internalNotes.set(this.internalNotesSaved()));
+    effect(() => {
+      if (this.activeTab() === 'mensagens' && this.project()?.unreadForStaff) {
+        this.projectsSvc.markMessagesRead(this.pid);
+      }
+    });
   }
 
   toDate(value: unknown): Date {

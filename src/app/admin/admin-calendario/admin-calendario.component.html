@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="calendario" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="calendario" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -16,9 +16,12 @@
         <button class="btn-icon" title="Próximo mês" (click)="nextMonth()">›</button>
         <button class="btn btn-outline btn-sm" (click)="goToday()">Hoje</button>
       </div>
-      <label class="cal-toggle">
-        <input type="checkbox" [checked]="showDeadlines()" (change)="toggleDeadlines()">
-        Mostrar prazos
+      <label class="switch-row" title="Mostrar prazos de projetos e tarefas no calendário">
+        <span class="switch" [class.on]="showDeadlines()"><span class="switch-knob"></span></span>
+        <input type="checkbox" style="display:none" [checked]="showDeadlines()" (change)="toggleDeadlines()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--muted)">
+          <path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="m9 16 2 2 4-4" />
+        </svg>
       </label>
     </div>
 
@@ -123,16 +126,16 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Tipo</label>
-        <select class="form-select" [ngModel]="form().type" (ngModelChange)="updateForm('type', $event)">
+        <app-select [ngModel]="form().type" (ngModelChange)="updateForm('type', $event)">
           @for (t of eventTypes; track t.key) { <option [value]="t.key">{{ t.label }}</option> }
-        </select>
+        </app-select>
       </div>
       <div class="form-group">
         <label class="form-label">Projeto (opcional)</label>
-        <select class="form-select" [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
+        <app-select [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
           <option value="">Sem projeto</option>
           @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
-        </select>
+        </app-select>
       </div>
     </div>
 

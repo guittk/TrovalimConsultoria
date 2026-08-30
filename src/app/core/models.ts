@@ -28,6 +28,12 @@ export interface UserAccount {
   /** Chaves das abas do admin (ex: 'config', 'contatos') escondidas para esta conta. Ignorado para owner. */
   hiddenTabs?: string[];
   /**
+   * Tema (claro/escuro) da área de conteúdo escolhido nesta conta. Ao logar,
+   * o app aplica este valor (ver App + ThemeService). O localStorage do
+   * navegador ainda é usado como cache pré-login (evita flash no 1º paint).
+   */
+  themePref?: 'light' | 'dark';
+  /**
    * Somente para clientes: id do doc em /empresas ao qual esta conta está
    * vinculada como colaborador. Várias contas (e-mails) podem apontar para a
    * mesma empresa, permitindo múltiplos colaboradores por cliente — todas
@@ -83,6 +89,9 @@ export type ProjectStatus =
 export interface ProjectStatusOption {
   key: string;
   label: string;
+  /** Cor da etiqueta do status (hex `#RRGGBB`). Ausente = usa a cor padrão
+      da chave (ver DEFAULT_STATUS_COLORS) ou a paleta por índice. */
+  color?: string;
 }
 
 export interface ProjectStatusSettings {
@@ -102,6 +111,80 @@ export interface PricingItem {
 /** Catálogo editável em Configurações — sem deploy. Usado pela calculadora dentro da Prospecção. */
 export interface PricingSettings {
   items: PricingItem[];
+}
+
+/**
+ * Catálogo de Serviços — separado do de Precificação de propósito: este
+ * descreve O QUE cada serviço resolve/pra quem é indicado, o de
+ * Precificação continua sendo só valor. O Brainstorm usa os dois juntos
+ * (ver `suggestProspectApproach` em functions/index.js) pra casar a dor
+ * declarada de um lead com a solução certa.
+ */
+export interface ServiceCatalogItem {
+  key: string;
+  name: string;
+  description: string;
+}
+
+export interface ServiceCatalogSettings {
+  items: ServiceCatalogItem[];
+}
+
+/**
+ * Catálogo ÚNICO (`settings/catalog`) — junta o que antes eram dois docs
+ * (`settings/pricing` + `settings/services`). Cada item tem sempre nome e
+ * descrição; `unit`/`baseValue` só quando ele tem preço (`null` = "só
+ * descrição"). `PricingSettingsService`/`ServiceCatalogSettingsService`
+ * viraram views derivadas deste doc, então a calculadora de proposta, o
+ * PDF e o Brainstorm continuam lendo o formato antigo sem mudança.
+ */
+export interface CatalogItem {
+  key: string;
+  name: string;
+  description: string;
+  unit: PricingUnit | null;
+  baseValue: number | null;
+}
+
+export interface CatalogSettings {
+  items: CatalogItem[];
+}
+
+/** Linha de uma proposta: cópia CONGELADA de um PricingItem no momento da geração — nunca aponta de volta pro catálogo. */
+export interface PropostaItem {
+  key: string;
+  name: string;
+  unit: PricingUnit;
+  baseValue: number;
+  qty: number;
+}
+
+export type PropostaStatus = 'rascunho' | 'enviada' | 'aceita' | 'recusada';
+
+/**
+ * Proposta comercial: nasce da calculadora dentro de uma Prospecção,
+ * congela os itens/valores escolhidos (edição só permitida em 'rascunho' —
+ * depois de enviada, o valor não muda mais sozinho mesmo que o catálogo
+ * mude). Documento público por id (link de aceite), então NUNCA guarda nada
+ * que não possa ser visto por quem tiver o link.
+ */
+export interface Proposta {
+  id: string;
+  leadId?: string | null;
+  clientName: string;
+  contactName?: string;
+  email?: string;
+  items: PropostaItem[];
+  total: number;
+  escopo?: string;
+  condicoes?: string;
+  status: PropostaStatus;
+  createdAt?: unknown;
+  sentAt?: unknown;
+  respondedAt?: unknown;
+  acceptedByName?: string;
+  acceptedByEmail?: string;
+  declineReason?: string;
 }
 
 export type TimelineMode = 'data' | 'ordem';
@@ -139,6 +222,10 @@ export interface Project {
   hidden?: boolean;
   /** Modo de ordenação da Linha do Tempo. Padrão: 'data'. */
   timelineMode?: TimelineMode;
+  /** Timestamp da última mensagem (de qualquer lado) — evita ler a subcoleção messages só pra ordenar/badge. */
+  lastMessageAt?: unknown;
+  /** true quando a última mensagem foi do cliente e a equipe ainda não abriu a aba Mensagens do projeto. */
+  unreadForStaff?: boolean;
 }
 
 export interface ProjectMessage {
@@ -262,6 +349,8 @@ export interface Lead {
   /** Preenchidos só quando o lead vira Empresa + Projeto (estágio "ganho"). */
   empresaId?: string | null;
   projectId?: string | null;
+  /** Id da proposta gerada a partir da calculadora deste lead (ver PropostasService.create). */
+  propostaId?: string | null;
   createdAt?: unknown;
 }
 
@@ -336,19 +425,13 @@ export interface PushToken {
   createdAt?: unknown;
 }
 
-/** /settings/notifications — chave pública do Web Push, colada uma vez no console do Firebase. */
-export interface NotificationSettings {
-  vapidKey: string;
-}
-
 /**
- * /settings/openai — a chave é SEGREDO (ao contrário da VAPID, que é
- * pública), então a regra do Firestore restringe leitura e escrita a
- * owner, e o valor nunca é lido pelo cliente fora da tela de
- * Configurações: só a Cloud Function usa a chave de verdade, via Admin SDK.
+ * Catálogo extraído de um texto livre pela Cloud Function
+ * `fillCatalogsFromContext` — retorno só, nada é gravado: a tela de
+ * Configurações mostra o antes/depois, a pessoa ajusta e confirma.
  */
-export interface OpenAiSettings {
-  apiKey: string;
+export interface CatalogExtraction {
+  items: { name: string; description: string; unit: PricingUnit | null; baseValue: number | null }[];
 }
 
 export interface ProspectSuggestion {
@@ -537,3 +620,68 @@ export interface ResumeVersion {
   createdAt?: unknown;
   createdByName?: string;
 }
+
+/**
+ * Planejamento — quadro estilo Monday.com (grupos coloridos, itens e
+ * sub-itens). Sistema próprio, sem nenhum campo ou coleção em comum com o
+ * Kanban (`Task`) — os dois convivem lado a lado, cada um com seu
+ * vocabulário: Kanban é execução de tarefa simples (staff-only, colunas
+ * fixas por status), Planejamento é um quadro por contexto (Global ou por
+ * projeto) com grupos/sub-itens/colunas configuráveis.
+ */
+export type PlanningStatus = 'backlog' | 'todo' | 'doing' | 'blocked' | 'review' | 'done' | 'canceled';
+
+export interface PlanningAttachment {
+  nome: string;
+  url: string;
+  /** Salvo (diferente do padrão simplificado usado em TaskAttachment) — permite apagar o blob do Storage ao remover o anexo. */
+  path: string;
+}
+
+/** Seção colorida dentro de um quadro — o quadro em si não é um documento, é implícito por `projectId` (null = Quadro Global). */
+export interface PlanningGroup {
+  id: string;
+  projectId: string | null;
+  nome: string;
+  cor: string;
+  ordem: number;
+  colapsado?: boolean;
+  createdAt?: unknown;
+}
+
+export interface PlanningItem {
+  id: string;
+  /** Denormalizado do grupo — permite indexar/filtrar itens por quadro direto, sem join. */
+  projectId: string | null;
+  groupId: string;
+  /** Presente = é sub-item, aponta pro item-pai. Só 1 nível (sub-item não tem filhos). */
+  parentId?: string | null;
+  nome: string;
+  descricao?: string;
+  assigneeIds?: string[];
+  status: PlanningStatus;
+  /** 1 a 5 (estrelas). Ausente = sem prioridade definida. */
+  prioridade?: number | null;
+  /** yyyy-mm-dd. */
+  dueDate?: string | null;
+  anexos?: PlanningAttachment[];
+  /**
+   * 3 estados: ausente = automático (esconde campos assim que o item ganha
+   * o 1º sub-item, porque quem carrega status/prazo real vira os filhos);
+   * true/false = escolha explícita da pessoa (ícone "olho" na linha), que
+   * vence pra sempre a partir daí mesmo que a quantidade de sub-itens mude.
+   */
+  mostrarCampos?: boolean | null;
+  ordem: number;
+  createdAt?: unknown;
+}
+
+export const PLANNING_STATUSES: { key: PlanningStatus; label: string; cor: string }[] = [
+  { key: 'backlog', label: 'Backlog', cor: '#707588' },
+  { key: 'todo', label: 'A Fazer', cor: '#79AFFD' },
+  { key: 'doing', label: 'Fazendo', cor: '#FDBC64' },
+  { key: 'blocked', label: 'Bloqueado', cor: '#E8697D' },
+  { key: 'review', label: 'Revisão', cor: '#339ECD' },
+  { key: 'done', label: 'Concluído', cor: '#33D391' },
+  { key: 'canceled', label: 'Cancelado', cor: '#5C5C5C' },
+];

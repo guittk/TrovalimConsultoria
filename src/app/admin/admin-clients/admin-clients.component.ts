@@ -11,6 +11,7 @@ import { ProjectsService } from '../../core/projects.service';
 import { Project, UserAccount } from '../../core/models';
 import { initials } from '../../shared/initials';
 import { PnavComponent } from '../../shared/pnav/pnav.component';
+import { SelectComponent } from '../../shared/select/select.component';
 import { ADMIN_TABS } from '../admin-tabs';
 
 interface StagedCollaborator {
@@ -22,7 +23,7 @@ interface StagedCollaborator {
 @Component({
   selector: 'app-admin-clients',
   standalone: true,
-  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent],
+  imports: [AsyncPipe, FormsModule, RouterLink, PnavComponent, SelectComponent],
   templateUrl: './admin-clients.component.html',
 })
 export class AdminClientsComponent {

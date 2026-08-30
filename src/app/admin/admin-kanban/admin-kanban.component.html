@@ -1,5 +1,5 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="kanban" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="kanban" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
@@ -17,14 +17,14 @@
   <div class="toolbar">
     <input type="text" class="toolbar-search" placeholder="Buscar por título…"
       [ngModel]="filterQuery()" (ngModelChange)="filterQuery.set($event)">
-    <select class="toolbar-select" [ngModel]="filterAssigneeId()" (ngModelChange)="filterAssigneeId.set($event)">
+    <app-select class="sel-toolbar" [ngModel]="filterAssigneeId()" (ngModelChange)="filterAssigneeId.set($event)">
       <option value="">Todos os responsáveis</option>
       @for (u of staff(); track u.uid) { <option [value]="u.uid">{{ u.name || u.email }}</option> }
-    </select>
-    <select class="toolbar-select" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)">
+    </app-select>
+    <app-select class="sel-toolbar" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)">
       <option value="">Todas as prioridades</option>
       @for (p of priorities; track p.key) { <option [value]="p.key">{{ p.label }}</option> }
-    </select>
+    </app-select>
     @if (hasActiveFilters()) {
       <button type="button" class="btn-icon" title="Limpar filtros" (click)="clearFilters()">✕</button>
     }
@@ -161,10 +161,10 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Projeto</label>
-        <select class="form-select" [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
+        <app-select [ngModel]="form().projectId" (ngModelChange)="updateForm('projectId', $event)">
           <option value="">Sem projeto (interno)</option>
           @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
-        </select>
+        </app-select>
       </div>
       <div class="form-group">
         <label class="form-label">Prazo</label>
@@ -175,15 +175,15 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Status</label>
-        <select class="form-select" [ngModel]="form().status" (ngModelChange)="updateForm('status', $event)">
+        <app-select [ngModel]="form().status" (ngModelChange)="updateForm('status', $event)">
           @for (s of statuses; track s.key) { <option [value]="s.key">{{ s.label }}</option> }
-        </select>
+        </app-select>
       </div>
       <div class="form-group">
         <label class="form-label">Prioridade</label>
-        <select class="form-select" [ngModel]="form().prioridade" (ngModelChange)="updateForm('prioridade', $event)">
+        <app-select [ngModel]="form().prioridade" (ngModelChange)="updateForm('prioridade', $event)">
           @for (p of priorities; track p.key) { <option [value]="p.key">{{ p.label }}</option> }
-        </select>
+        </app-select>
       </div>
     </div>
 
@@ -253,7 +253,7 @@
           {{ uploadingAttachment() ? 'Enviando…' : 'Escolher arquivo' }}
           <input type="file" style="display:none" (change)="handleUploadAttachment($event)">
         </label>
-        @if (uploadErr()) { <p style="font-size:.75rem;color:#DC2626;margin-top:.4rem">{{ uploadErr() }}</p> }
+        @if (uploadErr()) { <p style="font-size:.75rem;color:var(--danger);margin-top:.4rem">{{ uploadErr() }}</p> }
       </div>
     }
 

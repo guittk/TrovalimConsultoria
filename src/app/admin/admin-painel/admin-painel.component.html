@@ -1,31 +1,82 @@
 @if (userData$ | async; as userData) {
-  <app-pnav [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="painel" [userName]="userData.name || userData.email || ''" />
+  <app-pnav [showBell]="true" [tabs]="tabs" [hiddenTabs]="userData.hiddenTabs || []" activeSection="painel" [userName]="userData.name || userData.email || ''" />
 }
 
 <div class="page">
   <div class="page-header">
-    <h1 class="page-title">Painel</h1>
-    <p class="page-subtitle">O que fazer agora</p>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">O que fazer agora — e os indicadores da operação</p>
   </div>
 
-  <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:1.5rem">
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Empresas</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ empresasCount() }}</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" /><path d="M9 15h6v6H9z" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Empresas</div>
+          <div class="kpi-value">{{ empresasCount() }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Projetos Ativos</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ activeProjectsCount() }}</div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 7h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Projetos Ativos</div>
+          <div class="kpi-value">{{ activeProjectsCount() }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Tarefas em Aberto</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;color:var(--wine);margin-top:.35rem">{{ openTasksCount() }}</div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" /><path d="m8.5 12.5 2.5 2.5 4.5-5" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Tarefas em Aberto</div>
+          <div class="kpi-value">{{ openTasksCount() }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding:1.25rem">
-      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Vencidos</div>
-      <div style="font-family:var(--serif);font-size:1.9rem;margin-top:.35rem" [style.color]="overdueItems().length ? '#DC2626' : 'var(--wine)'">{{ overdueItems().length }}</div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" /><path d="M12 7v5l3 2" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Vencidos</div>
+          <div class="kpi-value" [class.is-alert]="overdueItems().length">{{ overdueItems().length }}</div>
+        </div>
+      </div>
     </div>
   </div>
+
+  @if (unreadProjects().length) {
+    <div class="card" style="margin-bottom:1.5rem;border-color:var(--wine)">
+      <div class="card-title"><span class="card-title-bar"></span>Mensagens Não Lidas</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        @for (p of unreadProjects(); track p.id) {
+          <a [routerLink]="['/admin/projeto', p.id]" [queryParams]="{ tab: 'mensagens' }" style="display:flex;align-items:center;gap:.75rem;padding:.6rem .9rem;background:var(--accent-soft);border:1px solid var(--wine);border-radius:12px;text-decoration:none">
+            <span class="badge" style="background:var(--wine);color:var(--gold);flex-shrink:0">Nova mensagem</span>
+            <span style="flex:1;min-width:0;font-weight:600;color:var(--graphite)">{{ p.name }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  }
 
   <div class="card">
     <div class="card-title"><span class="card-title-bar"></span>Hoje e Atrasado</div>
@@ -35,10 +86,10 @@
     } @else {
       <div style="display:flex;flex-direction:column;gap:.6rem">
         @for (item of overdueItems(); track item.kind + item.id) {
-          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:#FEF2F2;border:1px solid #FECACA">
-            <span class="badge" style="background:#FEE2E2;color:#DC2626;flex-shrink:0">{{ item.kind === 'tarefa' ? 'Tarefa' : 'Prazo do Projeto' }}</span>
+          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:var(--danger-soft);border:1px solid var(--danger-border);border-radius:12px">
+            <span class="badge" style="background:var(--danger-soft);color:var(--danger);flex-shrink:0">{{ item.kind === 'tarefa' ? 'Tarefa' : 'Prazo do Projeto' }}</span>
             <a [routerLink]="item.link" style="flex:1;min-width:0;font-weight:600;color:var(--graphite)">{{ item.title }}</a>
-            <span style="font-size:.78rem;color:#DC2626;flex-shrink:0">{{ item.date | date:'dd/MM' }}</span>
+            <span style="font-size:.78rem;color:var(--danger);flex-shrink:0">{{ item.date | date:'dd/MM' }}</span>
             @if (item.task; as t) {
               <div style="display:flex;gap:.4rem;flex-shrink:0">
                 <button class="btn btn-outline btn-sm" (click)="postponeTask(t)">+1 dia</button>
@@ -48,7 +99,7 @@
           </div>
         }
         @for (item of upcomingItems(); track item.kind + item.id) {
-          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:var(--bg);border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:var(--surface-2);border:1px solid var(--border);border-radius:12px">
             <span class="badge">{{ item.kind === 'tarefa' ? 'Tarefa' : 'Prazo do Projeto' }}</span>
             <a [routerLink]="item.link" style="flex:1;min-width:0;font-weight:600;color:var(--graphite)">{{ item.title }}</a>
             <span style="font-size:.78rem;color:var(--muted);flex-shrink:0">{{ item.date | date:'dd/MM' }}</span>
@@ -74,7 +125,7 @@
           @for (s of statusCounts(); track s.key) {
             <div style="display:flex;align-items:center;gap:.75rem">
               <span style="flex:1;font-size:.85rem">{{ s.label }}</span>
-              <span style="font-family:var(--serif);font-size:1.1rem;color:var(--wine);min-width:2rem;text-align:right">{{ s.count }}</span>
+              <span style="font-family:var(--serif);font-size:1.1rem;color:var(--gold);min-width:2rem;text-align:right">{{ s.count }}</span>
             </div>
           }
         </div>
@@ -96,6 +147,170 @@
         </div>
         <a routerLink="/admin/contatos" class="link-btn" style="display:inline-block;margin-top:.75rem;font-size:.8rem">Ver todos →</a>
       }
+    </div>
+  </div>
+
+  <!-- ── Indicadores da Operação (ex-tela "Relatórios") ──
+       Calculados na hora, a partir dos dados atuais — não é um histórico. -->
+  <div class="page-header" style="margin-top:2.5rem">
+    <h2 class="page-title" style="font-size:1.35rem">Indicadores da Operação</h2>
+    <p class="page-subtitle">Leitura direta dos dados de hoje — funil, carteira, pipeline e time</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 17 6-6 4 4 8-8" /><path d="M17 7h4v4" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Conversão de Leads</div>
+          <div class="kpi-value">{{ leadConversionRate() !== null ? leadConversionRate() + '%' : '—' }}</div>
+        </div>
+      </div>
+      <div class="kpi-foot">ganhos ÷ (ganhos + perdidos)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" /><path d="m16 11 2 2 4-4" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Taxa de Contratação</div>
+          <div class="kpi-value">{{ hiringRate() !== null ? hiringRate() + '%' : '—' }}</div>
+        </div>
+      </div>
+      <div class="kpi-foot">contratados ÷ (contratados + reprovados)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 7h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Projetos Ativos</div>
+          <div class="kpi-value">{{ activeProjectsCount() }}</div>
+        </div>
+      </div>
+      @if (overdueProjectsCount()) {
+        <div class="kpi-foot" style="color:var(--danger)">{{ overdueProjectsCount() }} com prazo vencido</div>
+      }
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" /><path d="M9 15h6v6H9z" />
+          </svg>
+        </span>
+        <div>
+          <div class="kpi-label">Empresas Ativas</div>
+          <div class="kpi-value">{{ empresasCount() }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:1fr 1fr;align-items:start">
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Funil de Prospecção</div>
+      @if (!leads().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum lead cadastrado ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          @for (b of leadBars(); track b.key) {
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <span style="width:130px;font-size:.82rem;flex-shrink:0">{{ b.label }}</span>
+              <div class="progress-bar" style="flex:1;height:10px">
+                <div class="progress-fill" [style.width.%]="b.pct" style="background:var(--gold)"></div>
+              </div>
+              <span style="font-family:var(--serif);font-size:.95rem;color:var(--gold);width:2rem;text-align:right;flex-shrink:0">{{ b.count }}</span>
+            </div>
+          }
+        </div>
+        <div style="display:flex;gap:1.5rem;margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--muted)">
+          <span>{{ leadsEmAberto() }} em aberto</span>
+          @if (valorEstimadoEmAberto()) { <span>{{ formatBrl(valorEstimadoEmAberto()) }} estimados em aberto</span> }
+        </div>
+      }
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Carteira de Projetos</div>
+      @if (!projects().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum projeto cadastrado ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          @for (b of projectBars(); track b.key) {
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <span style="width:130px;font-size:.82rem;flex-shrink:0">{{ b.label }}</span>
+              <div class="progress-bar" style="flex:1;height:10px">
+                <div class="progress-fill" [style.width.%]="b.pct" style="background:var(--gold)"></div>
+              </div>
+              <span style="font-family:var(--serif);font-size:.95rem;color:var(--gold);width:2rem;text-align:right;flex-shrink:0">{{ b.count }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:1fr 1fr;margin-top:1.5rem;align-items:start">
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Pipeline de Candidatos</div>
+      @if (!candidates().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhum candidato cadastrado ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          @for (b of candidateBars(); track b.key) {
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <span style="width:150px;font-size:.82rem;flex-shrink:0">{{ b.label }}</span>
+              <div class="progress-bar" style="flex:1;height:10px">
+                <div class="progress-fill" [style.width.%]="b.pct" style="background:var(--gold)"></div>
+              </div>
+              <span style="font-family:var(--serif);font-size:.95rem;color:var(--gold);width:2rem;text-align:right;flex-shrink:0">{{ b.count }}</span>
+            </div>
+          }
+        </div>
+        <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--muted)">{{ candidatesEmProcesso() }} em processo agora</div>
+      }
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-bar"></span>Tarefas Internas</div>
+      @if (!tasks().length) {
+        <div class="empty-state"><div class="empty-state-sub">Nenhuma tarefa cadastrada ainda.</div></div>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          @for (b of taskBars(); track b.key) {
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <span style="width:150px;font-size:.82rem;flex-shrink:0">{{ b.label }}</span>
+              <div class="progress-bar" style="flex:1;height:10px">
+                <div class="progress-fill" [style.width.%]="b.pct" style="background:var(--gold)"></div>
+              </div>
+              <span style="font-family:var(--serif);font-size:.95rem;color:var(--gold);width:2rem;text-align:right;flex-shrink:0">{{ b.count }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:1.5rem">
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Mentorados Ativos</div>
+      <div style="font-family:var(--serif);font-weight:400;font-size:1.9rem;color:var(--gold);margin-top:.35rem">{{ mentoradosAtivos() }}</div>
+    </div>
+    <div class="card" style="padding:1.25rem">
+      <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Trilhas de Carreira Ativas</div>
+      <div style="font-family:var(--serif);font-weight:400;font-size:1.9rem;color:var(--gold);margin-top:.35rem">{{ carreirasAtivas() }}</div>
     </div>
   </div>
 </div>
