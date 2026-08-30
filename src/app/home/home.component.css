@@ -6,16 +6,18 @@
   background: #fff;
 
   /*
-    A landing page voltou a acompanhar a paleta viva do `:root` em
-    `styles.css` (redesign de identidade, 2026-08-29 em diante) — não
-    redefine mais `--wine`/`--gold`/etc aqui. Antes esses tokens ficavam
-    congelados no estado anterior à branch `evolucao-plataforma`; a partir
-    de 2026-08-30 o site público passou a ser desenhado junto com o resto
-    da plataforma, então herdar do `:root` é o que mantém as duas frentes
-    em sincronia sem duplicar valores. `--cream-warm`/`--graphite`/`--muted`
-    também vêm do `:root` (a landing não usa tema escuro, então sempre lê
-    os valores do tema claro, que é o padrão de `:root`).
+    A landing page acompanha a paleta viva do `:root` em `styles.css`
+    (redesign de identidade, 2026-08-29 em diante) — não redefine
+    `--gold`/`--cream`/etc aqui, só herda. `--cream-warm`/`--graphite`/
+    `--muted` também vêm do `:root` (a landing não usa tema escuro, então
+    sempre lê os valores do tema claro, que é o padrão de `:root`).
+
+    Exceção: `--wine`, redefinido abaixo por pedido explícito do usuário
+    (2026-08-30) pra um tom mais escuro/saturado que o `--wine` do
+    `:root` (#5B0F16). Escopado a `:host` — vale só pro site público,
+    não pra área logada.
   */
+  --wine: #3D0B12;
 
   /*
     Sistema de animação. Um easing único de desaceleração longa
