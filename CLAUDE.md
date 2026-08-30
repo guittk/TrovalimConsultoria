@@ -111,7 +111,7 @@ O mesmo componente é sidebar no admin e barra no topo fora dele — o que decid
 
 ## Pendências do plano de evolução (branch `evolucao-plataforma`, atualizado 2026-08-29)
 
-Nada da branch `evolucao-plataforma` foi mergeado em `main` nem deployado em produção ainda — está tudo pronto e verificado no Emulator Suite, aguardando revisão. Detalhe completo em [docs/plano-evolucao-plataforma.html](docs/plano-evolucao-plataforma.html) (o texto lá ainda descreve o estado ANTES desta rodada — os itens abaixo já foram construídos e testados ponta a ponta no Emulator Suite, incluindo o fluxo público de aceite sem login).
+A branch `evolucao-plataforma` foi **mergeada em `main` (fast-forward) e ambas pushadas em 2026-08-30** — commit `827303a`. **Ainda NÃO foi deployada em produção** (`npm run deploy` / `firebase deploy` continua sendo ação manual do usuário). Tudo verificado no Emulator Suite. Detalhe completo em [docs/plano-evolucao-plataforma.html](docs/plano-evolucao-plataforma.html) (o texto lá ainda descreve o estado ANTES desta rodada — os itens abaixo já foram construídos e testados ponta a ponta no Emulator Suite, incluindo o fluxo público de aceite sem login).
 
 **Construído nesta rodada (2026-08-25):**
 - **Painel — marcador de mensagem não lida.** `Project.lastMessageAt`/`unreadForStaff`, card "Mensagens Não Lidas" no Painel e sino de notificações na navegação admin (`PnavComponent`, `NotificationsService`) — ver seção de Data Model acima.
