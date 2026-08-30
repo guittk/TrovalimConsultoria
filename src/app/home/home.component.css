@@ -6,6 +6,27 @@
   background: #fff;
 
   /*
+    Paleta da Landing Page — CONGELADA no estado anterior à branch
+    `evolucao-plataforma`. O redesign de identidade (2026-08-29) mudou os
+    valores desses tokens no `:root` do styles.css pra área logada; o site
+    público deve continuar com as cores originais. Redefinir aqui, no
+    `:host`, mantém tudo escopado a `<app-home>` (a plataforma não é
+    afetada) e vence também o tema escuro, que na landing não existe.
+    Exceção consciente à regra "nada de cor literal fora do bloco de
+    tokens": aqui o objetivo é justamente fixar valores literais.
+  */
+  --wine: #3D0B12;
+  --wine-dark: #1A0608;
+  --wine-mid: #5C1220;
+  --gold: #C9A96E;
+  --gold-light: #E8D5A3;
+  --gold-pale: #F5EDD9;
+  --cream: #F9F6F0;
+  --cream-warm: #EFE9DF;
+  --graphite: #2C2C2C;
+  --muted: #6B6B6B;
+
+  /*
     Sistema de animação. Um easing único de desaceleração longa
     (ease-out-quint) em toda a página — é o que dá a sensação de peso e
     controle, em vez de "site com animaçãozinha". Deslocamento curto de
