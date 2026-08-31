@@ -7,7 +7,7 @@ import { ToastService } from './toast.service';
   template: `
     <div class="toaster" aria-live="polite" aria-atomic="false">
       @for (t of toast.toasts(); track t.id) {
-        <div class="toast" [class.toast-error]="t.kind === 'error'" [class.toast-success]="t.kind === 'success'" role="status">
+        <div class="toast" [class.toast-error]="t.kind === 'error'" [class.toast-success]="t.kind === 'success'" [class.toast-leaving]="t.leaving" role="status">
           <svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             @if (t.kind === 'error') {

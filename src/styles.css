@@ -36,6 +36,11 @@
   --radius-md: 12px;
   --radius-sm: 8px;
 
+  /* Curvas de easing — nunca usar o ease-out fraco do CSS num elemento
+     deliberado (modal, dropdown, botão); estas são as versões fortes. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
   /* ── Tema claro (padrão) ── */
   --bg: #F2EEE8;
   --bg-glow-1: rgba(201,160,106,.16);
@@ -113,6 +118,18 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; overflow-x: hidden; }
+
+/* Reduz movimento pra quem pediu no SO — mantém feedback (opacity/color),
+   corta deslocamento/escala. Regra geral pra toda a plataforma; nenhuma
+   tela precisa tratar isso individualmente. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 body {
   font-family: var(--sans);
   font-weight: 400;
@@ -797,13 +814,15 @@ img { max-width: 100%; display: block; }
   border-radius: var(--radius-lg);
   padding: 1.75rem;
   display: block;
-  transition: box-shadow .22s ease-out, transform .22s ease-out, border-color .22s ease-out;
+  transition: box-shadow .22s var(--ease-out), transform .22s var(--ease-out), border-color .22s var(--ease-out);
   cursor: pointer;
 }
-.proj-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
-  transform: translateY(-2px) scale(1.01);
+@media (hover: hover) and (pointer: fine) {
+  .proj-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+    transform: translateY(-2px) scale(1.01);
+  }
 }
 .proj-card-brand {
   display: flex;
@@ -873,12 +892,14 @@ img { max-width: 100%; display: block; }
   display: flex;
   flex-direction: column;
   gap: .9rem;
-  transition: box-shadow .22s ease-out, transform .22s ease-out, border-color .22s ease-out;
+  transition: box-shadow .22s var(--ease-out), transform .22s var(--ease-out), border-color .22s var(--ease-out);
 }
-.client-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
-  transform: translateY(-2px) scale(1.01);
+@media (hover: hover) and (pointer: fine) {
+  .client-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+    transform: translateY(-2px) scale(1.01);
+  }
 }
 .client-card-top {
   display: flex;
@@ -1482,10 +1503,13 @@ img { max-width: 100%; display: block; }
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all .22s ease-out;
+  transition: transform .14s var(--ease-out), background-color .14s ease, color .14s ease, border-color .14s ease;
   line-height: 1;
 }
-.btn:hover { transform: translateY(-1px); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { transform: translateY(-1px); }
+}
+.btn:active { transform: translateY(0) scale(.97); transition-duration: .09s; }
 .btn-primary { background: var(--gold); color: var(--wine-dark); }
 .btn-primary:hover { background: var(--gold-light); }
 .btn-gold { background: var(--gold); color: var(--wine-dark); }
@@ -1685,6 +1709,14 @@ app-select.sel-toolbar .sel-trigger { padding: .68rem 1rem; font-size: .85rem; }
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
+  transform-origin: top left;
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  transition: transform .16s var(--ease-out), opacity .16s var(--ease-out);
+}
+.sel-popover.sel-align-right { transform-origin: top right; }
+@starting-style {
+  .sel-popover { transform: scale(.96) translateY(-4px); opacity: 0; }
 }
 .sel-option {
   border: none;
@@ -1721,8 +1753,13 @@ app-select.sel-toolbar .sel-trigger { padding: .68rem 1rem; font-size: .85rem; }
    * container com scroll resolve.
    */
   overflow-y: auto;
+  opacity: 0;
+  transition: opacity .22s var(--ease-out), display .22s allow-discrete;
 }
-.modal-backdrop.show { display: flex; }
+.modal-backdrop.show { display: flex; opacity: 1; }
+@starting-style {
+  .modal-backdrop.show { opacity: 0; }
+}
 .modal {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1733,6 +1770,12 @@ app-select.sel-toolbar .sel-trigger { padding: .68rem 1rem; font-size: .85rem; }
   position: relative;
   margin: auto;
   box-shadow: var(--shadow-lg);
+  transform: scale(1) translateY(0);
+  transition: transform .22s var(--ease-out);
+}
+.modal-backdrop:not(.show) .modal { transform: scale(.96) translateY(8px); }
+@starting-style {
+  .modal-backdrop.show .modal { transform: scale(.96) translateY(8px); }
 }
 .modal-title {
   font-family: var(--serif);
@@ -1801,8 +1844,10 @@ app-select.sel-toolbar .sel-trigger { padding: .68rem 1rem; font-size: .85rem; }
   box-shadow: var(--shadow-lg);
   font-size: .82rem;
   line-height: 1.4;
-  animation: toast-in .22s ease-out;
+  animation: toast-in .22s var(--ease-out);
+  transition: opacity .18s var(--ease-out), transform .18s var(--ease-out);
 }
+.toast-leaving { opacity: 0; transform: translateY(6px); pointer-events: none; }
 .toast-success { background: var(--success-soft); border-color: var(--success-border); color: var(--success); }
 .toast-error { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
 .toast-icon { flex-shrink: 0; margin-top: 1px; }

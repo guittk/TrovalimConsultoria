@@ -6,6 +6,7 @@ export interface Toast {
   id: number;
   kind: ToastKind;
   message: string;
+  leaving?: boolean;
 }
 
 /**
@@ -34,6 +35,11 @@ export class ToastService {
   }
 
   dismiss(id: number): void {
-    this.toasts.update((list) => list.filter((t) => t.id !== id));
+    // Marca "saindo" primeiro pra `<app-toaster>` tocar a transição de saída
+    // (CSS) antes de tirar o toast da lista — ver .toast-leaving em styles.css.
+    this.toasts.update((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+    setTimeout(() => {
+      this.toasts.update((list) => list.filter((t) => t.id !== id));
+    }, 180);
   }
 }

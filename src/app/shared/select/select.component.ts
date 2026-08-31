@@ -61,6 +61,7 @@ interface Opt {
       <div class="sel-backdrop" (click)="close()"></div>
       <div
         class="sel-popover"
+        [class.sel-align-right]="align === 'right'"
         role="listbox"
         [style.top.px]="pos().top"
         [style.left.px]="pos().left"
