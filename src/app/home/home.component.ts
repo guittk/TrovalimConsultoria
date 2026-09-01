@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ContactSubmissionsService } from '../core/contact-submissions.service';
@@ -47,6 +48,7 @@ const SECTION_IDS = ['home', 'sobre', 'empresas', 'profissionais', 'depoimentos'
 })
 export class HomeComponent implements AfterViewInit, OnDestroy {
   private readonly elRef = inject(ElementRef<HTMLElement>);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly scrolled = signal(false);
   readonly mobileNavOpen = signal(false);
@@ -277,6 +279,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // APIs de browser puras (IntersectionObserver, matchMedia, window) não
+    // existem no passo de prerender (SSG). Sem este guard o build lança.
+    // O portão `.anim-ready` só é aplicado aqui, então o HTML prerenderizado
+    // sai sem ele e a página aparece inteira (sem animação) para o crawler.
+    if (!this.isBrowser) return;
+
     const root = this.elRef.nativeElement as HTMLElement;
 
     /*

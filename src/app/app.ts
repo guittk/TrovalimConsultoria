@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog.component';
@@ -26,9 +27,13 @@ export class App {
     // Ao logar, o tema escolhido NA CONTA (doc /users/{uid}.themePref) vence
     // o cache do navegador — é o que faz a preferência seguir a pessoa entre
     // dispositivos. Sem sessão, `themePref` é undefined e nada muda.
-    this.auth.userData$
-      .pipe(takeUntilDestroyed())
-      .subscribe((data) => this.theme.applyFromAccount(data?.themePref));
+    // Só no browser: no passo de prerender não há sessão nem persistência, e
+    // iniciar o listener do Firebase Auth no Node é trabalho inútil.
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      this.auth.userData$
+        .pipe(takeUntilDestroyed())
+        .subscribe((data) => this.theme.applyFromAccount(data?.themePref));
+    }
 
     // NavigationStart liga o overlay; qualquer outro evento do Router (End,
     // Cancel, Error, ou Skipped — este último dispara quando se navega pra

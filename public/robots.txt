@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /portal
+Disallow: /proposta
+Disallow: /mentoria
+Disallow: /admin
+Disallow: /404
+
+Sitemap: https://geovana-trovalim-prod.web.app/sitemap.xml

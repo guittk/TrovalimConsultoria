@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { Auth } from 'firebase/auth';
 import { Firestore, doc, setDoc } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIRESTORE } from './firebase.providers';
@@ -24,6 +25,7 @@ export const THEME_STORAGE_KEY = 'trovalim.theme';
 export class ThemeService {
   private readonly auth: Auth = inject(FIREBASE_AUTH);
   private readonly db: Firestore = inject(FIRESTORE);
+  private readonly doc = inject(DOCUMENT);
 
   readonly theme = signal<ThemeMode>(ThemeService.read());
 
@@ -74,7 +76,7 @@ export class ThemeService {
   }
 
   private apply(mode: ThemeMode): void {
-    document.documentElement.setAttribute('data-theme', mode);
+    this.doc.documentElement.setAttribute('data-theme', mode);
   }
 
   private static read(): ThemeMode {
